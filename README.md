@@ -230,7 +230,7 @@ fonts/
 
 ## Current Scope and Limitations
 
-- PDE discretization uses an effective scalar diffusion from $\operatorname{tr}(D)$ for robustness/simplicity.
+- PDE discretization uses an effective scalar diffusion from $\text{tr}(D)$ for robustness/simplicity.
 - No data assimilation yet (Kalman/filtering/adjoint not yet implemented).
 - No persistent preferences/config save file yet.
 
