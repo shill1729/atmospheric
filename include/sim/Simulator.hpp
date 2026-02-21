@@ -7,6 +7,8 @@
 #include "science/Fields.hpp"
 #include "science/SourceModel.hpp"
 
+#include <string_view>
+
 namespace atm {
 
 class Simulator {
@@ -28,6 +30,8 @@ public:
     float time_scale() const;
     void adjust_trail_length(int delta);
     std::size_t trail_length() const;
+    void cycle_wind_model(int direction);
+    std::string_view wind_model_name() const;
 
     const ParticleSystem& particles() const;
     const AdvectionDiffusionSolver& pde() const;

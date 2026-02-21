@@ -31,12 +31,13 @@ Application::Application(const Config& config)
     window_.setFramerateLimit(60);
 
     const float pad = 24.0f;
-    const float top_offset = 70.0f;
+    const float top_offset = 142.0f;
     const float panel_width = (static_cast<float>(config.app.window_width) - 3.0f * pad) * 0.5f;
     const float panel_height = static_cast<float>(config.app.window_height) - top_offset - 2.0f * pad;
 
     left_panel_ = sf::FloatRect({pad, top_offset}, {panel_width, panel_height});
     right_panel_ = sf::FloatRect({2.0f * pad + panel_width, top_offset}, {panel_width, panel_height});
+    menu_rows_ = 6;
 }
 
 void Application::run() {
@@ -65,7 +66,7 @@ void Application::process_events() {
                 if (key->code == sf::Keyboard::Key::Up) {
                     menu_index_ = std::max(0, menu_index_ - 1);
                 } else if (key->code == sf::Keyboard::Key::Down) {
-                    menu_index_ = std::min(4, menu_index_ + 1);
+                    menu_index_ = std::min(menu_rows_ - 1, menu_index_ + 1);
                 } else if (key->code == sf::Keyboard::Key::Left) {
                     apply_menu_adjustment(-1);
                 } else if (key->code == sf::Keyboard::Key::Right || key->code == sf::Keyboard::Key::Enter) {
@@ -91,6 +92,9 @@ void Application::process_events() {
             }
             if (key->code == sf::Keyboard::Key::Backslash) {
                 simulator_.reset_time_scale();
+            }
+            if (key->code == sf::Keyboard::Key::W) {
+                simulator_.cycle_wind_model(1);
             }
         }
 
@@ -168,14 +172,16 @@ void Application::render() {
     }
 
     if (simulator_.source().is_active()) {
-        const sf::Vector2f p = domain_to_left_panel(simulator_.source().position());
         sf::CircleShape marker(5.5f);
         marker.setOrigin({5.5f, 5.5f});
-        marker.setPosition(p);
         marker.setFillColor(sf::Color(255, 80, 80));
         marker.setOutlineColor(sf::Color::White);
         marker.setOutlineThickness(1.0f);
-        window_.draw(marker);
+
+        for (const auto& src : simulator_.source().active_sources()) {
+            marker.setPosition(domain_to_left_panel(src.position));
+            window_.draw(marker);
+        }
     }
 
     sf::Text left_label(font_, "SDE Particle Panel", 16);
@@ -304,15 +310,17 @@ void Application::draw_hud_cards() {
     status << std::fixed << std::setprecision(2)
            << "t: " << simulator_.time_s() << " s"
            << "\nspeed: x" << simulator_.time_scale()
-           << "\nstate: " << (simulator_.paused() ? "paused" : "running");
+           << "\nstate: " << (simulator_.paused() ? "paused" : "running")
+           << "\nwind: " << simulator_.wind_model_name();
 
     std::ostringstream source_text;
     source_text << std::fixed << std::setprecision(2)
-                << "q(t): " << source.emission_rate()
+                << "q_total(t): " << source.emission_rate()
                 << "\nemitted: " << particles.last_emitted_count() << " / step"
-                << "\nsource: "
+                << "\nsources: " << source.active_count() << " / " << source.max_sources()
+                << "\nnewest: "
                 << (source.is_active()
-                        ? (std::to_string(static_cast<int>(source.age_s())) + "s / "
+                        ? (std::to_string(static_cast<int>(source.newest_age_s())) + "s / "
                             + std::to_string(static_cast<int>(source.lifespan_s())) + "s")
                         : std::string("inactive"));
 
@@ -322,20 +330,20 @@ void Application::draw_hud_cards() {
             << "\nBC: " << (simulator_.boundary_mode() == BoundaryMode::Periodic ? "periodic" : "reflecting")
             << "\nPDE max c: " << simulator_.pde().max_concentration();
 
-    const float top = 14.0f;
+    const float top = 12.0f;
     const float left = 24.0f;
     const float gap = 12.0f;
     const float card_w = 250.0f;
-    const float card_h = 92.0f;
+    const float card_h = 108.0f;
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
     draw_card(left + 2.0f * (card_w + gap), top, card_w, card_h, "Physics", physics.str());
 
     sf::Text footer(
         font_,
-        "Click left panel: source | Space: pause | R: reset | B: boundary | [ ]: speed | Esc: menu",
+        "Click left panel: source | W: wind model | Space: pause | R: reset | B: boundary | [ ]: speed | Esc: menu",
         14);
-    footer.setPosition({24.0f, window_.getSize().y - 26.0f});
+    footer.setPosition({24.0f, 122.0f});
     footer.setFillColor(sf::Color(170, 190, 208));
     window_.draw(footer);
 }
@@ -345,7 +353,7 @@ void Application::draw_menu_overlay() {
     dim.setFillColor(sf::Color(6, 10, 16, 170));
     window_.draw(dim);
 
-    const sf::Vector2f panel_size(560.0f, 330.0f);
+    const sf::Vector2f panel_size(620.0f, 386.0f);
     const sf::Vector2f panel_pos(
         0.5f * (static_cast<float>(window_.getSize().x) - panel_size.x),
         0.5f * (static_cast<float>(window_.getSize().y) - panel_size.y));
@@ -362,15 +370,16 @@ void Application::draw_menu_overlay() {
     title.setFillColor(sf::Color(210, 234, 250));
     window_.draw(title);
 
-    std::array<std::string, 5> rows;
+    std::array<std::string, 6> rows;
     std::ostringstream speed;
     speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << simulator_.time_scale();
     rows[0] = speed.str();
-    rows[1] = std::string("Boundary Mode         ")
+    rows[1] = std::string("Wind Model            ") + std::string(simulator_.wind_model_name());
+    rows[2] = std::string("Boundary Mode         ")
         + (simulator_.boundary_mode() == BoundaryMode::Periodic ? "Periodic" : "Reflecting");
-    rows[2] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
-    rows[3] = "Trail Length          " + std::to_string(simulator_.trail_length());
-    rows[4] = "Reset Simulation";
+    rows[3] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
+    rows[4] = "Trail Length          " + std::to_string(simulator_.trail_length());
+    rows[5] = "Reset Simulation";
 
     const float start_y = panel_pos.y + 62.0f;
     for (int i = 0; i < static_cast<int>(rows.size()); ++i) {
@@ -397,15 +406,18 @@ void Application::apply_menu_adjustment(int direction) {
         simulator_.scale_time(direction > 0 ? 1.25f : 0.8f);
         break;
     case 1:
-        simulator_.toggle_boundary_mode();
+        simulator_.cycle_wind_model(direction >= 0 ? 1 : -1);
         break;
     case 2:
-        show_wind_ = !show_wind_;
+        simulator_.toggle_boundary_mode();
         break;
     case 3:
-        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        show_wind_ = !show_wind_;
         break;
     case 4:
+        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        break;
+    case 5:
         simulator_.reset();
         break;
     default:

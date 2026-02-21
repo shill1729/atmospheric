@@ -89,6 +89,14 @@ std::size_t Simulator::trail_length() const {
     return particles_.trail_length();
 }
 
+void Simulator::cycle_wind_model(int direction) {
+    fields_.cycle_wind_preset(direction);
+}
+
+std::string_view Simulator::wind_model_name() const {
+    return fields_.wind_preset_name();
+}
+
 const ParticleSystem& Simulator::particles() const {
     return particles_;
 }
@@ -111,7 +119,9 @@ float Simulator::time_s() const {
 
 void Simulator::step_fixed(float dt) {
     source_.step(dt);
-    particles_.emit(source_.emission_rate(), dt, source_.position());
+    for (const auto& src : source_.active_sources()) {
+        particles_.emit(source_.emission_rate(src), dt, src.position);
+    }
     particles_.step(time_s_, dt, fields_, config_.physics.deposition_rate);
     pde_.step(time_s_, dt, fields_, source_);
     time_s_ += dt;

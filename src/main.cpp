@@ -23,7 +23,8 @@ void print_help(const char* exe) {
         << "  --source-emission X       Initial source emission rate\n"
         << "  --source-decay X          Source emission decay rate\n"
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
-        << "  --source-sigma X          Source spatial spread (meters)\n";
+        << "  --source-sigma X          Source spatial spread (meters)\n"
+        << "  --source-max N            Maximum simultaneous active sources\n";
 }
 
 unsigned int parse_uint(const std::string& v, const std::string& flag) {
@@ -124,6 +125,10 @@ int main(int argc, char** argv) {
             config.source.sigma = parse_float(need_value(arg), arg);
             continue;
         }
+        if (arg == "--source-max") {
+            config.source.max_sources = parse_int(need_value(arg), arg);
+            continue;
+        }
 
         std::cerr << "Unknown option: " << arg << "\n\n";
         print_help(argv[0]);
@@ -136,6 +141,10 @@ int main(int argc, char** argv) {
     }
     if (config.numerics.dt <= 0.0f || config.numerics.time_scale <= 0.0f) {
         std::cerr << "dt and time-scale must be positive\n";
+        return 1;
+    }
+    if (config.source.max_sources < 1) {
+        std::cerr << "source-max must be >= 1\n";
         return 1;
     }
 

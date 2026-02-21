@@ -40,6 +40,7 @@ private:
     bool menu_open_ = false;
     bool show_wind_ = true;
     int menu_index_ = 0;
+    int menu_rows_ = 0;
 };
 
 } // namespace atm

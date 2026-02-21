@@ -8,7 +8,7 @@ The two models share the same wind field, diffusivity model, source process, and
 
 ## Features
 
-- Click-to-place continuous point source with finite lifetime and exponential decay
+- Click-to-add continuous sources with finite lifetime and exponential decay (multi-source, capped)
 - SDE particle transport with diffusion and deposition/killing
 - PDE concentration transport with source and deposition
 - Wind vector overlay (toggle)
@@ -24,18 +24,18 @@ $$
 \Omega = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}] \subset \mathbb{R}^2.
 $$
 
-A synthetic source is centered at $x_s(t)$ and emits at rate $q(t)$, with
+A synthetic source $k$ is centered at $x_k(t)$ and emits at rate $q_k(t)$, with
 
 $$
-q(t) = q_0 e^{-\gamma t}, \quad 0 \le t \le T_s,
+q_k(t) = q_0 e^{-\gamma (t-t_k)}, \quad t_k \le t \le t_k + T_s,
 $$
 
-and $q(t)=0$ after lifespan $T_s$.
+and $q_k(t)=0$ after lifespan $T_s$.
 
-The spatial source density is Gaussian:
+The total spatial source density is a sum of Gaussian emitters:
 
 $$
-s(t,x) = q(t)\,\frac{1}{2\pi\sigma^2}\exp\left(-\frac{\|x-x_s(t)\|^2}{2\sigma^2}\right).
+s(t,x) = \sum_{k=1}^{K(t)} q_k(t)\,\frac{1}{2\pi\sigma^2}\exp\left(-\frac{\|x-x_k(t)\|^2}{2\sigma^2}\right),
 $$
 
 ### SDE viewpoint (tagged particles)
@@ -54,7 +54,8 @@ $$
 X_{n+1}=X_n + \mu(t_n,X_n)\Delta t + \sqrt{2\Delta t}\,L(t_n,X_n)\,\xi_n,
 $$
 
-where $\mu = w+\nabla\cdot D$, $LL^\top = D$, and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle.
+where $\mu = w+\nabla\cdot D$, $LL^\top = D$, and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle.  
+Particle births are generated independently from each active source.
 
 Deposition is simulated with Bernoulli survival over each step (hazard $\lambda$): remove particle with probability
 
@@ -153,6 +154,7 @@ cmake --build build-release -j
 --source-decay X
 --source-lifespan X
 --source-sigma X
+--source-max N
 ```
 
 Example:
@@ -170,7 +172,7 @@ Example:
 
 ## Runtime Controls
 
-- `Left click` (left panel): place/activate source
+- `Left click` (left panel): add source (up to `source-max` active sources)
 - `Space`: pause/resume
 - `R`: reset simulation
 - `B`: toggle particle BC mode (periodic/reflecting)
@@ -222,7 +224,7 @@ fonts/
 - `atm::Fields`
   - Defines synthetic $w(t,x)$ and $D(t,x)$, with numerical $\nabla\cdot D$
 - `atm::SourceModel`
-  - Source activation, age/lifespan, decaying emission, Gaussian source density
+  - Multi-source lifecycle manager (add/expire), decaying emissions, summed Gaussian source density
 - `atm::ParticleSystem`
   - Euler-Maruyama transport + deposition/killing + trail history
 - `atm::AdvectionDiffusionSolver`

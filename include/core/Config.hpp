@@ -19,6 +19,7 @@ struct SourceConfig {
     float lifespan = 45.0f;
     float sigma = 60.0f;
     float particle_scale = 1.0f;
+    int max_sources = 6;
 };
 
 struct PhysicsConfig {

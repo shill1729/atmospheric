@@ -9,38 +9,55 @@ constexpr float PI = 3.1415926535f;
 }
 
 SourceModel::SourceModel(const DomainConfig& domain, const SourceConfig& source)
-    : domain_(domain), source_(source) {
-    position_ = Vec2(0.5f * (domain_.x_min + domain_.x_max), 0.5f * (domain_.y_min + domain_.y_max));
+    : domain_(domain)
+    , source_(source) {
 }
 
 void SourceModel::activate(const Vec2& position) {
-    position_.x() = std::clamp(position.x(), domain_.x_min, domain_.x_max);
-    position_.y() = std::clamp(position.y(), domain_.y_min, domain_.y_max);
-    age_ = 0.0f;
-    active_ = true;
+    if (active_sources_.size() >= max_sources()) {
+        return;
+    }
+
+    ActiveSource src;
+    src.position.x() = std::clamp(position.x(), domain_.x_min, domain_.x_max);
+    src.position.y() = std::clamp(position.y(), domain_.y_min, domain_.y_max);
+    src.age_s = 0.0f;
+    active_sources_.push_back(src);
 }
 
 void SourceModel::deactivate() {
-    active_ = false;
-    age_ = 0.0f;
+    active_sources_.clear();
 }
 
 void SourceModel::step(float dt) {
-    if (!active_) {
-        return;
+    for (auto& src : active_sources_) {
+        src.age_s += dt;
     }
-    age_ += dt;
-    if (age_ >= source_.lifespan) {
-        active_ = false;
-    }
+
+    active_sources_.erase(
+        std::remove_if(active_sources_.begin(), active_sources_.end(), [&](const ActiveSource& src) {
+            return src.age_s >= source_.lifespan;
+        }),
+        active_sources_.end());
 }
 
 bool SourceModel::is_active() const {
-    return active_;
+    return !active_sources_.empty();
 }
 
-float SourceModel::age_s() const {
-    return age_;
+float SourceModel::newest_age_s() const {
+    if (active_sources_.empty()) {
+        return 0.0f;
+    }
+    return active_sources_.back().age_s;
+}
+
+std::size_t SourceModel::active_count() const {
+    return active_sources_.size();
+}
+
+std::size_t SourceModel::max_sources() const {
+    return static_cast<std::size_t>(std::max(1, source_.max_sources));
 }
 
 float SourceModel::lifespan_s() const {
@@ -48,25 +65,35 @@ float SourceModel::lifespan_s() const {
 }
 
 float SourceModel::emission_rate() const {
-    if (!active_) {
-        return 0.0f;
+    float total = 0.0f;
+    for (const auto& src : active_sources_) {
+        total += emission_rate(src);
     }
-    return source_.base_emission * std::exp(-source_.decay_rate * age_);
+    return total;
+}
+
+float SourceModel::emission_rate(const ActiveSource& source) const {
+    return source_.base_emission * std::exp(-source_.decay_rate * source.age_s);
 }
 
 float SourceModel::source_density(const Vec2& x) const {
-    if (!active_) {
+    if (active_sources_.empty()) {
         return 0.0f;
     }
 
     const float sigma2 = source_.sigma * source_.sigma;
-    const float r2 = (x - position_).squaredNorm();
     const float norm = 1.0f / (2.0f * PI * sigma2);
-    return emission_rate() * norm * std::exp(-r2 / (2.0f * sigma2));
+
+    float s = 0.0f;
+    for (const auto& src : active_sources_) {
+        const float r2 = (x - src.position).squaredNorm();
+        s += emission_rate(src) * norm * std::exp(-r2 / (2.0f * sigma2));
+    }
+    return s;
 }
 
-const Vec2& SourceModel::position() const {
-    return position_;
+const std::vector<SourceModel::ActiveSource>& SourceModel::active_sources() const {
+    return active_sources_;
 }
 
 } // namespace atm
