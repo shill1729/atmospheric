@@ -4,7 +4,7 @@ Interactive C++ atmospheric transport prototype with a split view:
 - **Left panel:** tagged-particle simulation via SDE (Euler-Maruyama)
 - **Right panel:** concentration evolution via advection-diffusion(-reaction) PDE
 
-The two models share the same wind field, diffusivity model, source process, and deposition rate.
+The two models share the same wind field, scalar diffusivity model, source process, and deposition rate.
 
 ## Features
 
@@ -73,7 +73,7 @@ $$
 
 In implementation, this is advanced as an explicit advection-diffusion-reaction update using:
 - upwind advection term for $-w\cdot\nabla c$
-- central finite differences for diffusion via $\kappa\Delta c$ with $\kappa = \tfrac{1}{2}\text{tr}(D)$
+- central finite differences for diffusion via $\kappa\Delta c$ with scalar $\kappa$
 - source addition $s(t,x)$
 - deposition sink $-\lambda c$
 
@@ -91,14 +91,19 @@ Negative values are clamped to zero.
 - **SDE:** selectable runtime mode
   - periodic wrapping
   - reflecting bounce
-- **PDE:** edge sampling currently uses clamped neighbor values (zero-normal-gradient style behavior for finite differences)
+  - absorbing/outflow
+- **PDE:** now synced to the same boundary mode toggle as SDE (`B` key)
+  - periodic index wrapping
+  - reflecting index mirroring
+  - absorbing boundary with zero exterior concentration (Dirichlet-like)
 
 ## Numerical Methods Summary
 
 ### SDE solver
 
 - Scheme: Euler-Maruyama
-- Noise: full matrix factorization via Cholesky $D=LL^\top$
+- Noise (current): isotropic scalar diffusion, i.e. $D=\kappa I$
+- Noise (roadmap): full tensor diffusion with matrix factorization (e.g. Cholesky $D=LL^\top$)
 - Time stepping: fixed $\Delta t$ internal step, with wall-clock scaling and per-frame substep cap
 
 ### PDE solver
@@ -107,7 +112,7 @@ Negative values are clamped to zero.
 - Time stepping: explicit forward Euler in time
 - Spatial discretization:
   - advection: first-order upwind
-  - diffusion: second-order central Laplacian (effective isotropic coefficient from $D$ trace)
+  - diffusion: second-order central finite-difference fluxes with scalar diffusivity $\kappa(t,x)$
 
 ## Dependencies
 
@@ -144,6 +149,10 @@ cmake --build build-release -j
 --help
 --window-width N
 --window-height N
+--x-min X
+--x-max X
+--y-min Y
+--y-max Y
 --grid-nx N
 --grid-ny N
 --dt X
@@ -173,9 +182,13 @@ Example:
 ## Runtime Controls
 
 - `Left click` (left panel): add source (up to `source-max` active sources)
+- `W`: cycle wind model
+- `K`: cycle diffusivity model
+- `H`: toggle Brownian/Heat special case
+- `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
 - `R`: reset simulation
-- `B`: toggle particle BC mode (periodic/reflecting)
+- `B`: toggle shared SDE/PDE boundary mode (periodic/reflecting/absorbing)
 - `[` / `]`: slower/faster simulation speed
 - `\`: reset speed to configured base
 - `Esc`: open/close preferences menu
@@ -222,7 +235,7 @@ fonts/
 - `atm::Simulator`
   - Owns shared models and advances them in fixed steps
 - `atm::Fields`
-  - Defines synthetic $w(t,x)$ and $D(t,x)$, with numerical $\nabla\cdot D$
+  - Defines synthetic $w(t,x)$ and scalar diffusivity model $\kappa(t,x)$ (with tensor roadmap)
 - `atm::SourceModel`
   - Multi-source lifecycle manager (add/expire), decaying emissions, summed Gaussian source density
 - `atm::ParticleSystem`
@@ -232,7 +245,8 @@ fonts/
 
 ## Current Scope and Limitations
 
-- PDE discretization uses an effective scalar diffusion from $\text{tr}(D)$ for robustness/simplicity.
+- Diffusion is currently scalar in both SDE and PDE paths (including Brownian/Heat case with $\kappa=\tfrac{1}{2}$ and zero wind).
+- Full tensor diffusivity in SDE/PDE is planned next (matrix diffusion + flux-form discretization).
 - No data assimilation yet (Kalman/filtering/adjoint not yet implemented).
 - No persistent preferences/config save file yet.
 

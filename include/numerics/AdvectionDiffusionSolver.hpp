@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Config.hpp"
+#include "numerics/ParticleSystem.hpp"
 #include "science/Fields.hpp"
 #include "science/SourceModel.hpp"
 
@@ -13,7 +14,7 @@ public:
     AdvectionDiffusionSolver(const DomainConfig& domain, float deposition_rate);
 
     void reset();
-    void step(float time_s, float dt, const Fields& fields, const SourceModel& source);
+    void step(float time_s, float dt, const Fields& fields, const SourceModel& source, BoundaryMode boundary_mode);
 
     int nx() const;
     int ny() const;
@@ -25,7 +26,7 @@ public:
 
 private:
     int idx(int i, int j) const;
-    float sample(const std::vector<float>& c, int i, int j) const;
+    float sample(const std::vector<float>& c, int i, int j, BoundaryMode boundary_mode) const;
 
     DomainConfig domain_;
     float deposition_rate_ = 0.0f;

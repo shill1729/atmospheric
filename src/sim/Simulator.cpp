@@ -198,7 +198,7 @@ int Simulator::step_fixed(float dt) {
         emitted_sum += particles_.last_emitted_count();
     }
     particles_.step(time_s_, dt, fields_, config_.physics.deposition_rate);
-    pde_.step(time_s_, dt, fields_, source_);
+    pde_.step(time_s_, dt, fields_, source_, particles_.boundary_mode());
     time_s_ += dt;
     return emitted_sum;
 }

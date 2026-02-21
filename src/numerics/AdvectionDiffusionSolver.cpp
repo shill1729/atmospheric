@@ -3,6 +3,35 @@
 #include <algorithm>
 
 namespace atm {
+namespace {
+int wrap_index(int i, int n) {
+    if (n <= 1) {
+        return 0;
+    }
+    int out = i % n;
+    if (out < 0) {
+        out += n;
+    }
+    return out;
+}
+
+int reflect_index(int i, int n) {
+    if (n <= 1) {
+        return 0;
+    }
+    int out = i;
+    const int hi = n - 1;
+    while (out < 0 || out > hi) {
+        if (out < 0) {
+            out = -out;
+        }
+        if (out > hi) {
+            out = 2 * hi - out;
+        }
+    }
+    return out;
+}
+}
 
 AdvectionDiffusionSolver::AdvectionDiffusionSolver(const DomainConfig& domain, float deposition_rate)
     : domain_(domain)
@@ -20,7 +49,8 @@ void AdvectionDiffusionSolver::reset() {
     std::fill(c_next_.begin(), c_next_.end(), 0.0f);
 }
 
-void AdvectionDiffusionSolver::step(float time_s, float dt, const Fields& fields, const SourceModel& source) {
+void AdvectionDiffusionSolver::step(
+    float time_s, float dt, const Fields& fields, const SourceModel& source, BoundaryMode boundary_mode) {
     if (domain_.nx < 2 || domain_.ny < 2) {
         return;
     }
@@ -31,11 +61,11 @@ void AdvectionDiffusionSolver::step(float time_s, float dt, const Fields& fields
             const float y = domain_.y_min + static_cast<float>(j) * dy_;
             const Vec2 p(x, y);
 
-            const float c = sample(c_, i, j);
-            const float cxm = sample(c_, i - 1, j);
-            const float cxp = sample(c_, i + 1, j);
-            const float cym = sample(c_, i, j - 1);
-            const float cyp = sample(c_, i, j + 1);
+            const float c = sample(c_, i, j, boundary_mode);
+            const float cxm = sample(c_, i - 1, j, boundary_mode);
+            const float cxp = sample(c_, i + 1, j, boundary_mode);
+            const float cym = sample(c_, i, j - 1, boundary_mode);
+            const float cyp = sample(c_, i, j + 1, boundary_mode);
 
             const Vec2 w = fields.wind(time_s, p);
             const float kappa_c = std::max(0.0f, fields.scalar_diffusivity(time_s, p));
@@ -107,9 +137,19 @@ int AdvectionDiffusionSolver::idx(int i, int j) const {
     return j * domain_.nx + i;
 }
 
-float AdvectionDiffusionSolver::sample(const std::vector<float>& c, int i, int j) const {
-    i = std::clamp(i, 0, domain_.nx - 1);
-    j = std::clamp(j, 0, domain_.ny - 1);
+float AdvectionDiffusionSolver::sample(const std::vector<float>& c, int i, int j, BoundaryMode boundary_mode) const {
+    if (boundary_mode == BoundaryMode::Absorbing) {
+        if (i < 0 || i >= domain_.nx || j < 0 || j >= domain_.ny) {
+            return 0.0f;
+        }
+    } else if (boundary_mode == BoundaryMode::Periodic) {
+        i = wrap_index(i, domain_.nx);
+        j = wrap_index(j, domain_.ny);
+    } else {
+        i = reflect_index(i, domain_.nx);
+        j = reflect_index(j, domain_.ny);
+    }
+
     return c[idx(i, j)];
 }
 
