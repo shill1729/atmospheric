@@ -58,7 +58,7 @@ Application::Application(const Config& config)
 
     left_panel_ = sf::FloatRect({pad, top_offset}, {panel_width, panel_height});
     right_panel_ = sf::FloatRect({2.0f * pad + panel_width, top_offset}, {panel_width, panel_height});
-    menu_rows_ = 9;
+    menu_rows_ = 10;
 }
 
 void Application::run() {
@@ -120,6 +120,9 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::K) {
                 simulator_.cycle_diffusion_model(1);
             }
+            if (key->code == sf::Keyboard::Key::P) {
+                simulator_.cycle_pde_diffusion_mode(1);
+            }
             if (key->code == sf::Keyboard::Key::U) {
                 mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
                     ? MassDisplayUnit::GramsPerSquareMeter
@@ -179,22 +182,34 @@ void Application::render() {
 
     sf::VertexArray tails(sf::PrimitiveType::Lines, line_segments * 2);
     std::size_t vi = 0;
+    const float panel_diag = std::sqrt(left_panel_.size.x * left_panel_.size.x + left_panel_.size.y * left_panel_.size.y);
+    const float max_segment_px = 0.35f * panel_diag;
     for (const auto& trail : trails) {
         if (trail.size() <= 1) {
             continue;
         }
         for (std::size_t k = 1; k < trail.size(); ++k) {
+            const sf::Vector2f p_prev = domain_to_left_panel(trail[k - 1]);
+            const sf::Vector2f p_curr = domain_to_left_panel(trail[k]);
+            const float seg_dx = p_curr.x - p_prev.x;
+            const float seg_dy = p_curr.y - p_prev.y;
+            const float seg_len = std::sqrt(seg_dx * seg_dx + seg_dy * seg_dy);
+            if (seg_len > max_segment_px) {
+                continue;
+            }
+
             const float a = static_cast<float>(k) / static_cast<float>(trail.size() - 1);
             const std::uint8_t alpha0 = static_cast<std::uint8_t>(20.0f + 90.0f * a);
             const std::uint8_t alpha1 = static_cast<std::uint8_t>(30.0f + 130.0f * a);
-            tails[vi].position = domain_to_left_panel(trail[k - 1]);
+            tails[vi].position = p_prev;
             tails[vi].color = sf::Color(80, 225, 120, alpha0);
             ++vi;
-            tails[vi].position = domain_to_left_panel(trail[k]);
+            tails[vi].position = p_curr;
             tails[vi].color = sf::Color(120, 255, 150, alpha1);
             ++vi;
         }
     }
+    tails.resize(vi);
     window_.draw(tails);
 
     sf::CircleShape particle(2.0f);
@@ -450,6 +465,7 @@ void Application::draw_hud_cards() {
            << "\nstate: " << (simulator_.paused() ? "paused" : "running")
            << "\nwind: " << simulator_.wind_model_name()
            << "\ndiff: " << simulator_.diffusion_model_name()
+           << "\nPDE diff: " << simulator_.pde_diffusion_mode_name()
            << "\nBH case: " << (simulator_.brownian_heat_case() ? "ON" : "off");
 
     std::ostringstream source_text;
@@ -484,7 +500,7 @@ void Application::draw_hud_cards() {
 
     sf::Text footer(
         font_,
-        "L-click: source | W: wind | K: diff | H: Brownian/Heat | U: units | Space: pause | R: reset | Esc: menu",
+        "L-click: source | W: wind | K: diff | P: PDE diff | H: Brownian/Heat | U: units | Space: pause | R: reset | Esc: menu",
         13);
     footer.setPosition({24.0f, top + card_h + 6.0f});
     footer.setFillColor(sf::Color(170, 190, 208));
@@ -496,7 +512,7 @@ void Application::draw_menu_overlay() {
     dim.setFillColor(sf::Color(6, 10, 16, 170));
     window_.draw(dim);
 
-    const sf::Vector2f panel_size(620.0f, 524.0f);
+    const sf::Vector2f panel_size(620.0f, 572.0f);
     const sf::Vector2f panel_pos(
         0.5f * (static_cast<float>(window_.getSize().x) - panel_size.x),
         0.5f * (static_cast<float>(window_.getSize().y) - panel_size.y));
@@ -513,18 +529,19 @@ void Application::draw_menu_overlay() {
     title.setFillColor(sf::Color(210, 234, 250));
     window_.draw(title);
 
-    std::array<std::string, 9> rows;
+    std::array<std::string, 10> rows;
     std::ostringstream speed;
     speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << simulator_.time_scale();
     rows[0] = speed.str();
     rows[1] = std::string("Wind Model            ") + std::string(simulator_.wind_model_name());
     rows[2] = std::string("Diffusivity Model     ") + std::string(simulator_.diffusion_model_name());
-    rows[3] = std::string("Boundary Mode         ") + boundary_mode_label(simulator_.boundary_mode());
-    rows[4] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
-    rows[5] = std::string("Brownian/Heat Case    ") + (simulator_.brownian_heat_case() ? "ON" : "Off");
-    rows[6] = std::string("Mass Units            ") + mass_unit_label(mass_unit_);
-    rows[7] = "Trail Length          " + std::to_string(simulator_.trail_length());
-    rows[8] = "Reset Simulation";
+    rows[3] = std::string("PDE Diffusion         ") + std::string(simulator_.pde_diffusion_mode_name());
+    rows[4] = std::string("Boundary Mode         ") + boundary_mode_label(simulator_.boundary_mode());
+    rows[5] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
+    rows[6] = std::string("Brownian/Heat Case    ") + (simulator_.brownian_heat_case() ? "ON" : "Off");
+    rows[7] = std::string("Mass Units            ") + mass_unit_label(mass_unit_);
+    rows[8] = "Trail Length          " + std::to_string(simulator_.trail_length());
+    rows[9] = "Reset Simulation";
 
     const float start_y = panel_pos.y + 62.0f;
     for (int i = 0; i < static_cast<int>(rows.size()); ++i) {
@@ -557,23 +574,26 @@ void Application::apply_menu_adjustment(int direction) {
         simulator_.cycle_diffusion_model(direction >= 0 ? 1 : -1);
         break;
     case 3:
-        simulator_.toggle_boundary_mode();
+        simulator_.cycle_pde_diffusion_mode(direction >= 0 ? 1 : -1);
         break;
     case 4:
-        show_wind_ = !show_wind_;
+        simulator_.toggle_boundary_mode();
         break;
     case 5:
-        simulator_.toggle_brownian_heat_case();
+        show_wind_ = !show_wind_;
         break;
     case 6:
+        simulator_.toggle_brownian_heat_case();
+        break;
+    case 7:
         mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
             ? MassDisplayUnit::GramsPerSquareMeter
             : MassDisplayUnit::MicrogramsPerSquareMeter;
         break;
-    case 7:
+    case 8:
         simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
         break;
-    case 8:
+    case 9:
         simulator_.reset();
         break;
     default:

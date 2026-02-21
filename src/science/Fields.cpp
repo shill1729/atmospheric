@@ -6,6 +6,62 @@
 namespace atm {
 namespace {
 constexpr float PI = 3.1415926535f;
+
+float normalized_x(const DomainConfig& d, const Vec2& x) {
+    const float lx = std::max(1.0f, d.x_max - d.x_min);
+    return (x.x() - d.x_min) / lx;
+}
+
+float normalized_y(const DomainConfig& d, const Vec2& x) {
+    const float ly = std::max(1.0f, d.y_max - d.y_min);
+    return (x.y() - d.y_min) / ly;
+}
+
+float scalar_spatial_kappa(const DomainConfig& d, float time_s, const Vec2& x) {
+    const float xs = normalized_x(d, x);
+    const float ys = normalized_y(d, x);
+    const float mod = std::sin(2.0f * PI * xs + 0.05f * time_s) * std::cos(2.0f * PI * ys - 0.04f * time_s);
+    return std::max(2.0f, 22.0f + 14.0f * mod);
+}
+
+Mat2 tensor_constant_spd() {
+    Mat2 d;
+    d << 18.0f, 6.0f, 6.0f, 10.0f;
+    return d;
+}
+
+Mat2 tensor_diagonal_spd(const DomainConfig& d, float time_s, const Vec2& x) {
+    const float xs = normalized_x(d, x);
+    const float ys = normalized_y(d, x);
+    const float d11 = std::max(
+        1.0f, 8.0f + 3.5f * std::sin(2.0f * PI * ys + 0.06f * time_s) + 2.0f * std::cos(2.0f * PI * xs));
+    const float d22 = std::max(
+        1.0f, 19.0f + 5.0f * std::cos(2.0f * PI * xs - 0.05f * time_s) + 2.5f * std::sin(2.0f * PI * ys));
+    Mat2 out = Mat2::Zero();
+    out(0, 0) = d11;
+    out(1, 1) = d22;
+    return out;
+}
+
+Mat2 tensor_full_anisotropic_spd(const DomainConfig& d, float time_s, const Vec2& x) {
+    const float xs = normalized_x(d, x);
+    const float ys = normalized_y(d, x);
+
+    const float lambda1
+        = std::max(1.0f, 4.5f + 1.8f * std::sin(2.0f * PI * xs + 0.04f * time_s) + 1.2f * std::cos(2.0f * PI * ys));
+    const float lambda2 = std::max(
+        lambda1 + 1.0f, 17.0f + 4.5f * std::cos(2.0f * PI * ys - 0.03f * time_s) + 3.0f * std::sin(2.0f * PI * xs));
+
+    const float theta = 0.7f * std::sin(2.0f * PI * xs - 0.05f * time_s) + 0.5f * std::cos(2.0f * PI * ys);
+    const float ct = std::cos(theta);
+    const float st = std::sin(theta);
+    Mat2 r;
+    r << ct, -st, st, ct;
+    Mat2 lam = Mat2::Zero();
+    lam(0, 0) = lambda1;
+    lam(1, 1) = lambda2;
+    return r * lam * r.transpose();
+}
 }
 
 Fields::Fields(const DomainConfig& domain)
@@ -27,29 +83,58 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
 }
 
 Mat2 Fields::diffusivity(float time_s, const Vec2& x) const {
-    const float kappa = scalar_diffusivity(time_s, x);
-    return kappa * Mat2::Identity();
+    switch (diffusivity_preset_) {
+    case DiffusivityPreset::ConstantScalar:
+        return 22.0f * Mat2::Identity();
+    case DiffusivityPreset::SpatialScalar:
+        return scalar_spatial_kappa(domain_, time_s, x) * Mat2::Identity();
+    case DiffusivityPreset::ConstantTensor:
+        return tensor_constant_spd();
+    case DiffusivityPreset::DiagonalTensor:
+        return tensor_diagonal_spd(domain_, time_s, x);
+    case DiffusivityPreset::FullAnisotropicTensor:
+        return tensor_full_anisotropic_spd(domain_, time_s, x);
+    case DiffusivityPreset::BrownianHalf:
+        return 0.5f * Mat2::Identity();
+    }
+    return 22.0f * Mat2::Identity();
 }
 
 Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
-    return grad_scalar_diffusivity(time_s, x);
+    const float lx = domain_.x_max - domain_.x_min;
+    const float ly = domain_.y_max - domain_.y_min;
+    const float hx = std::max(1.0f, 0.002f * lx);
+    const float hy = std::max(1.0f, 0.002f * ly);
+
+    auto sample_d = [&](float px, float py) {
+        const float sx = std::clamp(px, domain_.x_min, domain_.x_max);
+        const float sy = std::clamp(py, domain_.y_min, domain_.y_max);
+        return diffusivity(time_s, Vec2(sx, sy));
+    };
+
+    const Mat2 dxp = sample_d(x.x() + hx, x.y());
+    const Mat2 dxm = sample_d(x.x() - hx, x.y());
+    const Mat2 dyp = sample_d(x.x(), x.y() + hy);
+    const Mat2 dym = sample_d(x.x(), x.y() - hy);
+
+    const float d11_dx = (dxp(0, 0) - dxm(0, 0)) / (2.0f * hx);
+    const float d12_dy = (dyp(0, 1) - dym(0, 1)) / (2.0f * hy);
+    const float d21_dx = (dxp(1, 0) - dxm(1, 0)) / (2.0f * hx);
+    const float d22_dy = (dyp(1, 1) - dym(1, 1)) / (2.0f * hy);
+    return Vec2(d11_dx + d12_dy, d21_dx + d22_dy);
 }
 
 float Fields::scalar_diffusivity(float time_s, const Vec2& x) const {
     if (diffusivity_preset_ == DiffusivityPreset::ConstantScalar) {
         return 22.0f;
     }
+    if (diffusivity_preset_ == DiffusivityPreset::SpatialScalar) {
+        return scalar_spatial_kappa(domain_, time_s, x);
+    }
     if (diffusivity_preset_ == DiffusivityPreset::BrownianHalf) {
         return 0.5f;
     }
-
-    const float lx = domain_.x_max - domain_.x_min;
-    const float ly = domain_.y_max - domain_.y_min;
-    const float xs = (x.x() - domain_.x_min) / lx;
-    const float ys = (x.y() - domain_.y_min) / ly;
-
-    const float mod = std::sin(2.0f * PI * xs + 0.05f * time_s) * std::cos(2.0f * PI * ys - 0.04f * time_s);
-    return std::max(2.0f, 22.0f + 14.0f * mod);
+    return 0.5f * diffusivity(time_s, x).trace();
 }
 
 Vec2 Fields::grad_scalar_diffusivity(float time_s, const Vec2& x) const {
@@ -107,7 +192,7 @@ std::string_view Fields::wind_preset_name() const {
 
 void Fields::cycle_diffusivity_preset(int direction) {
     int id = static_cast<int>(diffusivity_preset_);
-    const int n = 3;
+    const int n = 6;
     id = (id + direction) % n;
     if (id < 0) {
         id += n;
@@ -129,6 +214,12 @@ std::string_view Fields::diffusivity_preset_name() const {
         return "Constant Scalar";
     case DiffusivityPreset::SpatialScalar:
         return "Spatial Scalar";
+    case DiffusivityPreset::ConstantTensor:
+        return "Constant Tensor";
+    case DiffusivityPreset::DiagonalTensor:
+        return "Diagonal Tensor";
+    case DiffusivityPreset::FullAnisotropicTensor:
+        return "Full Anisotropic";
     case DiffusivityPreset::BrownianHalf:
         return "Brownian (k=0.5)";
     }

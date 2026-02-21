@@ -34,6 +34,8 @@ public:
     std::string_view wind_model_name() const;
     void cycle_diffusion_model(int direction);
     std::string_view diffusion_model_name() const;
+    void cycle_pde_diffusion_mode(int direction);
+    std::string_view pde_diffusion_mode_name() const;
     void toggle_brownian_heat_case();
     bool brownian_heat_case() const;
     int last_emitted_total() const;

@@ -123,14 +123,24 @@ std::string_view Simulator::diffusion_model_name() const {
     return fields_.diffusivity_preset_name();
 }
 
+void Simulator::cycle_pde_diffusion_mode(int direction) {
+    pde_.cycle_diffusion_mode(direction);
+}
+
+std::string_view Simulator::pde_diffusion_mode_name() const {
+    return pde_.diffusion_mode_name();
+}
+
 void Simulator::toggle_brownian_heat_case() {
     if (brownian_heat_case()) {
         fields_.set_wind_preset(Fields::WindPreset::JetShear);
         fields_.set_diffusivity_preset(Fields::DiffusivityPreset::ConstantScalar);
+        pde_.set_diffusion_mode(AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace);
         particle_birth_multiplier_ = 1.0f;
     } else {
         fields_.set_wind_preset(Fields::WindPreset::Zero);
         fields_.set_diffusivity_preset(Fields::DiffusivityPreset::BrownianHalf);
+        pde_.set_diffusion_mode(AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace);
         particle_birth_multiplier_ = 12.0f;
     }
     const float base_scale = std::max(1.0e-6f, config_.source.particle_scale);

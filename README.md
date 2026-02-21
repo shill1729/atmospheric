@@ -4,13 +4,14 @@ Interactive C++ atmospheric transport prototype with a split view:
 - **Left panel:** tagged-particle simulation via SDE (Euler-Maruyama)
 - **Right panel:** concentration evolution via advection-diffusion(-reaction) PDE
 
-The two models share the same wind field, scalar diffusivity model, source process, and deposition rate.
+The two models share the same wind field, diffusivity model, source process, and deposition rate.
 
 ## Features
 
 - Click-to-add continuous sources with finite lifetime and exponential decay (multi-source, capped)
 - SDE particle transport with diffusion and deposition/killing
 - PDE concentration transport with source and deposition
+- Diffusivity presets: scalar and matrix/tensor examples (constant, diagonal-varying, full anisotropic SPD)
 - Wind vector overlay (toggle)
 - Runtime controls for speed, boundary mode, trails, and HUD/menu preferences
 
@@ -73,7 +74,9 @@ $$
 
 In implementation, this is advanced as an explicit advection-diffusion-reaction update using:
 - upwind advection term for $-w\cdot\nabla c$
-- central finite differences for diffusion via $\kappa\Delta c$ with scalar $\kappa$
+- selectable diffusion operator:
+  - scalarized approximation using $\kappa=\tfrac12\mathrm{tr}(D)$
+  - full tensor flux form $\nabla\cdot(D\nabla c)$ on a centered finite-difference stencil
 - source addition $s(t,x)$
 - deposition sink $-\lambda c$
 
@@ -102,8 +105,8 @@ Negative values are clamped to zero.
 ### SDE solver
 
 - Scheme: Euler-Maruyama
-- Noise (current): isotropic scalar diffusion, i.e. $D=\kappa I$
-- Noise (roadmap): full tensor diffusion with matrix factorization (e.g. Cholesky $D=LL^\top$)
+- Drift: $w+\nabla\cdot D$ (row-wise divergence of the diffusivity tensor)
+- Noise: matrix diffusion via $\sqrt{2\Delta t}\,D^{1/2}\xi$ (SPD factorization)
 - Time stepping: fixed $\Delta t$ internal step, with wall-clock scaling and per-frame substep cap
 
 ### PDE solver
@@ -184,6 +187,7 @@ Example:
 - `Left click` (left panel): add source (up to `source-max` active sources)
 - `W`: cycle wind model
 - `K`: cycle diffusivity model
+- `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -245,8 +249,8 @@ fonts/
 
 ## Current Scope and Limitations
 
-- Diffusion is currently scalar in both SDE and PDE paths (including Brownian/Heat case with $\kappa=\tfrac{1}{2}$ and zero wind).
-- Full tensor diffusivity in SDE/PDE is planned next (matrix diffusion + flux-form discretization).
+- SDE supports scalar and SPD tensor diffusivity presets (including Brownian/Heat case with $\kappa=\tfrac{1}{2}$ and zero wind).
+- PDE supports both scalarized tensor approximation and full tensor flux diffusion mode.
 - No data assimilation yet (Kalman/filtering/adjoint not yet implemented).
 - No persistent preferences/config save file yet.
 

@@ -42,6 +42,9 @@ AdvectionDiffusionSolver::AdvectionDiffusionSolver(const DomainConfig& domain, f
     const int n = domain_.nx * domain_.ny;
     c_.assign(n, 0.0f);
     c_next_.assign(n, 0.0f);
+    wind_cache_.assign(n, Vec2::Zero());
+    diff_cache_.assign(n, Mat2::Identity());
+    source_cache_.assign(n, 0.0f);
 }
 
 void AdvectionDiffusionSolver::reset() {
@@ -55,38 +58,84 @@ void AdvectionDiffusionSolver::step(
         return;
     }
 
+    const int n = domain_.nx * domain_.ny;
+    if (static_cast<int>(wind_cache_.size()) != n) {
+        wind_cache_.assign(n, Vec2::Zero());
+        diff_cache_.assign(n, Mat2::Identity());
+        source_cache_.assign(n, 0.0f);
+    }
+
     for (int j = 0; j < domain_.ny; ++j) {
         for (int i = 0; i < domain_.nx; ++i) {
             const float x = domain_.x_min + static_cast<float>(i) * dx_;
             const float y = domain_.y_min + static_cast<float>(j) * dy_;
             const Vec2 p(x, y);
+            const int k = idx(i, j);
+            wind_cache_[k] = fields.wind(time_s, p);
+            diff_cache_[k] = fields.diffusivity(time_s, p);
+            source_cache_[k] = source.source_density(p);
+        }
+    }
 
-            const float c = sample(c_, i, j, boundary_mode);
-            const float cxm = sample(c_, i - 1, j, boundary_mode);
-            const float cxp = sample(c_, i + 1, j, boundary_mode);
-            const float cym = sample(c_, i, j - 1, boundary_mode);
-            const float cyp = sample(c_, i, j + 1, boundary_mode);
+    auto c_at = [&](int i, int j) { return sample(c_, i, j, boundary_mode); };
+    auto d_at = [&](int i, int j) { return sample_diffusivity(diff_cache_, i, j, boundary_mode); };
+    auto w_at = [&](int i, int j) { return sample_wind(wind_cache_, i, j, boundary_mode); };
+    auto s_at = [&](int i, int j) { return sample_source(source_cache_, i, j, boundary_mode); };
 
-            const Vec2 w = fields.wind(time_s, p);
-            const float kappa_c = std::max(0.0f, fields.scalar_diffusivity(time_s, p));
-            const float kappa_e = 0.5f
-                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x + dx_, y))));
-            const float kappa_w = 0.5f
-                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x - dx_, y))));
-            const float kappa_n = 0.5f
-                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x, y + dy_))));
-            const float kappa_s = 0.5f
-                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x, y - dy_))));
+    for (int j = 0; j < domain_.ny; ++j) {
+        for (int i = 0; i < domain_.nx; ++i) {
+            const float c = c_at(i, j);
+            const float cxm = c_at(i - 1, j);
+            const float cxp = c_at(i + 1, j);
+            const float cym = c_at(i, j - 1);
+            const float cyp = c_at(i, j + 1);
 
+            const Vec2 w = w_at(i, j);
             const float dc_dx = w.x() >= 0.0f ? (c - cxm) / dx_ : (cxp - c) / dx_;
             const float dc_dy = w.y() >= 0.0f ? (c - cym) / dy_ : (cyp - c) / dy_;
             const float adv = -(w.x() * dc_dx + w.y() * dc_dy);
 
-            const float diff_x = (kappa_e * (cxp - c) - kappa_w * (c - cxm)) / (dx_ * dx_);
-            const float diff_y = (kappa_n * (cyp - c) - kappa_s * (c - cym)) / (dy_ * dy_);
-            const float diff = diff_x + diff_y;
+            float diff = 0.0f;
+            if (diffusion_mode_ == DiffusionMode::ScalarizedTrace) {
+                const float kappa_c = std::max(0.0f, 0.5f * d_at(i, j).trace());
+                const float kappa_e = 0.5f * (kappa_c + std::max(0.0f, 0.5f * d_at(i + 1, j).trace()));
+                const float kappa_w = 0.5f * (kappa_c + std::max(0.0f, 0.5f * d_at(i - 1, j).trace()));
+                const float kappa_n = 0.5f * (kappa_c + std::max(0.0f, 0.5f * d_at(i, j + 1).trace()));
+                const float kappa_s = 0.5f * (kappa_c + std::max(0.0f, 0.5f * d_at(i, j - 1).trace()));
 
-            const float src = source.source_density(p);
+                const float diff_x = (kappa_e * (cxp - c) - kappa_w * (c - cxm)) / (dx_ * dx_);
+                const float diff_y = (kappa_n * (cyp - c) - kappa_s * (c - cym)) / (dy_ * dy_);
+                diff = diff_x + diff_y;
+            } else {
+                const Mat2 de = 0.5f * (d_at(i, j) + d_at(i + 1, j));
+                const Mat2 dw = 0.5f * (d_at(i - 1, j) + d_at(i, j));
+                const Mat2 dn = 0.5f * (d_at(i, j) + d_at(i, j + 1));
+                const Mat2 ds = 0.5f * (d_at(i, j - 1) + d_at(i, j));
+
+                const float cx_e = (c_at(i + 1, j) - c_at(i, j)) / dx_;
+                const float cy_e = (c_at(i, j + 1) - c_at(i, j - 1) + c_at(i + 1, j + 1) - c_at(i + 1, j - 1))
+                    / (4.0f * dy_);
+                const float fx_e = de(0, 0) * cx_e + de(0, 1) * cy_e;
+
+                const float cx_w = (c_at(i, j) - c_at(i - 1, j)) / dx_;
+                const float cy_w = (c_at(i - 1, j + 1) - c_at(i - 1, j - 1) + c_at(i, j + 1) - c_at(i, j - 1))
+                    / (4.0f * dy_);
+                const float fx_w = dw(0, 0) * cx_w + dw(0, 1) * cy_w;
+
+                const float cx_n = (c_at(i + 1, j) - c_at(i - 1, j) + c_at(i + 1, j + 1) - c_at(i - 1, j + 1))
+                    / (4.0f * dx_);
+                const float cy_n = (c_at(i, j + 1) - c_at(i, j)) / dy_;
+                const float fy_n = dn(1, 0) * cx_n + dn(1, 1) * cy_n;
+
+                const float cx_s = (c_at(i + 1, j - 1) - c_at(i - 1, j - 1) + c_at(i + 1, j) - c_at(i - 1, j))
+                    / (4.0f * dx_);
+                const float cy_s = (c_at(i, j) - c_at(i, j - 1)) / dy_;
+                const float fy_s = ds(1, 0) * cx_s + ds(1, 1) * cy_s;
+
+                diff = (fx_e - fx_w) / dx_ + (fy_n - fy_s) / dy_;
+            }
+
+            const float src = s_at(i, j);
             const float react = -deposition_rate_ * c;
 
             const float next = c + dt * (adv + diff + src + react);
@@ -95,6 +144,34 @@ void AdvectionDiffusionSolver::step(
     }
 
     c_.swap(c_next_);
+}
+
+void AdvectionDiffusionSolver::cycle_diffusion_mode(int direction) {
+    int id = static_cast<int>(diffusion_mode_);
+    const int n = 2;
+    id = (id + direction) % n;
+    if (id < 0) {
+        id += n;
+    }
+    diffusion_mode_ = static_cast<DiffusionMode>(id);
+}
+
+AdvectionDiffusionSolver::DiffusionMode AdvectionDiffusionSolver::diffusion_mode() const {
+    return diffusion_mode_;
+}
+
+void AdvectionDiffusionSolver::set_diffusion_mode(DiffusionMode mode) {
+    diffusion_mode_ = mode;
+}
+
+std::string_view AdvectionDiffusionSolver::diffusion_mode_name() const {
+    switch (diffusion_mode_) {
+    case DiffusionMode::ScalarizedTrace:
+        return "Scalarized tr(D)/2";
+    case DiffusionMode::FullTensorFlux:
+        return "Full Tensor Flux";
+    }
+    return "Full Tensor Flux";
 }
 
 int AdvectionDiffusionSolver::nx() const {
@@ -137,6 +214,16 @@ int AdvectionDiffusionSolver::idx(int i, int j) const {
     return j * domain_.nx + i;
 }
 
+int AdvectionDiffusionSolver::map_index(int i, int n, BoundaryMode boundary_mode) const {
+    if (boundary_mode == BoundaryMode::Periodic) {
+        return wrap_index(i, n);
+    }
+    if (boundary_mode == BoundaryMode::Reflecting) {
+        return reflect_index(i, n);
+    }
+    return std::clamp(i, 0, n - 1);
+}
+
 float AdvectionDiffusionSolver::sample(const std::vector<float>& c, int i, int j, BoundaryMode boundary_mode) const {
     if (boundary_mode == BoundaryMode::Absorbing) {
         if (i < 0 || i >= domain_.nx || j < 0 || j >= domain_.ny) {
@@ -151,6 +238,26 @@ float AdvectionDiffusionSolver::sample(const std::vector<float>& c, int i, int j
     }
 
     return c[idx(i, j)];
+}
+
+Mat2 AdvectionDiffusionSolver::sample_diffusivity(
+    const std::vector<Mat2>& d, int i, int j, BoundaryMode boundary_mode) const {
+    i = map_index(i, domain_.nx, boundary_mode);
+    j = map_index(j, domain_.ny, boundary_mode);
+    return d[idx(i, j)];
+}
+
+Vec2 AdvectionDiffusionSolver::sample_wind(const std::vector<Vec2>& w, int i, int j, BoundaryMode boundary_mode) const {
+    i = map_index(i, domain_.nx, boundary_mode);
+    j = map_index(j, domain_.ny, boundary_mode);
+    return w[idx(i, j)];
+}
+
+float AdvectionDiffusionSolver::sample_source(
+    const std::vector<float>& s, int i, int j, BoundaryMode boundary_mode) const {
+    i = map_index(i, domain_.nx, boundary_mode);
+    j = map_index(j, domain_.ny, boundary_mode);
+    return s[idx(i, j)];
 }
 
 } // namespace atm

@@ -5,6 +5,23 @@
 #include <limits>
 
 namespace atm {
+namespace {
+Mat2 matrix_sqrt_spd(const Mat2& d) {
+    const Mat2 sym = 0.5f * (d + d.transpose());
+
+    Eigen::LLT<Mat2> llt(sym);
+    if (llt.info() == Eigen::Success) {
+        return llt.matrixL();
+    }
+
+    Eigen::SelfAdjointEigenSolver<Mat2> es(sym);
+    if (es.info() != Eigen::Success) {
+        return Mat2::Zero();
+    }
+    const auto eval_sqrt = es.eigenvalues().cwiseMax(0.0f).cwiseSqrt();
+    return es.eigenvectors() * eval_sqrt.asDiagonal();
+}
+}
 
 ParticleSystem::ParticleSystem(const DomainConfig& domain, const SourceConfig& source, std::size_t max_particles)
     : domain_(domain)
@@ -71,14 +88,14 @@ void ParticleSystem::step(float time_s, float dt, const Fields& fields, float de
         Vec2 x = particles_[i];
         previous_particles_[i] = x;
 
-        const Vec2 drift = fields.wind(time_s, x) + fields.grad_scalar_diffusivity(time_s, x);
-        const float kappa = std::max(0.0f, fields.scalar_diffusivity(time_s, x));
+        const Vec2 drift = fields.wind(time_s, x) + fields.div_diffusivity(time_s, x);
+        const Mat2 dmat = fields.diffusivity(time_s, x);
+        const Mat2 dsqrt = matrix_sqrt_spd(dmat);
 
         Vec2 next = x;
         next += drift * dt;
-        const float sigma = std::sqrt(2.0f * kappa * dt);
-        next.x() += sigma * standard_normal_(rng_);
-        next.y() += sigma * standard_normal_(rng_);
+        const Vec2 xi(standard_normal_(rng_), standard_normal_(rng_));
+        next += std::sqrt(2.0f * dt) * (dsqrt * xi);
         if (boundary_mode_ == BoundaryMode::Absorbing && !is_inside_domain(next)) {
             particles_[i] = particles_.back();
             previous_particles_[i] = previous_particles_.back();

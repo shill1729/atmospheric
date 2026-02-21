@@ -18,7 +18,10 @@ public:
     enum class DiffusivityPreset {
         ConstantScalar = 0,
         SpatialScalar = 1,
-        BrownianHalf = 2
+        ConstantTensor = 2,
+        DiagonalTensor = 3,
+        FullAnisotropicTensor = 4,
+        BrownianHalf = 5
     };
 
     explicit Fields(const DomainConfig& domain);
