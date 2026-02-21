@@ -1,0 +1,44 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CMake / build system
+/build/
+/build-release/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/install_manifest.txt
+/compile_commands.json
+
+# Compiled objects / binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# App binary name (if built in source by accident)
+/atmospheric
+
+# Logs / temporary files
+*.log
+*.tmp
+*.temp
+
+# SFML runtime cache-like leftovers (if any tools drop these)
+*.cache
