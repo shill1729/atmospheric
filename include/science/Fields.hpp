@@ -12,7 +12,13 @@ public:
     enum class WindPreset {
         JetShear = 0,
         VortexPair = 1,
-        Cellular = 2
+        Cellular = 2,
+        Zero = 3
+    };
+    enum class DiffusivityPreset {
+        ConstantScalar = 0,
+        SpatialScalar = 1,
+        BrownianHalf = 2
     };
 
     explicit Fields(const DomainConfig& domain);
@@ -20,9 +26,16 @@ public:
     Vec2 wind(float time_s, const Vec2& x) const;
     Mat2 diffusivity(float time_s, const Vec2& x) const;
     Vec2 div_diffusivity(float time_s, const Vec2& x) const;
+    float scalar_diffusivity(float time_s, const Vec2& x) const;
+    Vec2 grad_scalar_diffusivity(float time_s, const Vec2& x) const;
     void cycle_wind_preset(int direction);
     WindPreset wind_preset() const;
+    void set_wind_preset(WindPreset preset);
     std::string_view wind_preset_name() const;
+    void cycle_diffusivity_preset(int direction);
+    DiffusivityPreset diffusivity_preset() const;
+    void set_diffusivity_preset(DiffusivityPreset preset);
+    std::string_view diffusivity_preset_name() const;
 
 private:
     Vec2 wind_jet_shear(float time_s, const Vec2& x) const;
@@ -31,6 +44,7 @@ private:
 
     const DomainConfig& domain_;
     WindPreset wind_preset_ = WindPreset::JetShear;
+    DiffusivityPreset diffusivity_preset_ = DiffusivityPreset::ConstantScalar;
 };
 
 } // namespace atm

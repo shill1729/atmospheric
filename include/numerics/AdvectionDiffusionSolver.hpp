@@ -21,6 +21,7 @@ public:
     float dy() const;
     const std::vector<float>& concentration() const;
     float max_concentration() const;
+    float total_mass() const;
 
 private:
     int idx(int i, int j) const;

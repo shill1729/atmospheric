@@ -12,14 +12,15 @@ namespace atm {
 
 enum class BoundaryMode {
     Reflecting,
-    Periodic
+    Periodic,
+    Absorbing
 };
 
 class ParticleSystem {
 public:
     ParticleSystem(const DomainConfig& domain, const SourceConfig& source, std::size_t max_particles);
 
-    void emit(float emission_rate, float dt, const Vec2& source_position);
+    void emit(float emission_rate, float dt, const Vec2& source_position, float birth_multiplier = 1.0f);
     void step(float time_s, float dt, const Fields& fields, float deposition_rate);
     void toggle_boundary_mode();
     BoundaryMode boundary_mode() const;
@@ -34,6 +35,7 @@ public:
     const std::vector<std::vector<Vec2>>& trails() const;
 
 private:
+    bool is_inside_domain(const Vec2& p) const;
     Vec2 apply_boundary(const Vec2& p) const;
 
     const DomainConfig& domain_;
@@ -49,7 +51,7 @@ private:
     float emission_carry_ = 0.0f;
     int last_emitted_count_ = 0;
     float last_rate_per_second_ = 0.0f;
-    std::size_t trail_length_ = 14;
+    std::size_t trail_length_ = 30;
 };
 
 } // namespace atm

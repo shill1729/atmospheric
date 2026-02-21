@@ -20,45 +20,43 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
         return wind_vortex_pair(time_s, x);
     case WindPreset::Cellular:
         return wind_cellular(time_s, x);
+    case WindPreset::Zero:
+        return Vec2::Zero();
     }
     return wind_jet_shear(time_s, x);
 }
 
 Mat2 Fields::diffusivity(float time_s, const Vec2& x) const {
-    const Vec2 w = wind(time_s, x);
-    Vec2 e = w;
-    const float n = e.norm();
-    if (n < 1.0e-4f) {
-        e = Vec2(1.0f, 0.0f);
-    } else {
-        e /= n;
+    const float kappa = scalar_diffusivity(time_s, x);
+    return kappa * Mat2::Identity();
+}
+
+Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
+    return grad_scalar_diffusivity(time_s, x);
+}
+
+float Fields::scalar_diffusivity(float time_s, const Vec2& x) const {
+    if (diffusivity_preset_ == DiffusivityPreset::ConstantScalar) {
+        return 22.0f;
     }
-    const Vec2 e_perp(-e.y(), e.x());
+    if (diffusivity_preset_ == DiffusivityPreset::BrownianHalf) {
+        return 0.5f;
+    }
 
     const float lx = domain_.x_max - domain_.x_min;
     const float ly = domain_.y_max - domain_.y_min;
     const float xs = (x.x() - domain_.x_min) / lx;
     const float ys = (x.y() - domain_.y_min) / ly;
 
-    const float spatial = 1.0f + 0.35f * std::sin(2.0f * PI * xs + 0.03f * time_s)
-        * std::cos(2.0f * PI * ys - 0.02f * time_s);
-    float k_parallel = 34.0f * spatial;
-    float k_cross = 16.0f * spatial;
-    if (wind_preset_ == WindPreset::VortexPair) {
-        k_parallel *= 1.2f;
-        k_cross *= 1.25f;
-    } else if (wind_preset_ == WindPreset::Cellular) {
-        k_parallel *= 1.15f;
-        k_cross *= 1.4f;
-    }
-
-    Mat2 out = Mat2::Zero();
-    out += k_parallel * (e * e.transpose());
-    out += k_cross * (e_perp * e_perp.transpose());
-    return out;
+    const float mod = std::sin(2.0f * PI * xs + 0.05f * time_s) * std::cos(2.0f * PI * ys - 0.04f * time_s);
+    return std::max(2.0f, 22.0f + 14.0f * mod);
 }
 
-Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
+Vec2 Fields::grad_scalar_diffusivity(float time_s, const Vec2& x) const {
+    if (diffusivity_preset_ == DiffusivityPreset::ConstantScalar) {
+        return Vec2::Zero();
+    }
+
     const float lx = domain_.x_max - domain_.x_min;
     const float ly = domain_.y_max - domain_.y_min;
     const float hx = std::max(1.0f, 0.002f * lx);
@@ -67,25 +65,17 @@ Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
     auto sample = [&](float px, float py) {
         const float sx = std::clamp(px, domain_.x_min, domain_.x_max);
         const float sy = std::clamp(py, domain_.y_min, domain_.y_max);
-        return diffusivity(time_s, Vec2(sx, sy));
+        return scalar_diffusivity(time_s, Vec2(sx, sy));
     };
 
-    const Mat2 d_px = sample(x.x() + hx, x.y());
-    const Mat2 d_mx = sample(x.x() - hx, x.y());
-    const Mat2 d_py = sample(x.x(), x.y() + hy);
-    const Mat2 d_my = sample(x.x(), x.y() - hy);
-
-    const float dxx_dx = (d_px(0, 0) - d_mx(0, 0)) / (2.0f * hx);
-    const float dxy_dy = (d_py(0, 1) - d_my(0, 1)) / (2.0f * hy);
-    const float dyx_dx = (d_px(1, 0) - d_mx(1, 0)) / (2.0f * hx);
-    const float dyy_dy = (d_py(1, 1) - d_my(1, 1)) / (2.0f * hy);
-
-    return Vec2(dxx_dx + dxy_dy, dyx_dx + dyy_dy);
+    const float dk_dx = (sample(x.x() + hx, x.y()) - sample(x.x() - hx, x.y())) / (2.0f * hx);
+    const float dk_dy = (sample(x.x(), x.y() + hy) - sample(x.x(), x.y() - hy)) / (2.0f * hy);
+    return Vec2(dk_dx, dk_dy);
 }
 
 void Fields::cycle_wind_preset(int direction) {
     int id = static_cast<int>(wind_preset_);
-    const int n = 3;
+    const int n = 4;
     id = (id + direction) % n;
     if (id < 0) {
         id += n;
@@ -97,6 +87,10 @@ Fields::WindPreset Fields::wind_preset() const {
     return wind_preset_;
 }
 
+void Fields::set_wind_preset(WindPreset preset) {
+    wind_preset_ = preset;
+}
+
 std::string_view Fields::wind_preset_name() const {
     switch (wind_preset_) {
     case WindPreset::JetShear:
@@ -105,8 +99,40 @@ std::string_view Fields::wind_preset_name() const {
         return "Vortex Pair";
     case WindPreset::Cellular:
         return "Cellular Vortices";
+    case WindPreset::Zero:
+        return "Zero Wind";
     }
     return "Jet Shear";
+}
+
+void Fields::cycle_diffusivity_preset(int direction) {
+    int id = static_cast<int>(diffusivity_preset_);
+    const int n = 3;
+    id = (id + direction) % n;
+    if (id < 0) {
+        id += n;
+    }
+    diffusivity_preset_ = static_cast<DiffusivityPreset>(id);
+}
+
+Fields::DiffusivityPreset Fields::diffusivity_preset() const {
+    return diffusivity_preset_;
+}
+
+void Fields::set_diffusivity_preset(DiffusivityPreset preset) {
+    diffusivity_preset_ = preset;
+}
+
+std::string_view Fields::diffusivity_preset_name() const {
+    switch (diffusivity_preset_) {
+    case DiffusivityPreset::ConstantScalar:
+        return "Constant Scalar";
+    case DiffusivityPreset::SpatialScalar:
+        return "Spatial Scalar";
+    case DiffusivityPreset::BrownianHalf:
+        return "Brownian (k=0.5)";
+    }
+    return "Constant Scalar";
 }
 
 Vec2 Fields::wind_jet_shear(float time_s, const Vec2& x) const {

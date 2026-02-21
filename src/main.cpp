@@ -14,6 +14,10 @@ void print_help(const char* exe) {
         << "  --help                    Show this help message\n"
         << "  --window-width N          Window width in pixels\n"
         << "  --window-height N         Window height in pixels\n"
+        << "  --x-min X                 Domain minimum x\n"
+        << "  --x-max X                 Domain maximum x\n"
+        << "  --y-min Y                 Domain minimum y\n"
+        << "  --y-max Y                 Domain maximum y\n"
         << "  --grid-nx N               PDE grid cells in x\n"
         << "  --grid-ny N               PDE grid cells in y\n"
         << "  --dt X                    Fixed simulation step (seconds)\n"
@@ -85,6 +89,22 @@ int main(int argc, char** argv) {
             config.app.window_height = parse_uint(need_value(arg), arg);
             continue;
         }
+        if (arg == "--x-min") {
+            config.domain.x_min = parse_float(need_value(arg), arg);
+            continue;
+        }
+        if (arg == "--x-max") {
+            config.domain.x_max = parse_float(need_value(arg), arg);
+            continue;
+        }
+        if (arg == "--y-min") {
+            config.domain.y_min = parse_float(need_value(arg), arg);
+            continue;
+        }
+        if (arg == "--y-max") {
+            config.domain.y_max = parse_float(need_value(arg), arg);
+            continue;
+        }
         if (arg == "--grid-nx") {
             config.domain.nx = parse_int(need_value(arg), arg);
             continue;
@@ -137,6 +157,10 @@ int main(int argc, char** argv) {
 
     if (config.domain.nx < 2 || config.domain.ny < 2) {
         std::cerr << "grid dimensions must be >= 2\n";
+        return 1;
+    }
+    if (config.domain.x_max <= config.domain.x_min || config.domain.y_max <= config.domain.y_min) {
+        std::cerr << "domain bounds must satisfy x_max > x_min and y_max > y_min\n";
         return 1;
     }
     if (config.numerics.dt <= 0.0f || config.numerics.time_scale <= 0.0f) {

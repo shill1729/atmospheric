@@ -38,15 +38,23 @@ void AdvectionDiffusionSolver::step(float time_s, float dt, const Fields& fields
             const float cyp = sample(c_, i, j + 1);
 
             const Vec2 w = fields.wind(time_s, p);
-            const Mat2 d = fields.diffusivity(time_s, p);
-            const float kappa = std::max(0.0f, 0.5f * (d(0, 0) + d(1, 1)));
+            const float kappa_c = std::max(0.0f, fields.scalar_diffusivity(time_s, p));
+            const float kappa_e = 0.5f
+                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x + dx_, y))));
+            const float kappa_w = 0.5f
+                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x - dx_, y))));
+            const float kappa_n = 0.5f
+                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x, y + dy_))));
+            const float kappa_s = 0.5f
+                * (kappa_c + std::max(0.0f, fields.scalar_diffusivity(time_s, Vec2(x, y - dy_))));
 
             const float dc_dx = w.x() >= 0.0f ? (c - cxm) / dx_ : (cxp - c) / dx_;
             const float dc_dy = w.y() >= 0.0f ? (c - cym) / dy_ : (cyp - c) / dy_;
             const float adv = -(w.x() * dc_dx + w.y() * dc_dy);
 
-            const float lap = (cxp - 2.0f * c + cxm) / (dx_ * dx_) + (cyp - 2.0f * c + cym) / (dy_ * dy_);
-            const float diff = kappa * lap;
+            const float diff_x = (kappa_e * (cxp - c) - kappa_w * (c - cxm)) / (dx_ * dx_);
+            const float diff_y = (kappa_n * (cyp - c) - kappa_s * (c - cym)) / (dy_ * dy_);
+            const float diff = diff_x + diff_y;
 
             const float src = source.source_density(p);
             const float react = -deposition_rate_ * c;
@@ -85,6 +93,14 @@ float AdvectionDiffusionSolver::max_concentration() const {
         mx = std::max(mx, v);
     }
     return mx;
+}
+
+float AdvectionDiffusionSolver::total_mass() const {
+    float sum = 0.0f;
+    for (float v : c_) {
+        sum += v;
+    }
+    return sum * dx_ * dy_;
 }
 
 int AdvectionDiffusionSolver::idx(int i, int j) const {

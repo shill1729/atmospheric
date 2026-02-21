@@ -32,6 +32,16 @@ public:
     std::size_t trail_length() const;
     void cycle_wind_model(int direction);
     std::string_view wind_model_name() const;
+    void cycle_diffusion_model(int direction);
+    std::string_view diffusion_model_name() const;
+    void toggle_brownian_heat_case();
+    bool brownian_heat_case() const;
+    int last_emitted_total() const;
+    float last_emission_rate_per_second() const;
+    float particle_mass() const;
+    float sde_total_mass() const;
+    float pde_total_mass() const;
+    float mass_ratio_sde_to_pde() const;
 
     const ParticleSystem& particles() const;
     const AdvectionDiffusionSolver& pde() const;
@@ -40,7 +50,7 @@ public:
     float time_s() const;
 
 private:
-    void step_fixed(float dt);
+    int step_fixed(float dt);
 
     const Config config_;
     Fields fields_;
@@ -52,6 +62,10 @@ private:
     float accumulator_ = 0.0f;
     bool paused_ = false;
     float time_scale_runtime_ = 1.0f;
+    int last_emitted_total_ = 0;
+    float last_emission_rate_per_second_ = 0.0f;
+    float particle_mass_ = 1.0f;
+    float particle_birth_multiplier_ = 1.0f;
 };
 
 } // namespace atm

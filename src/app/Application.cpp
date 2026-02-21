@@ -22,6 +22,26 @@ sf::Color heat_color(float v) {
         static_cast<std::uint8_t>(255.0f * b),
         230);
 }
+
+float mass_scale(MassDisplayUnit unit) {
+    return unit == MassDisplayUnit::MicrogramsPerSquareMeter ? 1.0e6f : 1.0f;
+}
+
+const char* mass_unit_label(MassDisplayUnit unit) {
+    return unit == MassDisplayUnit::MicrogramsPerSquareMeter ? "ug/m^2" : "g/m^2";
+}
+
+const char* boundary_mode_label(BoundaryMode mode) {
+    switch (mode) {
+    case BoundaryMode::Periodic:
+        return "periodic";
+    case BoundaryMode::Reflecting:
+        return "reflecting";
+    case BoundaryMode::Absorbing:
+        return "absorbing";
+    }
+    return "periodic";
+}
 }
 
 Application::Application(const Config& config)
@@ -31,13 +51,13 @@ Application::Application(const Config& config)
     window_.setFramerateLimit(60);
 
     const float pad = 24.0f;
-    const float top_offset = 142.0f;
+    const float top_offset = 190.0f;
     const float panel_width = (static_cast<float>(config.app.window_width) - 3.0f * pad) * 0.5f;
     const float panel_height = static_cast<float>(config.app.window_height) - top_offset - 2.0f * pad;
 
     left_panel_ = sf::FloatRect({pad, top_offset}, {panel_width, panel_height});
     right_panel_ = sf::FloatRect({2.0f * pad + panel_width, top_offset}, {panel_width, panel_height});
-    menu_rows_ = 6;
+    menu_rows_ = 9;
 }
 
 void Application::run() {
@@ -96,6 +116,17 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::W) {
                 simulator_.cycle_wind_model(1);
             }
+            if (key->code == sf::Keyboard::Key::K) {
+                simulator_.cycle_diffusion_model(1);
+            }
+            if (key->code == sf::Keyboard::Key::U) {
+                mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
+                    ? MassDisplayUnit::GramsPerSquareMeter
+                    : MassDisplayUnit::MicrogramsPerSquareMeter;
+            }
+            if (key->code == sf::Keyboard::Key::H) {
+                simulator_.toggle_brownian_heat_case();
+            }
         }
 
         if (const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
@@ -108,6 +139,10 @@ void Application::process_events() {
 
 void Application::update(float frame_dt) {
     simulator_.step(frame_dt);
+    if (simulator_.time_s() < last_sim_time_s_) {
+        pde_display_max_ = 1.0e-8f;
+    }
+    last_sim_time_s_ = simulator_.time_s();
 }
 
 void Application::render() {
@@ -149,8 +184,8 @@ void Application::render() {
         }
         for (std::size_t k = 1; k < trail.size(); ++k) {
             const float a = static_cast<float>(k) / static_cast<float>(trail.size() - 1);
-            const std::uint8_t alpha0 = static_cast<std::uint8_t>(35.0f + 120.0f * a);
-            const std::uint8_t alpha1 = static_cast<std::uint8_t>(45.0f + 170.0f * a);
+            const std::uint8_t alpha0 = static_cast<std::uint8_t>(20.0f + 90.0f * a);
+            const std::uint8_t alpha1 = static_cast<std::uint8_t>(30.0f + 130.0f * a);
             tails[vi].position = domain_to_left_panel(trail[k - 1]);
             tails[vi].color = sf::Color(80, 225, 120, alpha0);
             ++vi;
@@ -161,22 +196,22 @@ void Application::render() {
     }
     window_.draw(tails);
 
-    sf::CircleShape particle(4.6f);
-    particle.setOrigin({4.6f, 4.6f});
-    particle.setOutlineThickness(1.0f);
-    particle.setOutlineColor(sf::Color(210, 255, 220, 235));
-    particle.setFillColor(sf::Color(90, 220, 120, 185));
+    sf::CircleShape particle(2.0f);
+    particle.setOrigin({2.0f, 2.0f});
+    particle.setOutlineThickness(0.6f);
+    particle.setOutlineColor(sf::Color(210, 255, 220, 180));
+    particle.setFillColor(sf::Color(90, 220, 120, 135));
     for (const Vec2& p : pts) {
         particle.setPosition(domain_to_left_panel(p));
         window_.draw(particle);
     }
 
     if (simulator_.source().is_active()) {
-        sf::CircleShape marker(5.5f);
-        marker.setOrigin({5.5f, 5.5f});
-        marker.setFillColor(sf::Color(255, 80, 80));
+        sf::CircleShape marker(3.2f);
+        marker.setOrigin({3.2f, 3.2f});
+        marker.setFillColor(sf::Color(255, 80, 80, 190));
         marker.setOutlineColor(sf::Color::White);
-        marker.setOutlineThickness(1.0f);
+        marker.setOutlineThickness(0.8f);
 
         for (const auto& src : simulator_.source().active_sources()) {
             marker.setPosition(domain_to_left_panel(src.position));
@@ -207,25 +242,84 @@ bool Application::left_panel_contains(const sf::Vector2i& pixel) const {
 }
 
 Vec2 Application::left_panel_pixel_to_domain(const sf::Vector2i& pixel) const {
-    const auto& d = simulator_.config().domain;
+    float x_min = 0.0f;
+    float x_max = 0.0f;
+    float y_min = 0.0f;
+    float y_max = 0.0f;
+    left_view_bounds(x_min, x_max, y_min, y_max);
 
     const float sx = (static_cast<float>(pixel.x) - left_panel_.position.x) / left_panel_.size.x;
     const float sy = (static_cast<float>(pixel.y) - left_panel_.position.y) / left_panel_.size.y;
 
-    const float x = d.x_min + std::clamp(sx, 0.0f, 1.0f) * (d.x_max - d.x_min);
-    const float y = d.y_min + std::clamp(sy, 0.0f, 1.0f) * (d.y_max - d.y_min);
+    const float x = x_min + std::clamp(sx, 0.0f, 1.0f) * (x_max - x_min);
+    const float y = y_min + std::clamp(sy, 0.0f, 1.0f) * (y_max - y_min);
     return Vec2(x, y);
 }
 
 sf::Vector2f Application::domain_to_left_panel(const Vec2& x) const {
-    const auto& d = simulator_.config().domain;
+    float x_min = 0.0f;
+    float x_max = 0.0f;
+    float y_min = 0.0f;
+    float y_max = 0.0f;
+    left_view_bounds(x_min, x_max, y_min, y_max);
 
-    const float sx = (x.x() - d.x_min) / (d.x_max - d.x_min);
-    const float sy = (x.y() - d.y_min) / (d.y_max - d.y_min);
+    const float sx = (x.x() - x_min) / (x_max - x_min);
+    const float sy = (x.y() - y_min) / (y_max - y_min);
 
     return sf::Vector2f(
         left_panel_.position.x + std::clamp(sx, 0.0f, 1.0f) * left_panel_.size.x,
         left_panel_.position.y + std::clamp(sy, 0.0f, 1.0f) * left_panel_.size.y);
+}
+
+void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, float& y_max) const {
+    const auto& d = simulator_.config().domain;
+    x_min = d.x_min;
+    x_max = d.x_max;
+    y_min = d.y_min;
+    y_max = d.y_max;
+
+    if (!simulator_.brownian_heat_case()) {
+        return;
+    }
+
+    const float zoom = 2.4f;
+    float cx = 0.5f * (d.x_min + d.x_max);
+    float cy = 0.5f * (d.y_min + d.y_max);
+    if (simulator_.source().is_active()) {
+        const auto& active = simulator_.source().active_sources();
+        cx = active.back().position.x();
+        cy = active.back().position.y();
+    }
+
+    const float width = (d.x_max - d.x_min) / zoom;
+    const float height = (d.y_max - d.y_min) / zoom;
+
+    x_min = cx - 0.5f * width;
+    x_max = cx + 0.5f * width;
+    y_min = cy - 0.5f * height;
+    y_max = cy + 0.5f * height;
+
+    if (x_min < d.x_min) {
+        x_max += (d.x_min - x_min);
+        x_min = d.x_min;
+    }
+    if (x_max > d.x_max) {
+        x_min -= (x_max - d.x_max);
+        x_max = d.x_max;
+    }
+    if (y_min < d.y_min) {
+        y_max += (d.y_min - y_min);
+        y_min = d.y_min;
+    }
+    if (y_max > d.y_max) {
+        y_min -= (y_max - d.y_max);
+        y_max = d.y_max;
+    }
+
+    x_min = std::max(x_min, d.x_min);
+    y_min = std::max(y_min, d.y_min);
+    x_max = std::min(x_max, d.x_max);
+    y_max = std::min(y_max, d.y_max);
 }
 
 void Application::draw_wind_field() {
@@ -286,6 +380,10 @@ void Application::draw_wind_field() {
 void Application::draw_hud_cards() {
     const auto& source = simulator_.source();
     const auto& particles = simulator_.particles();
+    const float mscale = mass_scale(mass_unit_);
+    const float sde_mass = simulator_.sde_total_mass() * mscale;
+    const float pde_mass = simulator_.pde_total_mass() * mscale;
+    const float ratio = simulator_.mass_ratio_sde_to_pde();
 
     auto draw_card = [&](float x, float y, float w, float h, const std::string& title, const std::string& body) {
         sf::RectangleShape card({w, h});
@@ -295,13 +393,14 @@ void Application::draw_hud_cards() {
         card.setOutlineColor(sf::Color(72, 112, 150, 190));
         window_.draw(card);
 
-        sf::Text t(font_, title, 15);
+        sf::Text t(font_, title, 14);
         t.setPosition({x + 10.0f, y + 8.0f});
         t.setFillColor(sf::Color(186, 220, 238));
         window_.draw(t);
 
-        sf::Text b(font_, body, 14);
+        sf::Text b(font_, body, 12);
         b.setPosition({x + 10.0f, y + 30.0f});
+        b.setLineSpacing(0.95f);
         b.setFillColor(sf::Color(216, 228, 238));
         window_.draw(b);
     };
@@ -311,12 +410,14 @@ void Application::draw_hud_cards() {
            << "t: " << simulator_.time_s() << " s"
            << "\nspeed: x" << simulator_.time_scale()
            << "\nstate: " << (simulator_.paused() ? "paused" : "running")
-           << "\nwind: " << simulator_.wind_model_name();
+           << "\nwind: " << simulator_.wind_model_name()
+           << "\ndiff: " << simulator_.diffusion_model_name()
+           << "\nBH case: " << (simulator_.brownian_heat_case() ? "ON" : "off");
 
     std::ostringstream source_text;
-    source_text << std::fixed << std::setprecision(2)
+    source_text << std::scientific << std::setprecision(2)
                 << "q_total(t): " << source.emission_rate()
-                << "\nemitted: " << particles.last_emitted_count() << " / step"
+                << "\nemitted: " << simulator_.last_emitted_total() << " / step"
                 << "\nsources: " << source.active_count() << " / " << source.max_sources()
                 << "\nnewest: "
                 << (source.is_active()
@@ -327,23 +428,27 @@ void Application::draw_hud_cards() {
     std::ostringstream physics;
     physics << std::fixed << std::setprecision(2)
             << "particles: " << particles.particles().size()
-            << "\nBC: " << (simulator_.boundary_mode() == BoundaryMode::Periodic ? "periodic" : "reflecting")
-            << "\nPDE max c: " << simulator_.pde().max_concentration();
+            << "\nBC: " << boundary_mode_label(simulator_.boundary_mode())
+            << "\nPDE max c: " << std::scientific << std::setprecision(3) << simulator_.pde().max_concentration()
+            << "\nM_sde: " << std::scientific << std::setprecision(2) << sde_mass
+            << "\nM_pde: " << std::scientific << std::setprecision(2) << pde_mass
+            << "\nratio: " << std::fixed << std::setprecision(3) << ratio << " (" << mass_unit_label(mass_unit_)
+            << ")";
 
     const float top = 12.0f;
     const float left = 24.0f;
     const float gap = 12.0f;
     const float card_w = 250.0f;
-    const float card_h = 108.0f;
+    const float card_h = 148.0f;
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
     draw_card(left + 2.0f * (card_w + gap), top, card_w, card_h, "Physics", physics.str());
 
     sf::Text footer(
         font_,
-        "Click left panel: source | W: wind model | Space: pause | R: reset | B: boundary | [ ]: speed | Esc: menu",
-        14);
-    footer.setPosition({24.0f, 122.0f});
+        "L-click: source | W: wind | K: diff | H: Brownian/Heat | U: units | Space: pause | R: reset | Esc: menu",
+        13);
+    footer.setPosition({24.0f, top + card_h + 6.0f});
     footer.setFillColor(sf::Color(170, 190, 208));
     window_.draw(footer);
 }
@@ -353,7 +458,7 @@ void Application::draw_menu_overlay() {
     dim.setFillColor(sf::Color(6, 10, 16, 170));
     window_.draw(dim);
 
-    const sf::Vector2f panel_size(620.0f, 386.0f);
+    const sf::Vector2f panel_size(620.0f, 524.0f);
     const sf::Vector2f panel_pos(
         0.5f * (static_cast<float>(window_.getSize().x) - panel_size.x),
         0.5f * (static_cast<float>(window_.getSize().y) - panel_size.y));
@@ -370,16 +475,18 @@ void Application::draw_menu_overlay() {
     title.setFillColor(sf::Color(210, 234, 250));
     window_.draw(title);
 
-    std::array<std::string, 6> rows;
+    std::array<std::string, 9> rows;
     std::ostringstream speed;
     speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << simulator_.time_scale();
     rows[0] = speed.str();
     rows[1] = std::string("Wind Model            ") + std::string(simulator_.wind_model_name());
-    rows[2] = std::string("Boundary Mode         ")
-        + (simulator_.boundary_mode() == BoundaryMode::Periodic ? "Periodic" : "Reflecting");
-    rows[3] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
-    rows[4] = "Trail Length          " + std::to_string(simulator_.trail_length());
-    rows[5] = "Reset Simulation";
+    rows[2] = std::string("Diffusivity Model     ") + std::string(simulator_.diffusion_model_name());
+    rows[3] = std::string("Boundary Mode         ") + boundary_mode_label(simulator_.boundary_mode());
+    rows[4] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
+    rows[5] = std::string("Brownian/Heat Case    ") + (simulator_.brownian_heat_case() ? "ON" : "Off");
+    rows[6] = std::string("Mass Units            ") + mass_unit_label(mass_unit_);
+    rows[7] = "Trail Length          " + std::to_string(simulator_.trail_length());
+    rows[8] = "Reset Simulation";
 
     const float start_y = panel_pos.y + 62.0f;
     for (int i = 0; i < static_cast<int>(rows.size()); ++i) {
@@ -409,15 +516,26 @@ void Application::apply_menu_adjustment(int direction) {
         simulator_.cycle_wind_model(direction >= 0 ? 1 : -1);
         break;
     case 2:
-        simulator_.toggle_boundary_mode();
+        simulator_.cycle_diffusion_model(direction >= 0 ? 1 : -1);
         break;
     case 3:
-        show_wind_ = !show_wind_;
+        simulator_.toggle_boundary_mode();
         break;
     case 4:
-        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        show_wind_ = !show_wind_;
         break;
     case 5:
+        simulator_.toggle_brownian_heat_case();
+        break;
+    case 6:
+        mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
+            ? MassDisplayUnit::GramsPerSquareMeter
+            : MassDisplayUnit::MicrogramsPerSquareMeter;
+        break;
+    case 7:
+        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        break;
+    case 8:
         simulator_.reset();
         break;
     default:
@@ -434,6 +552,11 @@ void Application::draw_pde_heatmap() {
 
     float cmax = pde.max_concentration();
     cmax = std::max(cmax, 1.0e-8f);
+    if (cmax > pde_display_max_) {
+        pde_display_max_ += 0.2f * (cmax - pde_display_max_);
+    } else {
+        pde_display_max_ = std::max(cmax, pde_display_max_ * 0.998f);
+    }
 
     const int nx = pde.nx();
     const int ny = pde.ny();
@@ -450,10 +573,10 @@ void Application::draw_pde_heatmap() {
             const float c01 = c[idx(i, j + 1)];
             const float c11 = c[idx(i + 1, j + 1)];
 
-            const float n00 = std::log1p(c00) / std::log1p(cmax);
-            const float n10 = std::log1p(c10) / std::log1p(cmax);
-            const float n01 = std::log1p(c01) / std::log1p(cmax);
-            const float n11 = std::log1p(c11) / std::log1p(cmax);
+            const float n00 = std::log1p(c00) / std::log1p(pde_display_max_);
+            const float n10 = std::log1p(c10) / std::log1p(pde_display_max_);
+            const float n01 = std::log1p(c01) / std::log1p(pde_display_max_);
+            const float n11 = std::log1p(c11) / std::log1p(pde_display_max_);
 
             const sf::Vector2f p00(right_panel_.position.x + i * sx, right_panel_.position.y + j * sy);
             const sf::Vector2f p10(right_panel_.position.x + (i + 1) * sx, right_panel_.position.y + j * sy);

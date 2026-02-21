@@ -17,7 +17,7 @@ ParticleSystem::ParticleSystem(const DomainConfig& domain, const SourceConfig& s
     trails_.reserve(max_particles_);
 }
 
-void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_position) {
+void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_position, float birth_multiplier) {
     last_emitted_count_ = 0;
     last_rate_per_second_ = 0.0f;
 
@@ -25,7 +25,8 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
         return;
     }
 
-    const float expected_count = emission_rate * source_.particle_scale * dt + emission_carry_;
+    const float mult = std::max(0.0f, birth_multiplier);
+    const float expected_count = emission_rate * source_.particle_scale * mult * dt + emission_carry_;
     if (expected_count <= 0.0f) {
         return;
     }
@@ -49,6 +50,9 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
         Vec2 p = source_position;
         p.x() += spread * standard_normal_(rng_);
         p.y() += spread * standard_normal_(rng_);
+        if (boundary_mode_ == BoundaryMode::Absorbing && !is_inside_domain(p)) {
+            continue;
+        }
         const Vec2 bounded = apply_boundary(p);
         particles_.push_back(bounded);
         previous_particles_.push_back(bounded);
@@ -69,22 +73,23 @@ void ParticleSystem::step(float time_s, float dt, const Fields& fields, float de
         Vec2 x = particles_[i];
         previous_particles_[i] = x;
 
-        const Vec2 drift = fields.wind(time_s, x) + fields.div_diffusivity(time_s, x);
-        const Mat2 d = fields.diffusivity(time_s, x);
-        Eigen::LLT<Mat2> llt(d);
-        Mat2 L = Mat2::Zero();
-        if (llt.info() == Eigen::Success) {
-            L = llt.matrixL();
-        } else {
-            Mat2 d_safe = d;
-            d_safe += 1.0e-3f * Mat2::Identity();
-            L = d_safe.llt().matrixL();
-        }
+        const Vec2 drift = fields.wind(time_s, x) + fields.grad_scalar_diffusivity(time_s, x);
+        const float kappa = std::max(0.0f, fields.scalar_diffusivity(time_s, x));
 
         Vec2 next = x;
         next += drift * dt;
-        const Vec2 z(standard_normal_(rng_), standard_normal_(rng_));
-        next += std::sqrt(2.0f * dt) * (L * z);
+        const float sigma = std::sqrt(2.0f * kappa * dt);
+        next.x() += sigma * standard_normal_(rng_);
+        next.y() += sigma * standard_normal_(rng_);
+        if (boundary_mode_ == BoundaryMode::Absorbing && !is_inside_domain(next)) {
+            particles_[i] = particles_.back();
+            previous_particles_[i] = previous_particles_.back();
+            trails_[i] = trails_.back();
+            particles_.pop_back();
+            previous_particles_.pop_back();
+            trails_.pop_back();
+            continue;
+        }
         next = apply_boundary(next);
 
         if (uniform01(rng_) < kill_prob) {
@@ -128,7 +133,17 @@ const std::vector<std::vector<Vec2>>& ParticleSystem::trails() const {
 }
 
 void ParticleSystem::toggle_boundary_mode() {
-    boundary_mode_ = boundary_mode_ == BoundaryMode::Periodic ? BoundaryMode::Reflecting : BoundaryMode::Periodic;
+    switch (boundary_mode_) {
+    case BoundaryMode::Periodic:
+        boundary_mode_ = BoundaryMode::Reflecting;
+        break;
+    case BoundaryMode::Reflecting:
+        boundary_mode_ = BoundaryMode::Absorbing;
+        break;
+    case BoundaryMode::Absorbing:
+        boundary_mode_ = BoundaryMode::Periodic;
+        break;
+    }
 }
 
 BoundaryMode ParticleSystem::boundary_mode() const {
@@ -144,12 +159,16 @@ float ParticleSystem::emission_rate_per_second() const {
 }
 
 void ParticleSystem::set_trail_length(std::size_t length) {
-    trail_length_ = std::clamp<std::size_t>(length, 2, 80);
+    trail_length_ = std::clamp<std::size_t>(length, 2, 180);
     for (auto& trail : trails_) {
         if (trail.size() > trail_length_) {
             trail.erase(trail.begin(), trail.end() - static_cast<std::ptrdiff_t>(trail_length_));
         }
     }
+}
+
+bool ParticleSystem::is_inside_domain(const Vec2& p) const {
+    return p.x() >= domain_.x_min && p.x() <= domain_.x_max && p.y() >= domain_.y_min && p.y() <= domain_.y_max;
 }
 
 std::size_t ParticleSystem::trail_length() const {
