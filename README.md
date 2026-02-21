@@ -72,7 +72,7 @@ $$
 
 In implementation, this is advanced as an explicit advection-diffusion-reaction update using:
 - upwind advection term for $-w\cdot\nabla c$
-- central finite differences for diffusion via $\kappa\Delta c$ with $\kappa = \tfrac{1}{2}\operatorname{tr}(D)$
+- central finite differences for diffusion via $\kappa\Delta c$ with $\kappa = \tfrac{1}{2}\text{tr}(D)$
 - source addition $s(t,x)$
 - deposition sink $-\lambda c$
 
