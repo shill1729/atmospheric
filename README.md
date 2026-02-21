@@ -234,7 +234,7 @@ fonts/
 - No data assimilation yet (Kalman/filtering/adjoint not yet implemented).
 - No persistent preferences/config save file yet.
 
-## Next Steps (recommended)
+## Features TBA
 
 1. Full tensor-diffusion PDE discretization in flux form $\nabla\cdot(D\nabla c)$.
 2. Config file IO for reproducible runs.
