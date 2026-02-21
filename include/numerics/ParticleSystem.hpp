@@ -48,7 +48,6 @@ private:
     std::vector<std::vector<Vec2>> trails_;
     std::mt19937 rng_;
     std::normal_distribution<float> standard_normal_;
-    float emission_carry_ = 0.0f;
     int last_emitted_count_ = 0;
     float last_rate_per_second_ = 0.0f;
     std::size_t trail_length_ = 30;

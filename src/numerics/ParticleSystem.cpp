@@ -26,18 +26,16 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
     }
 
     const float mult = std::max(0.0f, birth_multiplier);
-    const float expected_count = emission_rate * source_.particle_scale * mult * dt + emission_carry_;
+    const float expected_count = emission_rate * source_.particle_scale * mult * dt;
     if (expected_count <= 0.0f) {
         return;
     }
 
     int spawn_count = static_cast<int>(std::floor(expected_count));
-    emission_carry_ = expected_count - static_cast<float>(spawn_count);
-
+    const float frac = expected_count - static_cast<float>(spawn_count);
     std::uniform_real_distribution<float> uniform01(0.0f, 1.0f);
-    if (uniform01(rng_) < emission_carry_) {
+    if (uniform01(rng_) < frac) {
         ++spawn_count;
-        emission_carry_ = 0.0f;
     }
 
     const std::size_t remaining = max_particles_ - particles_.size();
@@ -115,7 +113,6 @@ void ParticleSystem::clear() {
     particles_.clear();
     previous_particles_.clear();
     trails_.clear();
-    emission_carry_ = 0.0f;
     last_emitted_count_ = 0;
     last_rate_per_second_ = 0.0f;
 }

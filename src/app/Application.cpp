@@ -8,6 +8,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace atm {
 namespace {
@@ -324,54 +325,91 @@ void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, flo
 
 void Application::draw_wind_field() {
     const auto& d = simulator_.config().domain;
+    float x_min = 0.0f;
+    float x_max = 0.0f;
+    float y_min = 0.0f;
+    float y_max = 0.0f;
+    left_view_bounds(x_min, x_max, y_min, y_max);
 
-    const int nx = 10;
-    const int ny = 7;
-    const float dx = (d.x_max - d.x_min) / static_cast<float>(nx - 1);
-    const float dy = (d.y_max - d.y_min) / static_cast<float>(ny - 1);
+    const int nx = std::clamp(d.nx / 12, 8, 16);
+    const int ny = std::clamp(d.ny / 12, 6, 12);
+    const float dx = (x_max - x_min) / static_cast<float>(nx - 1);
+    const float dy = (y_max - y_min) / static_cast<float>(ny - 1);
 
-    sf::VertexArray arrows(sf::PrimitiveType::Lines);
-    arrows.resize(static_cast<std::size_t>(nx * ny) * 6);
+    struct WindSample {
+        Vec2 x;
+        Vec2 w;
+        float norm = 0.0f;
+    };
+    std::vector<WindSample> samples;
+    samples.reserve(static_cast<std::size_t>(nx * ny));
 
-    std::size_t i = 0;
+    float max_norm = 0.0f;
     for (int iy = 0; iy < ny; ++iy) {
         for (int ix = 0; ix < nx; ++ix) {
-            const Vec2 x(d.x_min + ix * dx, d.y_min + iy * dy);
-            const Vec2 w = simulator_.wind_at(x);
-            const float w_norm = std::max(1.0f, w.norm());
-            const Vec2 dir = w / w_norm;
-
-            const Vec2 tip_x = x + 160.0f * w;
-            const Vec2 left_wing_x = tip_x - 240.0f * dir + 110.0f * Vec2(-dir.y(), dir.x());
-            const Vec2 right_wing_x = tip_x - 240.0f * dir - 110.0f * Vec2(-dir.y(), dir.x());
-
-            const sf::Vector2f p0 = domain_to_left_panel(x);
-            const sf::Vector2f p1 = domain_to_left_panel(tip_x);
-            const sf::Vector2f p2 = domain_to_left_panel(left_wing_x);
-            const sf::Vector2f p3 = domain_to_left_panel(right_wing_x);
-
-            const sf::Color c(120, 200, 255, 150);
-            arrows[i].position = p0;
-            arrows[i].color = c;
-            ++i;
-            arrows[i].position = p1;
-            arrows[i].color = c;
-            ++i;
-
-            arrows[i].position = p1;
-            arrows[i].color = c;
-            ++i;
-            arrows[i].position = p2;
-            arrows[i].color = c;
-            ++i;
-
-            arrows[i].position = p1;
-            arrows[i].color = c;
-            ++i;
-            arrows[i].position = p3;
-            arrows[i].color = c;
-            ++i;
+            WindSample s;
+            s.x = Vec2(x_min + ix * dx, y_min + iy * dy);
+            s.w = simulator_.wind_at(s.x);
+            s.norm = s.w.norm();
+            max_norm = std::max(max_norm, s.norm);
+            samples.push_back(s);
         }
+    }
+
+    if (samples.empty()) {
+        return;
+    }
+
+    sf::VertexArray arrows(sf::PrimitiveType::Lines);
+    arrows.resize(samples.size() * 6);
+    const sf::Color c(120, 200, 255, 150);
+    const float min_len_px = 8.0f;
+    const float max_len_px = 30.0f;
+    const float inv_max = max_norm > 1.0e-8f ? (1.0f / max_norm) : 0.0f;
+
+    std::size_t i = 0;
+    for (const auto& s : samples) {
+        const sf::Vector2f p0 = domain_to_left_panel(s.x);
+
+        sf::Vector2f dir(1.0f, 0.0f);
+        if (s.norm > 1.0e-8f) {
+            const sf::Vector2f p_unit = domain_to_left_panel(s.x + s.w);
+            sf::Vector2f pix_vec = p_unit - p0;
+            const float pix_norm = std::sqrt(pix_vec.x * pix_vec.x + pix_vec.y * pix_vec.y);
+            if (pix_norm > 1.0e-6f) {
+                dir = pix_vec / pix_norm;
+            }
+        }
+
+        const float strength = s.norm * inv_max;
+        const float len = min_len_px + (max_len_px - min_len_px) * strength;
+        const sf::Vector2f p1 = p0 + dir * len;
+        const sf::Vector2f perp(-dir.y, dir.x);
+        const float wing_back = std::max(4.0f, 0.42f * len);
+        const float wing_side = std::max(2.0f, 0.22f * len);
+        const sf::Vector2f p2 = p1 - dir * wing_back + perp * wing_side;
+        const sf::Vector2f p3 = p1 - dir * wing_back - perp * wing_side;
+
+        arrows[i].position = p0;
+        arrows[i].color = c;
+        ++i;
+        arrows[i].position = p1;
+        arrows[i].color = c;
+        ++i;
+
+        arrows[i].position = p1;
+        arrows[i].color = c;
+        ++i;
+        arrows[i].position = p2;
+        arrows[i].color = c;
+        ++i;
+
+        arrows[i].position = p1;
+        arrows[i].color = c;
+        ++i;
+        arrows[i].position = p3;
+        arrows[i].color = c;
+        ++i;
     }
 
     window_.draw(arrows);

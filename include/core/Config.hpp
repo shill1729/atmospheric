@@ -9,8 +9,8 @@ struct DomainConfig {
     float x_max = 30000.0f;
     float y_min = 0.0f;
     float y_max = 30000.0f;
-    int nx = 110;
-    int ny = 110;
+    int nx = 200;
+    int ny = 200;
 };
 
 struct SourceConfig {
@@ -18,7 +18,7 @@ struct SourceConfig {
     float decay_rate = 0.03f;
     float lifespan = 45.0f;
     float sigma = 60.0f;
-    float particle_scale = 1.0f;
+    float particle_scale = 5.0f;
     int max_sources = 6;
 };
 
