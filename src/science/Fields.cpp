@@ -64,8 +64,9 @@ Mat2 tensor_full_anisotropic_spd(const DomainConfig& d, float time_s, const Vec2
 }
 }
 
-Fields::Fields(const DomainConfig& domain)
-    : domain_(domain) {
+Fields::Fields(const DomainConfig& domain, const PhysicsConfig& physics)
+    : domain_(domain)
+    , constant_scalar_diffusivity_(std::max(1.0e-6f, physics.constant_scalar_diffusivity)) {
 }
 
 Vec2 Fields::wind(float time_s, const Vec2& x) const {
@@ -85,7 +86,7 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
 Mat2 Fields::diffusivity(float time_s, const Vec2& x) const {
     switch (diffusivity_preset_) {
     case DiffusivityPreset::ConstantScalar:
-        return 92.0f * Mat2::Identity();
+        return constant_scalar_diffusivity_ * Mat2::Identity();
     case DiffusivityPreset::SpatialScalar:
         return scalar_spatial_kappa(domain_, time_s, x) * Mat2::Identity();
     case DiffusivityPreset::ConstantTensor:
@@ -97,7 +98,7 @@ Mat2 Fields::diffusivity(float time_s, const Vec2& x) const {
     case DiffusivityPreset::BrownianHalf:
         return 0.5f * Mat2::Identity();
     }
-    return 22.0f * Mat2::Identity();
+    return constant_scalar_diffusivity_ * Mat2::Identity();
 }
 
 Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
@@ -126,7 +127,7 @@ Vec2 Fields::div_diffusivity(float time_s, const Vec2& x) const {
 
 float Fields::scalar_diffusivity(float time_s, const Vec2& x) const {
     if (diffusivity_preset_ == DiffusivityPreset::ConstantScalar) {
-        return 22.0f;
+        return constant_scalar_diffusivity_;
     }
     if (diffusivity_preset_ == DiffusivityPreset::SpatialScalar) {
         return scalar_spatial_kappa(domain_, time_s, x);

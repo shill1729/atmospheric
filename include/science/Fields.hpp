@@ -24,7 +24,7 @@ public:
         BrownianHalf = 5
     };
 
-    explicit Fields(const DomainConfig& domain);
+    Fields(const DomainConfig& domain, const PhysicsConfig& physics);
 
     Vec2 wind(float time_s, const Vec2& x) const;
     Mat2 diffusivity(float time_s, const Vec2& x) const;
@@ -46,6 +46,7 @@ private:
     Vec2 wind_cellular(float time_s, const Vec2& x) const;
 
     const DomainConfig& domain_;
+    float constant_scalar_diffusivity_ = 22.0f;
     WindPreset wind_preset_ = WindPreset::JetShear;
     DiffusivityPreset diffusivity_preset_ = DiffusivityPreset::ConstantScalar;
 };

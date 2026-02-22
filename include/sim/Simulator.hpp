@@ -26,6 +26,7 @@ public:
     BoundaryMode boundary_mode() const;
     Vec2 wind_at(const Vec2& x) const;
     void scale_time(float factor);
+    void set_time_scale(float value);
     void reset_time_scale();
     float time_scale() const;
     void adjust_trail_length(int delta);

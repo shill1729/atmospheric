@@ -3,7 +3,6 @@
 #include <cstddef>
 
 namespace atm {
-
 struct DomainConfig {
     float x_min = 0.0f;
     float x_max = 30000.0f;
@@ -12,7 +11,6 @@ struct DomainConfig {
     int nx = 200;
     int ny = 200;
 };
-
 struct SourceConfig {
     float base_emission = 0.9f;
     float decay_rate = 0.03f;
@@ -21,11 +19,10 @@ struct SourceConfig {
     float particle_scale = 5.0f;
     int max_sources = 6;
 };
-
 struct PhysicsConfig {
     float deposition_rate = 0.012f;
+    float constant_scalar_diffusivity = 22.0f;
 };
-
 struct NumericsConfig {
     float dt = 0.08f;
     float time_scale = 10.0f;
@@ -36,6 +33,9 @@ struct NumericsConfig {
 struct AppConfig {
     unsigned int window_width = 1440;
     unsigned int window_height = 860;
+    float pde_fixed_color_scale = 1.0e-4f;
+    float sensor_sample_period_s = 5.0f;
+    float sensor_noise_std = 0.0f;
 };
 
 struct Config {

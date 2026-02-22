@@ -14,6 +14,7 @@ The two models share the same wind field, diffusivity model, source process, and
 - Diffusivity presets: scalar and matrix/tensor examples (constant, diagonal-varying, full anisotropic SPD)
 - Wind vector overlay (toggle)
 - Runtime controls for speed, boundary mode, trails, and HUD/menu preferences
+- PDE-panel sensors with periodic concentration sampling and on-plot readouts
 
 ## Mathematical Model
 
@@ -185,11 +186,15 @@ Example:
 ## Runtime Controls
 
 - `Left click` (left panel): add source (up to `source-max` active sources)
+- `Left click` (right panel): add concentration sensor
 - `W`: cycle wind model
 - `K`: cycle diffusivity model
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `C`: toggle PDE color scaling mode (auto/fixed)
 - Top toolbar `PDE`: editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
+- Top toolbar `Options`: editable pending settings for `time scale`, `max particles`, `deposition`,
+  `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`), and source parameters
+  (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -221,6 +226,7 @@ include/
     Fields.hpp                       # Wind and diffusivity models
     SourceModel.hpp                  # Source lifecycle + source density
   sim/
+    SensorManager.hpp                # Sensor placement + periodic sampled history
     SimulationController.hpp         # Applies settings, recreates simulator when needed
     Simulator.hpp                    # Orchestration of SDE+PDE stepping
   ui/

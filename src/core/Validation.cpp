@@ -42,6 +42,9 @@ std::vector<std::string> validate_config(const Config& config) {
     if (!is_finite_non_negative(config.physics.deposition_rate)) {
         errors.emplace_back("deposition rate must be a finite number >= 0");
     }
+    if (!is_finite_positive(config.physics.constant_scalar_diffusivity)) {
+        errors.emplace_back("constant scalar diffusivity must be a finite number > 0");
+    }
 
     if (!is_finite_non_negative(config.source.base_emission)) {
         errors.emplace_back("source emission must be a finite number >= 0");
@@ -69,6 +72,15 @@ std::vector<std::string> validate_config(const Config& config) {
 
     if (config.app.window_width < 1 || config.app.window_height < 1) {
         errors.emplace_back("window size must be >= 1x1");
+    }
+    if (!is_finite_positive(config.app.pde_fixed_color_scale)) {
+        errors.emplace_back("PDE fixed color scale must be a finite number > 0");
+    }
+    if (!is_finite_positive(config.app.sensor_sample_period_s)) {
+        errors.emplace_back("sensor sample period must be a finite number > 0");
+    }
+    if (!is_finite_non_negative(config.app.sensor_noise_std)) {
+        errors.emplace_back("sensor noise std must be a finite number >= 0");
     }
 
     return errors;

@@ -7,7 +7,7 @@ namespace atm {
 
 Simulator::Simulator(const Config& config)
     : config_(config)
-    , fields_(config_.domain)
+    , fields_(config_.domain, config_.physics)
     , source_(config_.domain, config_.source)
     , particles_(config_.domain, config_.source, config_.numerics.max_particles)
     , pde_(config_.domain, config_.physics.deposition_rate)
@@ -87,6 +87,10 @@ Vec2 Simulator::wind_at(const Vec2& x) const {
 
 void Simulator::scale_time(float factor) {
     time_scale_runtime_ = std::clamp(time_scale_runtime_ * factor, 0.25f, 120.0f);
+}
+
+void Simulator::set_time_scale(float value) {
+    time_scale_runtime_ = std::clamp(value, 0.25f, 120.0f);
 }
 
 void Simulator::reset_time_scale() {

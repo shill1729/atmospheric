@@ -44,12 +44,12 @@ const char* boundary_mode_label(BoundaryMode mode) {
     return "periodic";
 }
 
-constexpr float PDE_FIXED_COLOR_SCALE = 1.0e-4f;
 }
 
 Application::Application(const Config& config)
     : controller_(config)
     , menu_model_(controller_.current_settings())
+    , sensor_manager_(config.app.sensor_sample_period_s, config.app.sensor_noise_std)
     , window_(sf::VideoMode({config.app.window_width, config.app.window_height}), "Atmospheric Tool - Phase 1")
     , font_("fonts/arial.ttf") {
     window_.setFramerateLimit(60);
@@ -62,6 +62,8 @@ Application::Application(const Config& config)
     left_panel_ = sf::FloatRect({pad, top_offset}, {panel_width, panel_height});
     right_panel_ = sf::FloatRect({2.0f * pad + panel_width, top_offset}, {panel_width, panel_height});
     menu_rows_ = 11;
+    pde_fixed_color_scale_ = std::max(1.0e-8f, config.app.pde_fixed_color_scale);
+    pde_color_scale_runtime_ = pde_fixed_color_scale_;
 }
 
 void Application::run() {
@@ -108,6 +110,7 @@ void Application::process_events() {
             }
             if (key->code == sf::Keyboard::Key::R) {
                 sim().reset();
+                sensor_manager_.clear();
             }
             if (key->code == sf::Keyboard::Key::B) {
                 sim().toggle_boundary_mode();
@@ -149,9 +152,14 @@ void Application::process_events() {
                 const TopToolbarClickResult toolbar_click
                     = top_toolbar_.handle_click(click->position, menu_model_, controller_);
                 if (toolbar_click.settings_changed) {
-                    pde_color_scale_runtime_ = PDE_FIXED_COLOR_SCALE;
+                    const RuntimeSettings settings = controller_.current_settings();
+                    pde_fixed_color_scale_ = std::max(1.0e-8f, settings.pde_fixed_color_scale);
+                    pde_color_scale_runtime_ = pde_fixed_color_scale_;
+                    sensor_manager_.set_sample_period(settings.sensor_sample_period_s);
+                    sensor_manager_.set_noise_std(settings.sensor_noise_std);
                 }
                 if (toolbar_click.recreated_simulator) {
+                    sensor_manager_.clear();
                     menu_open_ = false;
                 }
                 if (toolbar_click.consumed) {
@@ -160,6 +168,8 @@ void Application::process_events() {
             }
             if (click->button == sf::Mouse::Button::Left && left_panel_contains(click->position)) {
                 sim().set_source(left_panel_pixel_to_domain(click->position));
+            } else if (click->button == sf::Mouse::Button::Left && right_panel_contains(click->position)) {
+                sensor_manager_.add_sensor(right_panel_pixel_to_domain(click->position), sim().time_s());
             }
         }
     }
@@ -167,6 +177,7 @@ void Application::process_events() {
 
 void Application::update(float frame_dt) {
     sim().step(frame_dt);
+    sensor_manager_.step(sim().time_s(), sim().pde(), sim().config().domain);
 }
 
 void Application::render() {
@@ -187,6 +198,7 @@ void Application::render() {
     right_rect.setOutlineThickness(2.0f);
     window_.draw(right_rect);
     draw_pde_heatmap();
+    draw_sensor_overlay();
 
     if (show_wind_) {
         draw_wind_field();
@@ -291,6 +303,11 @@ bool Application::left_panel_contains(const sf::Vector2i& pixel) const {
     return left_panel_.contains(p);
 }
 
+bool Application::right_panel_contains(const sf::Vector2i& pixel) const {
+    const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
+    return right_panel_.contains(p);
+}
+
 Vec2 Application::left_panel_pixel_to_domain(const sf::Vector2i& pixel) const {
     float x_min = 0.0f;
     float x_max = 0.0f;
@@ -303,6 +320,16 @@ Vec2 Application::left_panel_pixel_to_domain(const sf::Vector2i& pixel) const {
 
     const float x = x_min + std::clamp(sx, 0.0f, 1.0f) * (x_max - x_min);
     const float y = y_min + std::clamp(sy, 0.0f, 1.0f) * (y_max - y_min);
+    return Vec2(x, y);
+}
+
+Vec2 Application::right_panel_pixel_to_domain(const sf::Vector2i& pixel) const {
+    const auto& d = sim().config().domain;
+    const float sx = (static_cast<float>(pixel.x) - right_panel_.position.x) / right_panel_.size.x;
+    const float sy = (static_cast<float>(pixel.y) - right_panel_.position.y) / right_panel_.size.y;
+
+    const float x = d.x_min + std::clamp(sx, 0.0f, 1.0f) * (d.x_max - d.x_min);
+    const float y = d.y_min + std::clamp(sy, 0.0f, 1.0f) * (d.y_max - d.y_min);
     return Vec2(x, y);
 }
 
@@ -319,6 +346,16 @@ sf::Vector2f Application::domain_to_left_panel(const Vec2& x) const {
     return sf::Vector2f(
         left_panel_.position.x + std::clamp(sx, 0.0f, 1.0f) * left_panel_.size.x,
         left_panel_.position.y + std::clamp(sy, 0.0f, 1.0f) * left_panel_.size.y);
+}
+
+sf::Vector2f Application::domain_to_right_panel(const Vec2& x) const {
+    const auto& d = sim().config().domain;
+    const float sx = (x.x() - d.x_min) / (d.x_max - d.x_min);
+    const float sy = (x.y() - d.y_min) / (d.y_max - d.y_min);
+
+    return sf::Vector2f(
+        right_panel_.position.x + std::clamp(sx, 0.0f, 1.0f) * right_panel_.size.x,
+        right_panel_.position.y + std::clamp(sy, 0.0f, 1.0f) * right_panel_.size.y);
 }
 
 void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, float& y_max) const {
@@ -544,7 +581,7 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Options | PDE  | L-click source | W wind | K diff | Esc preferences | F1 controls",
+        "Toolbar: File | Options | PDE  | L-click source/sensor | W wind | K diff | Esc preferences | F1 controls",
         13);
     control_text.setPosition({34.0f, 171.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
@@ -633,7 +670,8 @@ void Application::draw_help_overlay() {
     const std::string body =
         "Primary\n"
         "Top bar : File / Options / PDE menus\n"
-        "L-click : place source\n"
+        "L-click left panel  : place source\n"
+        "L-click right panel : place sensor\n"
         "Space   : pause/resume\n"
         "R       : reset simulation\n"
         "Esc     : open/close preferences\n"
@@ -701,6 +739,7 @@ void Application::apply_menu_adjustment(int direction) {
         break;
     case 10:
         sim().reset();
+        sensor_manager_.clear();
         break;
     default:
         break;
@@ -719,7 +758,7 @@ void Application::draw_pde_heatmap() {
         const float target = std::max(1.0e-9f, 0.15f * max_c);
         pde_color_scale_runtime_ = 0.92f * pde_color_scale_runtime_ + 0.08f * target;
     } else {
-        pde_color_scale_runtime_ = PDE_FIXED_COLOR_SCALE;
+        pde_color_scale_runtime_ = pde_fixed_color_scale_;
     }
     const float denom = std::log1p(std::max(pde_color_scale_runtime_, 1.0e-10f));
     
@@ -771,6 +810,45 @@ void Application::draw_pde_heatmap() {
         }
     }
     window_.draw(mesh);
+}
+
+void Application::draw_sensor_overlay() {
+    const auto& sensors = sensor_manager_.sensors();
+    if (sensors.empty()) {
+        return;
+    }
+
+    sf::CircleShape marker(3.5f);
+    marker.setOrigin({3.5f, 3.5f});
+    marker.setFillColor(sf::Color(252, 230, 128, 220));
+    marker.setOutlineThickness(1.0f);
+    marker.setOutlineColor(sf::Color(20, 26, 32, 240));
+
+    int sensor_id = 1;
+    for (const auto& sensor : sensors) {
+        const sf::Vector2f p = domain_to_right_panel(sensor.position);
+        marker.setPosition(p);
+        window_.draw(marker);
+
+        std::ostringstream ss;
+        ss << "S" << sensor_id << " (" << std::fixed << std::setprecision(0) << sensor.position.x() << ","
+           << sensor.position.y() << ") ";
+        if (!sensor.history.empty()) {
+            const auto& obs = sensor.history.back();
+            ss << "c=" << std::scientific << std::setprecision(2) << obs.noisy_concentration;
+        } else {
+            ss << "c=n/a";
+        }
+
+        sf::Text label(font_, ss.str(), 11);
+        const float max_x = right_panel_.position.x + right_panel_.size.x - 180.0f;
+        const float label_x = std::clamp(p.x + 7.0f, right_panel_.position.x + 2.0f, max_x);
+        const float label_y = std::max(right_panel_.position.y + 2.0f, p.y - 13.0f);
+        label.setPosition({label_x, label_y});
+        label.setFillColor(sf::Color(255, 250, 204, 235));
+        window_.draw(label);
+        ++sensor_id;
+    }
 }
 
 Simulator& Application::sim() {

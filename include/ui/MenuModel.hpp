@@ -23,6 +23,19 @@ public:
     void sync_from_current(const RuntimeSettings& current);
     bool dirty() const;
 
+    void adjust_time_scale(float delta);
+    void adjust_max_particles(int delta);
+    void adjust_deposition_rate(float delta);
+    void adjust_constant_scalar_diffusivity(float delta);
+    void adjust_source_base_emission(float delta);
+    void adjust_source_decay_rate(float delta);
+    void adjust_source_lifespan(float delta);
+    void adjust_source_sigma(float delta);
+    void adjust_source_max_sources(int delta);
+    void adjust_pde_fixed_color_scale(float delta);
+    void adjust_sensor_sample_period_s(float delta);
+    void adjust_sensor_noise_std(float delta);
+
     void adjust_pde_grid_nx(int delta);
     void adjust_pde_grid_ny(int delta);
     void adjust_dt(float delta);

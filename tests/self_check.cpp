@@ -73,7 +73,8 @@ int main() {
         domain.nx = 8;
         domain.ny = 8;
 
-        atm::Fields fields(domain);
+        atm::PhysicsConfig physics;
+        atm::Fields fields(domain, physics);
         const atm::Vec2 p(5.0f, 5.0f);
         const atm::Mat2 d = fields.diffusivity(0.0f, p);
         if (d(0, 0) <= 0.0f || d(1, 1) <= 0.0f) {
