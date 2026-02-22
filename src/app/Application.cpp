@@ -53,7 +53,7 @@ const char* boundary_mode_label(BoundaryMode mode) {
 Application::Application(const Config& config)
     : controller_(config)
     , menu_model_(controller_.current_settings())
-    , sensor_manager_(config.app.sensor_sample_period_s, config.app.sensor_noise_std)
+    , sensor_manager_(config.app.sensor_sample_period_s, config.app.sensor_noise_std, config.app.sensor_history_capacity)
     , window_(sf::VideoMode({config.app.window_width, config.app.window_height}), "Atmospheric Tool - Phase 1")
     , font_("fonts/arial.ttf") {
     window_.setFramerateLimit(60);
@@ -170,6 +170,7 @@ void Application::process_events() {
                     pde_color_scale_runtime_ = pde_fixed_color_scale_;
                     sensor_manager_.set_sample_period(settings.sensor_sample_period_s);
                     sensor_manager_.set_noise_std(settings.sensor_noise_std);
+                    sensor_manager_.set_history_capacity(static_cast<std::size_t>(settings.sensor_history_capacity));
                 }
                 if (toolbar_click.recreated_simulator) {
                     sensor_manager_.clear();

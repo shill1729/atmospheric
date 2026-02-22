@@ -27,7 +27,7 @@ sf::FloatRect file_menu_rect() {
 }
 
 sf::FloatRect options_menu_rect() {
-    return sf::FloatRect({toolbar_button_rect(1).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {360.0f, 412.0f});
+    return sf::FloatRect({toolbar_button_rect(1).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {360.0f, 440.0f});
 }
 
 bool handle_file_menu_click(const sf::Vector2i& pixel, const sf::FloatRect& panel, TopToolbarClickResult& out) {
@@ -247,6 +247,16 @@ bool handle_options_menu_click(
         out.consumed = true;
         return true;
     }
+    if (hit_small(x_minus, row_y(12))) {
+        menu_model.adjust_sensor_history_capacity(-1);
+        out.consumed = true;
+        return true;
+    }
+    if (hit_small(x_plus, row_y(12))) {
+        menu_model.adjust_sensor_history_capacity(1);
+        out.consumed = true;
+        return true;
+    }
 
     const sf::FloatRect apply({panel.position.x + 12.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
     const sf::FloatRect cancel({panel.position.x + 108.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
@@ -374,6 +384,7 @@ void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font
         draw_row(9, "PDE Fixed Scale", draw_float(pending.pde_fixed_color_scale, 4));
         draw_row(10, "Sensor Period (s)", draw_float(pending.sensor_sample_period_s, 2));
         draw_row(11, "Sensor Noise", draw_float(pending.sensor_noise_std, 3));
+        draw_row(12, "Sensor Hist Cap", std::to_string(pending.sensor_history_capacity));
 
         auto draw_small_button = [&](float x, float y, const char* label) {
             sf::RectangleShape b({20.0f, 18.0f});
@@ -389,7 +400,7 @@ void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font
         };
         const float x_plus = panel.position.x + panel.size.x - 36.0f;
         const float x_minus = x_plus - 24.0f;
-        for (int row = 0; row < 12; ++row) {
+        for (int row = 0; row < 13; ++row) {
             const float y = panel.position.y + 38.0f + static_cast<float>(row) * 28.0f;
             draw_small_button(x_minus, y, "-");
             draw_small_button(x_plus, y, "+");

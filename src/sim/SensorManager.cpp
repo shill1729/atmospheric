@@ -4,13 +4,10 @@
 #include <cmath>
 
 namespace atm {
-namespace {
-constexpr std::size_t MAX_HISTORY = 30;
-}
-
-SensorManager::SensorManager(float sample_period_s, float noise_std)
+SensorManager::SensorManager(float sample_period_s, float noise_std, std::size_t history_capacity)
     : sample_period_s_(std::max(0.1f, sample_period_s))
     , noise_std_(std::max(0.0f, noise_std))
+    , history_capacity_(std::max<std::size_t>(1, history_capacity))
     , rng_(std::random_device{}())
     , standard_normal_(0.0f, 1.0f) {
 }
@@ -29,6 +26,19 @@ void SensorManager::set_noise_std(float stddev) {
 
 float SensorManager::noise_std() const {
     return noise_std_;
+}
+
+void SensorManager::set_history_capacity(std::size_t capacity) {
+    history_capacity_ = std::max<std::size_t>(1, capacity);
+    for (auto& sensor : sensors_) {
+        if (sensor.history.size() > history_capacity_) {
+            sensor.history.erase(sensor.history.begin(), sensor.history.end() - static_cast<std::ptrdiff_t>(history_capacity_));
+        }
+    }
+}
+
+std::size_t SensorManager::history_capacity() const {
+    return history_capacity_;
 }
 
 void SensorManager::add_sensor(const Vec2& position, float current_time_s) {
@@ -53,7 +63,7 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
             }
 
             sensor.history.push_back(Observation{sensor.next_sample_time_s, concentration, noisy});
-            if (sensor.history.size() > MAX_HISTORY) {
+            if (sensor.history.size() > history_capacity_) {
                 sensor.history.erase(sensor.history.begin());
             }
             sensor.next_sample_time_s += sample_period_s_;

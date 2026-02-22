@@ -1,7 +1,10 @@
 #include "core/Config.hpp"
 #include "core/Validation.hpp"
+#include "numerics/AdvectionDiffusionSolver.hpp"
 #include "numerics/ParticleSystem.hpp"
 #include "science/Fields.hpp"
+#include "sim/SensorManager.hpp"
+#include "sim/Simulator.hpp"
 
 #include <iostream>
 #include <string>
@@ -25,6 +28,7 @@ int main() {
         atm::Config bad{};
         bad.source.sigma = 0.0f;
         bad.physics.deposition_rate = -0.1f;
+        bad.app.sensor_history_capacity = 0;
         const auto errors = atm::validate_config(bad);
         if (!contains_message(errors, "source sigma")) {
             std::cerr << "Missing validation error for source sigma <= 0\n";
@@ -32,6 +36,10 @@ int main() {
         }
         if (!contains_message(errors, "deposition rate")) {
             std::cerr << "Missing validation error for negative deposition rate\n";
+            ++failures;
+        }
+        if (!contains_message(errors, "sensor history capacity")) {
+            std::cerr << "Missing validation error for sensor history capacity < 1\n";
             ++failures;
         }
     }
@@ -79,6 +87,59 @@ int main() {
         const atm::Mat2 d = fields.diffusivity(0.0f, p);
         if (d(0, 0) <= 0.0f || d(1, 1) <= 0.0f) {
             std::cerr << "Unexpected non-positive diagonal diffusivity in default preset\n";
+            ++failures;
+        }
+    }
+
+    {
+        atm::Config cfg{};
+        cfg.domain.x_min = 0.0f;
+        cfg.domain.x_max = 100.0f;
+        cfg.domain.y_min = 0.0f;
+        cfg.domain.y_max = 100.0f;
+        cfg.domain.nx = 20;
+        cfg.domain.ny = 20;
+        cfg.numerics.dt = 0.1f;
+        cfg.numerics.time_scale = 1.0f;
+        cfg.numerics.max_substeps_per_frame = 1;
+        cfg.physics.deposition_rate = 0.0f;
+        cfg.source.base_emission = 20.0f;
+        cfg.source.decay_rate = 0.0f;
+        cfg.source.lifespan = cfg.numerics.dt;
+        cfg.source.sigma = 10.0f;
+
+        atm::Simulator sim(cfg);
+        sim.set_source(atm::Vec2(50.0f, 50.0f));
+        sim.step(cfg.numerics.dt);
+
+        if (sim.pde_total_mass() <= 0.0f) {
+            std::cerr << "PDE mass should increase on first step when source lifespan equals dt\n";
+            ++failures;
+        }
+    }
+
+    {
+        atm::DomainConfig domain;
+        domain.x_min = 0.0f;
+        domain.x_max = 10.0f;
+        domain.y_min = 0.0f;
+        domain.y_max = 10.0f;
+        domain.nx = 8;
+        domain.ny = 8;
+
+        atm::AdvectionDiffusionSolver pde(domain, 0.0f);
+        atm::SensorManager sensors(0.5f, 0.0f, 3);
+        sensors.add_sensor(atm::Vec2(5.0f, 5.0f), 0.0f);
+        sensors.step(2.5f, pde, domain);
+
+        if (sensors.sensors().empty() || sensors.sensors().front().history.size() != 3) {
+            std::cerr << "Sensor history should respect configured capacity\n";
+            ++failures;
+        }
+
+        sensors.set_history_capacity(2);
+        if (sensors.sensors().front().history.size() != 2) {
+            std::cerr << "Lowering history capacity should trim existing history\n";
             ++failures;
         }
     }

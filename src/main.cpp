@@ -30,6 +30,7 @@ void print_help(const char* exe) {
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
         << "  --source-sigma X          Source spatial spread (meters)\n"
         << "  --source-max N            Maximum simultaneous active sources\n"
+        << "  --sensor-history-capacity N  Max observations retained per sensor\n"
         << "  --conc-scale X            ug/m^2 per model concentration unit\n"
         << "  --mixing-height X         Mixing-height assumption in meters (for ug/m^3 display)\n";
 }
@@ -151,6 +152,10 @@ int main(int argc, char** argv) {
             }
             if (arg == "--source-max") {
                 config.source.max_sources = parse_int(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--sensor-history-capacity") {
+                config.app.sensor_history_capacity = parse_size(need_value(arg), arg);
                 continue;
             }
             if (arg == "--conc-scale") {

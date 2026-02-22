@@ -16,6 +16,7 @@ RuntimeSettings make_runtime_settings(const Config& config, AdvectionDiffusionSo
     out.pde_fixed_color_scale = config.app.pde_fixed_color_scale;
     out.sensor_sample_period_s = config.app.sensor_sample_period_s;
     out.sensor_noise_std = config.app.sensor_noise_std;
+    out.sensor_history_capacity = static_cast<int>(config.app.sensor_history_capacity);
     out.pde_grid_nx = config.domain.nx;
     out.pde_grid_ny = config.domain.ny;
     out.dt = config.numerics.dt;
@@ -31,6 +32,7 @@ bool same_runtime_settings(const RuntimeSettings& a, const RuntimeSettings& b) {
         && a.source_sigma == b.source_sigma && a.source_max_sources == b.source_max_sources
         && a.pde_fixed_color_scale == b.pde_fixed_color_scale
         && a.sensor_sample_period_s == b.sensor_sample_period_s && a.sensor_noise_std == b.sensor_noise_std
+        && a.sensor_history_capacity == b.sensor_history_capacity
         && a.pde_grid_nx == b.pde_grid_nx && a.pde_grid_ny == b.pde_grid_ny && a.dt == b.dt
         && a.pde_diffusion_mode == b.pde_diffusion_mode;
 }

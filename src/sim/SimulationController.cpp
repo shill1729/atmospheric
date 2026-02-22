@@ -77,6 +77,9 @@ ApplySettingsReport SimulationController::apply_settings(const RuntimeSettings& 
     if (next.sensor_noise_std != current.sensor_noise_std) {
         config_.app.sensor_noise_std = next.sensor_noise_std;
     }
+    if (next.sensor_history_capacity != current.sensor_history_capacity) {
+        config_.app.sensor_history_capacity = static_cast<std::size_t>(next.sensor_history_capacity);
+    }
 
     simulator().set_pde_diffusion_mode(next.pde_diffusion_mode);
     report.changed = true;

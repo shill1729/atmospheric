@@ -82,6 +82,10 @@ void MenuModel::adjust_sensor_noise_std(float delta) {
     pending_.sensor_noise_std = std::clamp(pending_.sensor_noise_std + delta, 0.0f, 100.0f);
 }
 
+void MenuModel::adjust_sensor_history_capacity(int delta) {
+    pending_.sensor_history_capacity = std::clamp(pending_.sensor_history_capacity + delta, 1, 100000);
+}
+
 void MenuModel::adjust_pde_grid_nx(int delta) {
     pending_.pde_grid_nx = std::clamp(pending_.pde_grid_nx + delta, 2, 1024);
 }

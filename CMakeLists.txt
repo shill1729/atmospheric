@@ -53,6 +53,7 @@ if (BUILD_TESTING)
         src/numerics/ParticleSystem.cpp
         src/science/Fields.cpp
         src/science/SourceModel.cpp
+        src/sim/SensorManager.cpp
         src/sim/Simulator.cpp
     )
 

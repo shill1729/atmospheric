@@ -35,6 +35,7 @@ public:
     void adjust_pde_fixed_color_scale(float delta);
     void adjust_sensor_sample_period_s(float delta);
     void adjust_sensor_noise_std(float delta);
+    void adjust_sensor_history_capacity(int delta);
 
     void adjust_pde_grid_nx(int delta);
     void adjust_pde_grid_ny(int delta);

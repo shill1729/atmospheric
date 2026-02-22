@@ -24,12 +24,14 @@ public:
         std::vector<Observation> history;
     };
 
-    SensorManager(float sample_period_s, float noise_std);
+    SensorManager(float sample_period_s, float noise_std, std::size_t history_capacity = 30);
 
     void set_sample_period(float seconds);
     float sample_period() const;
     void set_noise_std(float stddev);
     float noise_std() const;
+    void set_history_capacity(std::size_t capacity);
+    std::size_t history_capacity() const;
 
     void add_sensor(const Vec2& position, float current_time_s);
     void clear();
@@ -43,6 +45,7 @@ private:
     std::vector<Sensor> sensors_;
     float sample_period_s_ = 5.0f;
     float noise_std_ = 0.0f;
+    std::size_t history_capacity_ = 30;
     std::mt19937 rng_;
     std::normal_distribution<float> standard_normal_;
 };

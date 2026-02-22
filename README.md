@@ -216,6 +216,7 @@ cmake --build build-release -j
 --source-lifespan X
 --source-sigma X
 --source-max N
+--sensor-history-capacity N
 --conc-scale X
 --mixing-height X
 ```
@@ -247,7 +248,7 @@ Example:
 - `J`: toggle adjoint overlay on the right panel
 - Top toolbar `PDE`: editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
 - Top toolbar `Options`: editable pending settings for `time scale`, `max particles`, `deposition`,
-  `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`), and source parameters
+  `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`, `history cap`), and source parameters
   (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)
 - Top toolbar `File`: `Estimate Source (Paused)` action
 - `H`: toggle Brownian/Heat special case
@@ -264,6 +265,7 @@ Concentration display calibration:
   - `conc_display = model_concentration * conc_scale / mixing_height`
 - `--conc-scale` sets `conc_scale` (ug/m^2 per model unit).
 - `--mixing-height` is the assumed vertical mixing depth (meters).
+- `--sensor-history-capacity` sets max observations retained per sensor history.
 
 Menu controls:
 - `Up/Down`: select option

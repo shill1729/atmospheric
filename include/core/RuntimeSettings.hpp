@@ -18,6 +18,7 @@ struct RuntimeSettings {
     float pde_fixed_color_scale = 0.0f;
     float sensor_sample_period_s = 0.0f;
     float sensor_noise_std = 0.0f;
+    int sensor_history_capacity = 0;
     int pde_grid_nx = 0;
     int pde_grid_ny = 0;
     float dt = 0.0f;
