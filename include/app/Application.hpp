@@ -26,7 +26,9 @@ private:
     void draw_wind_field();
     void draw_pde_heatmap();
     void draw_hud_cards();
+    void draw_control_strip();
     void draw_menu_overlay();
+    void draw_help_overlay();
     void apply_menu_adjustment(int direction);
     void left_view_bounds(float& x_min, float& x_max, float& y_min, float& y_max) const;
 
@@ -44,6 +46,7 @@ private:
 
     sf::Clock frame_clock_;
     bool menu_open_ = false;
+    bool help_open_ = false;
     bool show_wind_ = true;
     int menu_index_ = 0;
     int menu_rows_ = 0;

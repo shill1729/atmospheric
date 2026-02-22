@@ -78,6 +78,10 @@ void Application::process_events() {
         }
 
         if (const auto* key = event->getIf<sf::Event::KeyPressed>()) {
+            if (key->code == sf::Keyboard::Key::F1) {
+                help_open_ = !help_open_;
+                continue;
+            }
             if (key->code == sf::Keyboard::Key::Escape) {
                 menu_open_ = !menu_open_;
                 continue;
@@ -246,8 +250,12 @@ void Application::render() {
     window_.draw(right_label);
 
     draw_hud_cards();
+    draw_control_strip();
     if (menu_open_) {
         draw_menu_overlay();
+    }
+    if (help_open_) {
+        draw_help_overlay();
     }
     window_.display();
 }
@@ -497,14 +505,23 @@ void Application::draw_hud_cards() {
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
     draw_card(left + 2.0f * (card_w + gap), top, card_w, card_h, "Physics", physics.str());
+}
 
-    sf::Text footer(
+void Application::draw_control_strip() {
+    sf::RectangleShape strip({860.0f, 28.0f});
+    strip.setPosition({24.0f, 166.0f});
+    strip.setFillColor(sf::Color(10, 16, 24, 188));
+    strip.setOutlineThickness(1.0f);
+    strip.setOutlineColor(sf::Color(70, 108, 145, 180));
+    window_.draw(strip);
+
+    sf::Text control_text(
         font_,
-        "L-click: source | W: wind | K: diff | P: PDE diff | H: Brownian/Heat | U: units | Space: pause | R: reset | Esc: menu",
+        "L-click source | W wind | K diff | P PDE diff | Space pause | Esc preferences | F1 controls",
         13);
-    footer.setPosition({24.0f, top + card_h + 6.0f});
-    footer.setFillColor(sf::Color(170, 190, 208));
-    window_.draw(footer);
+    control_text.setPosition({34.0f, 171.0f});
+    control_text.setFillColor(sf::Color(168, 192, 210));
+    window_.draw(control_text);
 }
 
 void Application::draw_menu_overlay() {
@@ -559,6 +576,61 @@ void Application::draw_menu_overlay() {
     sf::Text hint(font_, "Up/Down: select   Left/Right/Enter: adjust   Esc: close", 14);
     hint.setPosition({panel_pos.x + 20.0f, panel_pos.y + panel_size.y - 28.0f});
     hint.setFillColor(sf::Color(174, 196, 214));
+    window_.draw(hint);
+}
+
+void Application::draw_help_overlay() {
+    sf::RectangleShape dim({static_cast<float>(window_.getSize().x), static_cast<float>(window_.getSize().y)});
+    dim.setFillColor(sf::Color(4, 8, 14, 192));
+    window_.draw(dim);
+
+    const sf::Vector2f panel_size(760.0f, 430.0f);
+    const sf::Vector2f panel_pos(
+        0.5f * (static_cast<float>(window_.getSize().x) - panel_size.x),
+        0.5f * (static_cast<float>(window_.getSize().y) - panel_size.y));
+
+    sf::RectangleShape panel(panel_size);
+    panel.setPosition(panel_pos);
+    panel.setFillColor(sf::Color(16, 24, 36, 238));
+    panel.setOutlineThickness(2.0f);
+    panel.setOutlineColor(sf::Color(108, 150, 188, 236));
+    window_.draw(panel);
+
+    sf::Text title(font_, "Controls", 24);
+    title.setPosition({panel_pos.x + 20.0f, panel_pos.y + 14.0f});
+    title.setFillColor(sf::Color(214, 234, 248));
+    window_.draw(title);
+
+    const std::string body =
+        "Primary\n"
+        "L-click : place source\n"
+        "Space   : pause/resume\n"
+        "R       : reset simulation\n"
+        "Esc     : open/close preferences\n"
+        "F1      : open/close this controls window\n"
+        "\n"
+        "Models\n"
+        "W       : cycle wind field model\n"
+        "K       : cycle SDE diffusivity model\n"
+        "P       : cycle PDE diffusion mode\n"
+        "B       : cycle boundary condition\n"
+        "H       : toggle Brownian/Heat special case\n"
+        "U       : toggle mass units\n"
+        "\n"
+        "Time\n"
+        "[       : decrease simulation speed\n"
+        "]       : increase simulation speed\n"
+        "\\       : reset speed to x1";
+
+    sf::Text text(font_, body, 18);
+    text.setPosition({panel_pos.x + 24.0f, panel_pos.y + 56.0f});
+    text.setLineSpacing(1.1f);
+    text.setFillColor(sf::Color(188, 208, 226));
+    window_.draw(text);
+
+    sf::Text hint(font_, "Press F1 to close", 14);
+    hint.setPosition({panel_pos.x + panel_size.x - 140.0f, panel_pos.y + panel_size.y - 28.0f});
+    hint.setFillColor(sf::Color(170, 194, 214));
     window_.draw(hint);
 }
 
