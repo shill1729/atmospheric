@@ -44,11 +44,12 @@ const char* boundary_mode_label(BoundaryMode mode) {
     return "periodic";
 }
 
-constexpr float PDE_FIXED_COLOR_SCALE = 4.0e-4f;
+constexpr float PDE_FIXED_COLOR_SCALE = 1.0e-4f;
 }
 
 Application::Application(const Config& config)
-    : simulator_(config)
+    : controller_(config)
+    , menu_model_(controller_.current_settings())
     , window_(sf::VideoMode({config.app.window_width, config.app.window_height}), "Atmospheric Tool - Phase 1")
     , font_("fonts/arial.ttf") {
     window_.setFramerateLimit(60);
@@ -103,31 +104,32 @@ void Application::process_events() {
             }
 
             if (key->code == sf::Keyboard::Key::Space) {
-                simulator_.toggle_paused();
+                sim().toggle_paused();
             }
             if (key->code == sf::Keyboard::Key::R) {
-                simulator_.reset();
+                sim().reset();
             }
             if (key->code == sf::Keyboard::Key::B) {
-                simulator_.toggle_boundary_mode();
+                sim().toggle_boundary_mode();
             }
             if (key->code == sf::Keyboard::Key::LBracket) {
-                simulator_.scale_time(0.8f);
+                sim().scale_time(0.8f);
             }
             if (key->code == sf::Keyboard::Key::RBracket) {
-                simulator_.scale_time(1.25f);
+                sim().scale_time(1.25f);
             }
             if (key->code == sf::Keyboard::Key::Backslash) {
-                simulator_.reset_time_scale();
+                sim().reset_time_scale();
             }
             if (key->code == sf::Keyboard::Key::W) {
-                simulator_.cycle_wind_model(1);
+                sim().cycle_wind_model(1);
             }
             if (key->code == sf::Keyboard::Key::K) {
-                simulator_.cycle_diffusion_model(1);
+                sim().cycle_diffusion_model(1);
             }
             if (key->code == sf::Keyboard::Key::P) {
-                simulator_.cycle_pde_diffusion_mode(1);
+                sim().cycle_pde_diffusion_mode(1);
+                menu_model_.sync_from_current(controller_.current_settings());
             }
             if (key->code == sf::Keyboard::Key::C) {
                 pde_auto_color_scale_ = !pde_auto_color_scale_;
@@ -138,24 +140,38 @@ void Application::process_events() {
                     : MassDisplayUnit::MicrogramsPerSquareMeter;
             }
             if (key->code == sf::Keyboard::Key::H) {
-                simulator_.toggle_brownian_heat_case();
+                sim().toggle_brownian_heat_case();
             }
         }
 
         if (const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
+            if (click->button == sf::Mouse::Button::Left) {
+                const TopToolbarClickResult toolbar_click
+                    = top_toolbar_.handle_click(click->position, menu_model_, controller_);
+                if (toolbar_click.settings_changed) {
+                    pde_color_scale_runtime_ = PDE_FIXED_COLOR_SCALE;
+                }
+                if (toolbar_click.recreated_simulator) {
+                    menu_open_ = false;
+                }
+                if (toolbar_click.consumed) {
+                    continue;
+                }
+            }
             if (click->button == sf::Mouse::Button::Left && left_panel_contains(click->position)) {
-                simulator_.set_source(left_panel_pixel_to_domain(click->position));
+                sim().set_source(left_panel_pixel_to_domain(click->position));
             }
         }
     }
 }
 
 void Application::update(float frame_dt) {
-    simulator_.step(frame_dt);
+    sim().step(frame_dt);
 }
 
 void Application::render() {
     window_.clear(sf::Color(15, 19, 25));
+    const bool toolbar_open = top_toolbar_.has_open_menu(menu_model_);
 
     sf::RectangleShape left_rect({left_panel_.size.x, left_panel_.size.y});
     left_rect.setPosition({left_panel_.position.x, left_panel_.position.y});
@@ -176,8 +192,8 @@ void Application::render() {
         draw_wind_field();
     }
 
-    const auto& pts = simulator_.particles().particles();
-    const auto& trails = simulator_.particles().trails();
+    const auto& pts = sim().particles().particles();
+    const auto& trails = sim().particles().trails();
     std::size_t line_segments = 0;
     for (const auto& trail : trails) {
         if (trail.size() > 1) {
@@ -227,14 +243,14 @@ void Application::render() {
         window_.draw(particle);
     }
 
-    if (simulator_.source().is_active()) {
+    if (sim().source().is_active()) {
         sf::CircleShape marker(3.2f);
         marker.setOrigin({3.2f, 3.2f});
         marker.setFillColor(sf::Color(255, 80, 80, 190));
         marker.setOutlineColor(sf::Color::White);
         marker.setOutlineThickness(0.8f);
 
-        for (const auto& src : simulator_.source().active_sources()) {
+        for (const auto& src : sim().source().active_sources()) {
             marker.setPosition(domain_to_left_panel(src.position));
             window_.draw(marker);
         }
@@ -250,14 +266,23 @@ void Application::render() {
     right_label.setFillColor(sf::Color(185, 185, 185));
     window_.draw(right_label);
 
-    draw_hud_cards();
-    draw_control_strip();
+    if (!toolbar_open) {
+        draw_hud_cards();
+        draw_control_strip();
+    }
     if (menu_open_) {
         draw_menu_overlay();
     }
     if (help_open_) {
         draw_help_overlay();
     }
+    if (toolbar_open) {
+        sf::RectangleShape dim({static_cast<float>(window_.getSize().x), static_cast<float>(window_.getSize().y)});
+        dim.setFillColor(sf::Color(6, 10, 16, 120));
+        window_.draw(dim);
+    }
+    top_toolbar_.draw(window_, font_, menu_model_);
+    top_toolbar_.draw_active_menu(window_, font_, menu_model_);
     window_.display();
 }
 
@@ -297,21 +322,21 @@ sf::Vector2f Application::domain_to_left_panel(const Vec2& x) const {
 }
 
 void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, float& y_max) const {
-    const auto& d = simulator_.config().domain;
+    const auto& d = sim().config().domain;
     x_min = d.x_min;
     x_max = d.x_max;
     y_min = d.y_min;
     y_max = d.y_max;
 
-    if (!simulator_.brownian_heat_case()) {
+    if (!sim().brownian_heat_case()) {
         return;
     }
 
     const float zoom = 2.4f;
     float cx = 0.5f * (d.x_min + d.x_max);
     float cy = 0.5f * (d.y_min + d.y_max);
-    if (simulator_.source().is_active()) {
-        const auto& active = simulator_.source().active_sources();
+    if (sim().source().is_active()) {
+        const auto& active = sim().source().active_sources();
         cx = active.back().position.x();
         cy = active.back().position.y();
     }
@@ -348,7 +373,7 @@ void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, flo
 }
 
 void Application::draw_wind_field() {
-    const auto& d = simulator_.config().domain;
+    const auto& d = sim().config().domain;
     float x_min = 0.0f;
     float x_max = 0.0f;
     float y_min = 0.0f;
@@ -373,7 +398,7 @@ void Application::draw_wind_field() {
         for (int ix = 0; ix < nx; ++ix) {
             WindSample s;
             s.x = Vec2(x_min + ix * dx, y_min + iy * dy);
-            s.w = simulator_.wind_at(s.x);
+            s.w = sim().wind_at(s.x);
             s.norm = s.w.norm();
             max_norm = std::max(max_norm, s.norm);
             samples.push_back(s);
@@ -440,12 +465,12 @@ void Application::draw_wind_field() {
 }
 
 void Application::draw_hud_cards() {
-    const auto& source = simulator_.source();
-    const auto& particles = simulator_.particles();
+    const auto& source = sim().source();
+    const auto& particles = sim().particles();
     const float mscale = mass_scale(mass_unit_);
-    const float sde_mass = simulator_.sde_total_mass() * mscale;
-    const float pde_mass = simulator_.pde_total_mass() * mscale;
-    const float ratio = simulator_.mass_ratio_sde_to_pde();
+    const float sde_mass = sim().sde_total_mass() * mscale;
+    const float pde_mass = sim().pde_total_mass() * mscale;
+    const float ratio = sim().mass_ratio_sde_to_pde();
 
     auto draw_card = [&](float x, float y, float w, float h, const std::string& title, const std::string& body) {
         sf::RectangleShape card({w, h});
@@ -469,19 +494,19 @@ void Application::draw_hud_cards() {
 
     std::ostringstream status;
     status << std::fixed << std::setprecision(2)
-           << "t: " << simulator_.time_s() << " s"
-           << "\nspeed: x" << simulator_.time_scale()
-           << "\nstate: " << (simulator_.paused() ? "paused" : "running")
-           << "\nwind: " << simulator_.wind_model_name()
-           << "\ndiff: " << simulator_.diffusion_model_name()
-           << "\nPDE diff: " << simulator_.pde_diffusion_mode_name()
+           << "t: " << sim().time_s() << " s"
+           << "\nspeed: x" << sim().time_scale()
+           << "\nstate: " << (sim().paused() ? "paused" : "running")
+           << "\nwind: " << sim().wind_model_name()
+           << "\ndiff: " << sim().diffusion_model_name()
+           << "\nPDE diff: " << sim().pde_diffusion_mode_name()
            << "\nPDE color: " << (pde_auto_color_scale_ ? "Auto" : "Fixed")
-           << "\nBH case: " << (simulator_.brownian_heat_case() ? "ON" : "off");
+           << "\nBH case: " << (sim().brownian_heat_case() ? "ON" : "off");
 
     std::ostringstream source_text;
     source_text << std::scientific << std::setprecision(2)
                 << "q_total(t): " << source.emission_rate()
-                << "\nemitted: " << simulator_.last_emitted_total() << " / step"
+                << "\nemitted: " << sim().last_emitted_total() << " / step"
                 << "\nsources: " << source.active_count() << " / " << source.max_sources()
                 << "\nnewest: "
                 << (source.is_active()
@@ -492,14 +517,14 @@ void Application::draw_hud_cards() {
     std::ostringstream physics;
     physics << std::fixed << std::setprecision(2)
             << "particles: " << particles.particles().size()
-            << "\nBC: " << boundary_mode_label(simulator_.boundary_mode())
-            << "\nPDE max c: " << std::scientific << std::setprecision(3) << simulator_.pde().max_concentration()
+            << "\nBC: " << boundary_mode_label(sim().boundary_mode())
+            << "\nPDE max c: " << std::scientific << std::setprecision(3) << sim().pde().max_concentration()
             << "\nM_sde: " << std::scientific << std::setprecision(2) << sde_mass
             << "\nM_pde: " << std::scientific << std::setprecision(2) << pde_mass
             << "\nratio: " << std::fixed << std::setprecision(3) << ratio << " (" << mass_unit_label(mass_unit_)
             << ")";
 
-    const float top = 12.0f;
+    const float top = 38.0f;
     const float left = 24.0f;
     const float gap = 12.0f;
     const float card_w = 250.0f;
@@ -519,12 +544,13 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "L-click source | W wind | K diff | P PDE diff | C color scale | Esc preferences | F1 controls",
+        "Toolbar: File | Options | PDE  | L-click source | W wind | K diff | Esc preferences | F1 controls",
         13);
     control_text.setPosition({34.0f, 171.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
     window_.draw(control_text);
 }
+
 
 void Application::draw_menu_overlay() {
     sf::RectangleShape dim({static_cast<float>(window_.getSize().x), static_cast<float>(window_.getSize().y)});
@@ -550,17 +576,17 @@ void Application::draw_menu_overlay() {
 
     std::array<std::string, 11> rows;
     std::ostringstream speed;
-    speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << simulator_.time_scale();
+    speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << sim().time_scale();
     rows[0] = speed.str();
-    rows[1] = std::string("Wind Model            ") + std::string(simulator_.wind_model_name());
-    rows[2] = std::string("Diffusivity Model     ") + std::string(simulator_.diffusion_model_name());
-    rows[3] = std::string("PDE Diffusion         ") + std::string(simulator_.pde_diffusion_mode_name());
-    rows[4] = std::string("Boundary Mode         ") + boundary_mode_label(simulator_.boundary_mode());
+    rows[1] = std::string("Wind Model            ") + std::string(sim().wind_model_name());
+    rows[2] = std::string("Diffusivity Model     ") + std::string(sim().diffusion_model_name());
+    rows[3] = std::string("PDE Diffusion         ") + std::string(sim().pde_diffusion_mode_name());
+    rows[4] = std::string("Boundary Mode         ") + boundary_mode_label(sim().boundary_mode());
     rows[5] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
-    rows[6] = std::string("Brownian/Heat Case    ") + (simulator_.brownian_heat_case() ? "ON" : "Off");
+    rows[6] = std::string("Brownian/Heat Case    ") + (sim().brownian_heat_case() ? "ON" : "Off");
     rows[7] = std::string("Mass Units            ") + mass_unit_label(mass_unit_);
     rows[8] = std::string("PDE Color Scale       ") + (pde_auto_color_scale_ ? "Auto" : "Fixed");
-    rows[9] = "Trail Length          " + std::to_string(simulator_.trail_length());
+    rows[9] = "Trail Length          " + std::to_string(sim().trail_length());
     rows[10] = "Reset Simulation";
 
     const float start_y = panel_pos.y + 62.0f;
@@ -606,6 +632,7 @@ void Application::draw_help_overlay() {
 
     const std::string body =
         "Primary\n"
+        "Top bar : File / Options / PDE menus\n"
         "L-click : place source\n"
         "Space   : pause/resume\n"
         "R       : reset simulation\n"
@@ -641,25 +668,25 @@ void Application::draw_help_overlay() {
 void Application::apply_menu_adjustment(int direction) {
     switch (menu_index_) {
     case 0:
-        simulator_.scale_time(direction > 0 ? 1.25f : 0.8f);
+        sim().scale_time(direction > 0 ? 1.25f : 0.8f);
         break;
     case 1:
-        simulator_.cycle_wind_model(direction >= 0 ? 1 : -1);
+        sim().cycle_wind_model(direction >= 0 ? 1 : -1);
         break;
     case 2:
-        simulator_.cycle_diffusion_model(direction >= 0 ? 1 : -1);
+        sim().cycle_diffusion_model(direction >= 0 ? 1 : -1);
         break;
     case 3:
-        simulator_.cycle_pde_diffusion_mode(direction >= 0 ? 1 : -1);
+        sim().cycle_pde_diffusion_mode(direction >= 0 ? 1 : -1);
         break;
     case 4:
-        simulator_.toggle_boundary_mode();
+        sim().toggle_boundary_mode();
         break;
     case 5:
         show_wind_ = !show_wind_;
         break;
     case 6:
-        simulator_.toggle_brownian_heat_case();
+        sim().toggle_brownian_heat_case();
         break;
     case 7:
         mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
@@ -670,10 +697,10 @@ void Application::apply_menu_adjustment(int direction) {
         pde_auto_color_scale_ = !pde_auto_color_scale_;
         break;
     case 9:
-        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        sim().adjust_trail_length(direction > 0 ? 1 : -1);
         break;
     case 10:
-        simulator_.reset();
+        sim().reset();
         break;
     default:
         break;
@@ -681,7 +708,7 @@ void Application::apply_menu_adjustment(int direction) {
 }
 
 void Application::draw_pde_heatmap() {
-    const auto& pde = simulator_.pde();
+    const auto& pde = sim().pde();
     const auto& c = pde.concentration();
     if (c.empty() || pde.nx() < 2 || pde.ny() < 2) {
         return;
@@ -744,6 +771,14 @@ void Application::draw_pde_heatmap() {
         }
     }
     window_.draw(mesh);
+}
+
+Simulator& Application::sim() {
+    return controller_.simulator();
+}
+
+const Simulator& Application::sim() const {
+    return controller_.simulator();
 }
 
 } // namespace atm

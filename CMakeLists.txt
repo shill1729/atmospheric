@@ -10,12 +10,16 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 
 add_executable(atmospheric
     src/app/Application.cpp
+    src/core/RuntimeSettings.cpp
     src/core/Validation.cpp
     src/numerics/AdvectionDiffusionSolver.cpp
     src/numerics/ParticleSystem.cpp
     src/science/Fields.cpp
     src/science/SourceModel.cpp
+    src/sim/SimulationController.cpp
     src/sim/Simulator.cpp
+    src/ui/MenuModel.cpp
+    src/ui/TopToolbar.cpp
     src/main.cpp
 )
 

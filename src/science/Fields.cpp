@@ -85,7 +85,7 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
 Mat2 Fields::diffusivity(float time_s, const Vec2& x) const {
     switch (diffusivity_preset_) {
     case DiffusivityPreset::ConstantScalar:
-        return 22.0f * Mat2::Identity();
+        return 92.0f * Mat2::Identity();
     case DiffusivityPreset::SpatialScalar:
         return scalar_spatial_kappa(domain_, time_s, x) * Mat2::Identity();
     case DiffusivityPreset::ConstantTensor:

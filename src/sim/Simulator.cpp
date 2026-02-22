@@ -127,6 +127,14 @@ void Simulator::cycle_pde_diffusion_mode(int direction) {
     pde_.cycle_diffusion_mode(direction);
 }
 
+AdvectionDiffusionSolver::DiffusionMode Simulator::pde_diffusion_mode() const {
+    return pde_.diffusion_mode();
+}
+
+void Simulator::set_pde_diffusion_mode(AdvectionDiffusionSolver::DiffusionMode mode) {
+    pde_.set_diffusion_mode(mode);
+}
+
 std::string_view Simulator::pde_diffusion_mode_name() const {
     return pde_.diffusion_mode_name();
 }

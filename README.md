@@ -189,6 +189,7 @@ Example:
 - `K`: cycle diffusivity model
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `C`: toggle PDE color scaling mode (auto/fixed)
+- Top toolbar `PDE`: editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -210,6 +211,7 @@ include/
     Application.hpp                  # SFML app, rendering, HUD/menu/input
   core/
     Config.hpp                       # Global simulation/app parameters
+    RuntimeSettings.hpp              # UI-editable runtime settings subset
     Validation.hpp                   # Centralized configuration validation
     Types.hpp                        # Vec2/Mat2 aliases (Eigen)
   numerics/
@@ -219,16 +221,24 @@ include/
     Fields.hpp                       # Wind and diffusivity models
     SourceModel.hpp                  # Source lifecycle + source density
   sim/
+    SimulationController.hpp         # Applies settings, recreates simulator when needed
     Simulator.hpp                    # Orchestration of SDE+PDE stepping
+  ui/
+    MenuModel.hpp                    # Toolbar menu state + pending edits
+    TopToolbar.hpp                   # Toolbar rendering + click handling
 
 src/
   app/Application.cpp
+  core/RuntimeSettings.cpp
   core/Validation.cpp
   numerics/ParticleSystem.cpp
   numerics/AdvectionDiffusionSolver.cpp
   science/Fields.cpp
   science/SourceModel.cpp
+  sim/SimulationController.cpp
   sim/Simulator.cpp
+  ui/MenuModel.cpp
+  ui/TopToolbar.cpp
   main.cpp                           # CLI parsing + app bootstrap
 
 tests/

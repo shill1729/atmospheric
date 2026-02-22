@@ -35,6 +35,8 @@ public:
     void cycle_diffusion_model(int direction);
     std::string_view diffusion_model_name() const;
     void cycle_pde_diffusion_mode(int direction);
+    AdvectionDiffusionSolver::DiffusionMode pde_diffusion_mode() const;
+    void set_pde_diffusion_mode(AdvectionDiffusionSolver::DiffusionMode mode);
     std::string_view pde_diffusion_mode_name() const;
     void toggle_brownian_heat_case();
     bool brownian_heat_case() const;
