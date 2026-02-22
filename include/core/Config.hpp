@@ -12,7 +12,7 @@ struct DomainConfig {
     int ny = 200;
 };
 struct SourceConfig {
-    float base_emission = 0.9f;
+    float base_emission = 30.0f;
     float decay_rate = 0.03f;
     float lifespan = 45.0f;
     float sigma = 60.0f;
@@ -21,7 +21,7 @@ struct SourceConfig {
 };
 struct PhysicsConfig {
     float deposition_rate = 0.012f;
-    float constant_scalar_diffusivity = 22.0f;
+    float constant_scalar_diffusivity = 6.0f;
 };
 struct NumericsConfig {
     float dt = 0.08f;
@@ -36,6 +36,8 @@ struct AppConfig {
     float pde_fixed_color_scale = 1.0e-4f;
     float sensor_sample_period_s = 5.0f;
     float sensor_noise_std = 0.0f;
+    float concentration_scale_ug_per_m2 = 1.0e5f;
+    float mixing_height_m = 1.0f;
 };
 
 struct Config {

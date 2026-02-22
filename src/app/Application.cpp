@@ -32,6 +32,10 @@ const char* mass_unit_label(MassDisplayUnit unit) {
     return unit == MassDisplayUnit::MicrogramsPerSquareMeter ? "ug/m^2" : "g/m^2";
 }
 
+float concentration_display_factor_ug_per_m3(float ug_per_m2_scale, float mixing_height_m) {
+    return ug_per_m2_scale / std::max(1.0e-6f, mixing_height_m);
+}
+
 const char* boundary_mode_label(BoundaryMode mode) {
     switch (mode) {
     case BoundaryMode::Periodic:
@@ -64,6 +68,8 @@ Application::Application(const Config& config)
     menu_rows_ = 11;
     pde_fixed_color_scale_ = std::max(1.0e-8f, config.app.pde_fixed_color_scale);
     pde_color_scale_runtime_ = pde_fixed_color_scale_;
+    concentration_scale_ug_per_m2_ = std::max(1.0e-12f, config.app.concentration_scale_ug_per_m2);
+    mixing_height_m_ = std::max(1.0e-6f, config.app.mixing_height_m);
 }
 
 void Application::run() {
@@ -297,7 +303,7 @@ void Application::render() {
     left_label.setFillColor(sf::Color(180, 210, 230));
     window_.draw(left_label);
 
-    sf::Text right_label(font_, "PDE Concentration Heatmap", 16);
+    sf::Text right_label(font_, "PDE Concentration Heatmap (ug/m^3)", 16);
     right_label.setPosition({right_panel_.position.x + 10.0f, right_panel_.position.y + 8.0f});
     right_label.setFillColor(sf::Color(185, 185, 185));
     window_.draw(right_label);
@@ -576,10 +582,12 @@ void Application::draw_hud_cards() {
                         : std::string("inactive"));
 
     std::ostringstream physics;
+    const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
+    const float pde_max_ug_m3 = sim().pde().max_concentration() * c_factor;
     physics << std::fixed << std::setprecision(2)
             << "particles: " << particles.particles().size()
             << "\nBC: " << boundary_mode_label(sim().boundary_mode())
-            << "\nPDE max c: " << std::scientific << std::setprecision(3) << sim().pde().max_concentration()
+            << "\nPDE max c: " << std::scientific << std::setprecision(3) << pde_max_ug_m3 << " ug/m^3"
             << "\nM_sde: " << std::scientific << std::setprecision(2) << sde_mass
             << "\nM_pde: " << std::scientific << std::setprecision(2) << pde_mass
             << "\nratio: " << std::fixed << std::setprecision(3) << ratio << " (" << mass_unit_label(mass_unit_)
@@ -870,7 +878,8 @@ void Application::draw_sensor_overlay() {
            << sensor.position.y() << ") ";
         if (!sensor.history.empty()) {
             const auto& obs = sensor.history.back();
-            ss << "c=" << std::scientific << std::setprecision(2) << obs.noisy_concentration;
+            const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
+            ss << "c=" << std::scientific << std::setprecision(2) << (obs.noisy_concentration * c_factor) << " ug/m^3";
         } else {
             ss << "c=n/a";
         }

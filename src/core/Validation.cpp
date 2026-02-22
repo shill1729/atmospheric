@@ -82,6 +82,12 @@ std::vector<std::string> validate_config(const Config& config) {
     if (!is_finite_non_negative(config.app.sensor_noise_std)) {
         errors.emplace_back("sensor noise std must be a finite number >= 0");
     }
+    if (!is_finite_positive(config.app.concentration_scale_ug_per_m2)) {
+        errors.emplace_back("concentration scale (ug/m^2 per model unit) must be a finite number > 0");
+    }
+    if (!is_finite_positive(config.app.mixing_height_m)) {
+        errors.emplace_back("mixing height must be a finite number > 0");
+    }
 
     return errors;
 }

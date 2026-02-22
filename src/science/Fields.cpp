@@ -21,22 +21,22 @@ float scalar_spatial_kappa(const DomainConfig& d, float time_s, const Vec2& x) {
     const float xs = normalized_x(d, x);
     const float ys = normalized_y(d, x);
     const float mod = std::sin(2.0f * PI * xs + 0.05f * time_s) * std::cos(2.0f * PI * ys - 0.04f * time_s);
-    return std::max(2.0f, 22.0f + 14.0f * mod);
+    return std::max(0.8f, 8.0f + 4.0f * mod);
 }
 
 Mat2 tensor_constant_spd() {
     Mat2 d;
-    d << 18.0f, 6.0f, 6.0f, 10.0f;
+    d << 6.0f, 2.0f, 2.0f, 4.0f;
     return d;
 }
 
 Mat2 tensor_diagonal_spd(const DomainConfig& d, float time_s, const Vec2& x) {
     const float xs = normalized_x(d, x);
     const float ys = normalized_y(d, x);
-    const float d11 = std::max(
-        1.0f, 8.0f + 3.5f * std::sin(2.0f * PI * ys + 0.06f * time_s) + 2.0f * std::cos(2.0f * PI * xs));
-    const float d22 = std::max(
-        1.0f, 19.0f + 5.0f * std::cos(2.0f * PI * xs - 0.05f * time_s) + 2.5f * std::sin(2.0f * PI * ys));
+    const float d11
+        = std::max(0.6f, 3.0f + 1.2f * std::sin(2.0f * PI * ys + 0.06f * time_s) + 0.8f * std::cos(2.0f * PI * xs));
+    const float d22
+        = std::max(0.8f, 6.0f + 1.8f * std::cos(2.0f * PI * xs - 0.05f * time_s) + 1.0f * std::sin(2.0f * PI * ys));
     Mat2 out = Mat2::Zero();
     out(0, 0) = d11;
     out(1, 1) = d22;
@@ -48,9 +48,9 @@ Mat2 tensor_full_anisotropic_spd(const DomainConfig& d, float time_s, const Vec2
     const float ys = normalized_y(d, x);
 
     const float lambda1
-        = std::max(1.0f, 4.5f + 1.8f * std::sin(2.0f * PI * xs + 0.04f * time_s) + 1.2f * std::cos(2.0f * PI * ys));
+        = std::max(0.7f, 2.2f + 0.8f * std::sin(2.0f * PI * xs + 0.04f * time_s) + 0.6f * std::cos(2.0f * PI * ys));
     const float lambda2 = std::max(
-        lambda1 + 1.0f, 17.0f + 4.5f * std::cos(2.0f * PI * ys - 0.03f * time_s) + 3.0f * std::sin(2.0f * PI * xs));
+        lambda1 + 0.5f, 7.5f + 1.6f * std::cos(2.0f * PI * ys - 0.03f * time_s) + 1.2f * std::sin(2.0f * PI * xs));
 
     const float theta = 0.7f * std::sin(2.0f * PI * xs - 0.05f * time_s) + 0.5f * std::cos(2.0f * PI * ys);
     const float ct = std::cos(theta);
@@ -233,10 +233,10 @@ Vec2 Fields::wind_jet_shear(float time_s, const Vec2& x) const {
     const float xs = (x.x() - domain_.x_min) / lx;
     const float ys = (x.y() - domain_.y_min) / ly;
 
-    const float u = 18.0f + 10.0f * std::sin(2.0f * PI * ys + 0.05f * time_s)
-        + 4.0f * std::cos(4.0f * PI * xs - 0.03f * time_s);
-    const float v = 2.0f + 8.0f * std::sin(2.0f * PI * xs - 0.06f * time_s)
-        + 2.0f * std::cos(3.0f * PI * ys + 0.04f * time_s);
+    const float u = 8.0f + 4.0f * std::sin(2.0f * PI * ys + 0.05f * time_s)
+        + 1.5f * std::cos(4.0f * PI * xs - 0.03f * time_s);
+    const float v = 0.8f + 3.0f * std::sin(2.0f * PI * xs - 0.06f * time_s)
+        + 1.0f * std::cos(3.0f * PI * ys + 0.04f * time_s);
     return Vec2(u, v);
 }
 
@@ -246,7 +246,7 @@ Vec2 Fields::wind_vortex_pair(float time_s, const Vec2& x) const {
     const Vec2 c1(domain_.x_min + 0.33f * lx, domain_.y_min + 0.5f * ly);
     const Vec2 c2(domain_.x_min + 0.67f * lx, domain_.y_min + 0.5f * ly);
 
-    const float gamma = 2.0e6f;
+    const float gamma = 6.0e5f;
     const float core2 = 1200.0f * 1200.0f;
 
     auto vortex_vel = [&](const Vec2& c, float g) {
@@ -256,8 +256,8 @@ Vec2 Fields::wind_vortex_pair(float time_s, const Vec2& x) const {
         return Vec2(-coeff * r.y(), coeff * r.x());
     };
 
-    const float drift_u = 7.0f + 2.0f * std::sin(0.04f * time_s);
-    const float drift_v = 1.2f * std::cos(0.03f * time_s);
+    const float drift_u = 3.0f + 1.0f * std::sin(0.04f * time_s);
+    const float drift_v = 0.6f * std::cos(0.03f * time_s);
     return Vec2(drift_u, drift_v) + vortex_vel(c1, gamma) + vortex_vel(c2, -gamma);
 }
 
@@ -267,11 +267,11 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
     const float xs = (x.x() - domain_.x_min) / lx;
     const float ys = (x.y() - domain_.y_min) / ly;
 
-    const float amp = 9.5e4f;
+    const float amp = 2.5e4f;
     const float phase = 0.12f * time_s;
     const float dpsi_dy = amp * (2.0f * PI / ly) * std::sin(2.0f * PI * xs + phase) * std::cos(2.0f * PI * ys);
     const float dpsi_dx = amp * (2.0f * PI / lx) * std::cos(2.0f * PI * xs + phase) * std::sin(2.0f * PI * ys);
-    const float u = dpsi_dy + 5.0f;
+    const float u = dpsi_dy + 2.0f;
     const float v = -dpsi_dx;
     return Vec2(u, v);
 }

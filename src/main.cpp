@@ -29,7 +29,9 @@ void print_help(const char* exe) {
         << "  --source-decay X          Source emission decay rate\n"
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
         << "  --source-sigma X          Source spatial spread (meters)\n"
-        << "  --source-max N            Maximum simultaneous active sources\n";
+        << "  --source-max N            Maximum simultaneous active sources\n"
+        << "  --conc-scale X            ug/m^2 per model concentration unit\n"
+        << "  --mixing-height X         Mixing-height assumption in meters (for ug/m^3 display)\n";
 }
 
 unsigned int parse_uint(const std::string& v, const std::string& flag) {
@@ -149,6 +151,14 @@ int main(int argc, char** argv) {
             }
             if (arg == "--source-max") {
                 config.source.max_sources = parse_int(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--conc-scale") {
+                config.app.concentration_scale_ug_per_m2 = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--mixing-height") {
+                config.app.mixing_height_m = parse_float(need_value(arg), arg);
                 continue;
             }
             std::cerr << "Unknown option: " << arg << "\n\n";

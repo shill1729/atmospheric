@@ -80,6 +80,8 @@ private:
     bool show_wind_ = true;
     bool show_adjoint_overlay_ = true;
     bool pde_auto_color_scale_ = true;
+    float concentration_scale_ug_per_m2_ = 1.0e5f;
+    float mixing_height_m_ = 1.0f;
     float pde_fixed_color_scale_ = 1.0e-4f;
     float pde_color_scale_runtime_ = 4.0e-4f;
     int menu_index_ = 0;

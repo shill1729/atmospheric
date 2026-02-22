@@ -1,4 +1,4 @@
-# Atmospheric (SDE + PDE Prototype)
+# Atmospheric (SDE + PDE + Adjoint Prototype)
 
 Interactive C++ atmospheric transport prototype with a split view:
 - **Left panel:** tagged-particle simulation via SDE (Euler-Maruyama)
@@ -15,6 +15,7 @@ The two models share the same wind field, diffusivity model, source process, and
 - Wind vector overlay (toggle)
 - Runtime controls for speed, boundary mode, trails, and HUD/menu preferences
 - PDE-panel sensors with periodic concentration sampling and on-plot readouts
+- Pause-time adjoint source estimation from sensor history (posterior heatmap + \((x^*, t^*)\))
 
 ## Mathematical Model
 
@@ -83,6 +84,38 @@ In implementation, this is advanced as an explicit advection-diffusion-reaction 
 
 Negative values are clamped to zero.
 
+### Adjoint viewpoint (inverse source estimation)
+
+To infer likely release location/time from sensor detections, the app solves the backward adjoint transport PDE:
+
+$$
+\partial_t \phi + w\cdot \nabla \phi + \nabla\cdot(D\nabla \phi) - \lambda \phi + f = 0,
+\quad \phi(T,x)=0.
+$$
+
+The forcing \(f(t,x)\) is built from sensor sites \(\{x_i\}\) using threshold-gated Gaussian bumps:
+
+$$
+f(t,x)=\sum_i \alpha_i\,\mathbf{1}_{\tilde c(t,x_i)>c_T}\,\beta_i
+\exp\!\left(-\frac{\|x-x_i\|^2}{2\sigma^2}\right).
+$$
+
+Current defaults in code:
+- equal sensor weights (\(\alpha_i=1\))
+- fixed detection threshold \(c_T\)
+- \(\beta_i\) normalized per bump over the computational domain
+- forcing is piecewise-constant in time from recorded sensor samples
+
+The app computes
+\[
+Z(t)=\int_\Omega \phi(t,x)\,dx,\quad
+t^*=\arg\max_t Z(t),\quad
+x^*=\arg\max_x p(t^*,x),\quad
+p=\phi/Z.
+\]
+
+This avoids the degenerate \(P(t)=\int_\Omega p(t,x)\,dx\equiv 1\) criterion.
+
 ## Initial and Boundary Conditions
 
 ### Initial conditions (IC)
@@ -100,6 +133,9 @@ Negative values are clamped to zero.
   - periodic index wrapping
   - reflecting index mirroring
   - absorbing boundary with zero exterior concentration (Dirichlet-like)
+- **Adjoint (source estimator):** 2D lateral inflow/outflow style BCs
+  - inflow (\(w\cdot n<0\)): \(\phi=0\)
+  - outflow (\(w\cdot n\ge 0\)): Robin-type \(D\partial_n\phi + (w\cdot n)\phi=0\) (discretized)
 
 ## Numerical Methods Summary
 
@@ -117,6 +153,18 @@ Negative values are clamped to zero.
 - Spatial discretization:
   - advection: first-order upwind
   - diffusion: either scalarized $\kappa=\tfrac12 \mathrm{tr}(D)$ or full tensor flux $\nabla \cdot (D\nabla c)$
+
+### Adjoint solver
+
+- Solve direction: backward in physical time (\(t\in[t_0,T]\)) with terminal condition \(\phi(T)=0\)
+- Grid: separate uniform Cartesian adjoint grid (default \(96\times96\))
+- Time stepping: explicit update on adjoint grid
+- Advection: first-order upwind for \(w\cdot\nabla\phi\)
+- Diffusion mode: matched to current PDE mode
+  - scalarized trace mode
+  - full tensor flux mode
+- Forcing: built from recorded sensor history (threshold-gated Gaussian bumps)
+- Output: posterior-like field \(p(t^*,x)\), estimated \((x^*,t^*)\), overlay heatmap
 
 ## Dependencies
 
@@ -168,6 +216,8 @@ cmake --build build-release -j
 --source-lifespan X
 --source-sigma X
 --source-max N
+--conc-scale X
+--mixing-height X
 ```
 
 Example:
@@ -180,7 +230,9 @@ Example:
   --grid-ny 140 \
   --time-scale 12 \
   --max-particles 120 \
-  --source-emission 1.2
+  --source-emission 1.2 \
+  --conc-scale 1.0e5 \
+  --mixing-height 1000
 ```
 
 ## Runtime Controls
@@ -191,10 +243,13 @@ Example:
 - `K`: cycle diffusivity model
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `C`: toggle PDE color scaling mode (auto/fixed)
+- `E`: run source estimation (requires paused state)
+- `J`: toggle adjoint overlay on the right panel
 - Top toolbar `PDE`: editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
 - Top toolbar `Options`: editable pending settings for `time scale`, `max particles`, `deposition`,
   `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`), and source parameters
   (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)
+- Top toolbar `File`: `Estimate Source (Paused)` action
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -204,6 +259,12 @@ Example:
 - `\`: reset speed to configured base
 - `Esc`: open/close preferences menu
 
+Concentration display calibration:
+- Displayed PDE and sensor concentrations are reported as `ug/m^3` using:
+  - `conc_display = model_concentration * conc_scale / mixing_height`
+- `--conc-scale` sets `conc_scale` (ug/m^2 per model unit).
+- `--mixing-height` is the assumed vertical mixing depth (meters).
+
 Menu controls:
 - `Up/Down`: select option
 - `Left/Right/Enter`: adjust/apply
@@ -212,6 +273,9 @@ Menu controls:
 
 ```text
 include/
+  adjoint/
+    AdjointSolver.hpp               # Backward adjoint PDE solver
+    SourceEstimator.hpp             # Sensor-forcing builder + (x*, t*) estimator
   app/
     Application.hpp                  # SFML app, rendering, HUD/menu/input
   core/
@@ -234,6 +298,8 @@ include/
     TopToolbar.hpp                   # Toolbar rendering + click handling
 
 src/
+  adjoint/AdjointSolver.cpp
+  adjoint/SourceEstimator.cpp
   app/Application.cpp
   core/RuntimeSettings.cpp
   core/Validation.cpp
@@ -268,16 +334,26 @@ fonts/
   - Euler-Maruyama transport + deposition/killing + trail history
 - `atm::AdvectionDiffusionSolver`
   - Explicit PDE update on uniform grid
+- `atm::SensorManager`
+  - Sensor placement, periodic sampling, rolling observation history
+- `atm::AdjointSolver`
+  - Backward adjoint transport solver (scalarized/full-tensor diffusion modes)
+- `atm::SourceEstimator`
+  - Builds adjoint forcing from sensors and extracts \((x^*, t^*)\)
 
 ## Current Scope and Limitations
 
 - SDE supports scalar and SPD tensor diffusivity presets (including Brownian/Heat case with $\kappa=\tfrac{1}{2}$ and zero wind).
 - PDE supports both scalarized tensor approximation and full tensor flux diffusion mode.
-- No data assimilation yet (Kalman/filtering/adjoint not yet implemented).
+- Adjoint source estimation is implemented as a practical MVP from sensor history.
+- Estimator currently assumes single dominant source in reporting (\(x^*,t^*\)); multimodal outputs are not yet surfaced in UI.
+- Forcing uses sample-and-hold from sensor history (no interpolation/smoother yet).
+- No Kalman/filtering-based data assimilation yet.
 - No persistent preferences/config save file yet.
 
 ## Features TBA
 
 1. Config file IO for reproducible runs.
-2. Optional measurement stations and inverse-source workflow.
-3. Expanded automated numerical regression tests.
+2. Multimodal source estimation outputs (top-k peaks, confidence diagnostics).
+3. Kalman/filtering and uncertainty-aware assimilation workflows.
+4. Expanded automated numerical regression tests.
