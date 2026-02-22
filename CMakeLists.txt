@@ -10,6 +10,7 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 
 add_executable(atmospheric
     src/app/Application.cpp
+    src/core/Validation.cpp
     src/numerics/AdvectionDiffusionSolver.cpp
     src/numerics/ParticleSystem.cpp
     src/science/Fields.cpp
@@ -35,3 +36,33 @@ target_compile_options(atmospheric PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive->
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
 )
+
+include(CTest)
+if (BUILD_TESTING)
+    add_executable(atmospheric_self_check
+        tests/self_check.cpp
+        src/core/Validation.cpp
+        src/numerics/AdvectionDiffusionSolver.cpp
+        src/numerics/ParticleSystem.cpp
+        src/science/Fields.cpp
+        src/science/SourceModel.cpp
+        src/sim/Simulator.cpp
+    )
+
+    target_include_directories(atmospheric_self_check
+        PRIVATE
+            include
+    )
+
+    target_link_libraries(atmospheric_self_check
+        PRIVATE
+            Eigen3::Eigen
+    )
+
+    target_compile_options(atmospheric_self_check PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive->
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+    )
+
+    add_test(NAME atmospheric_self_check COMMAND atmospheric_self_check)
+endif()

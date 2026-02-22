@@ -201,12 +201,12 @@ float Simulator::time_s() const {
 }
 
 int Simulator::step_fixed(float dt) {
-    source_.step(dt);
     int emitted_sum = 0;
     for (const auto& src : source_.active_sources()) {
         particles_.emit(source_.emission_rate(src), dt, src.position, particle_birth_multiplier_);
         emitted_sum += particles_.last_emitted_count();
     }
+    source_.step(dt);
     particles_.step(time_s_, dt, fields_, config_.physics.deposition_rate);
     pde_.step(time_s_, dt, fields_, source_, particles_.boundary_mode());
     time_s_ += dt;

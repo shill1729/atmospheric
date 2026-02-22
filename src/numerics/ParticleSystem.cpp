@@ -57,10 +57,8 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
 
     const std::size_t remaining = max_particles_ - particles_.size();
     spawn_count = std::min<int>(spawn_count, static_cast<int>(remaining));
-    last_emitted_count_ = spawn_count;
-    last_rate_per_second_ = static_cast<float>(spawn_count) / dt;
-
     const float spread = 0.02f * source_.sigma;
+    int emitted_count = 0;
     for (int i = 0; i < spawn_count; ++i) {
         Vec2 p = source_position;
         p.x() += spread * standard_normal_(rng_);
@@ -72,7 +70,10 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
         particles_.push_back(bounded);
         previous_particles_.push_back(bounded);
         trails_.emplace_back(1, bounded);
+        ++emitted_count;
     }
+    last_emitted_count_ = emitted_count;
+    last_rate_per_second_ = static_cast<float>(emitted_count) / dt;
 }
 
 void ParticleSystem::step(float time_s, float dt, const Fields& fields, float deposition_rate) {
@@ -80,7 +81,7 @@ void ParticleSystem::step(float time_s, float dt, const Fields& fields, float de
         return;
     }
 
-    const float kill_prob = 1.0f - std::exp(-deposition_rate * dt);
+    const float kill_prob = std::clamp(1.0f - std::exp(-deposition_rate * dt), 0.0f, 1.0f);
     std::uniform_real_distribution<float> uniform01(0.0f, 1.0f);
 
     std::size_t i = 0;

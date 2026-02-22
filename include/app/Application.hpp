@@ -48,10 +48,10 @@ private:
     bool menu_open_ = false;
     bool help_open_ = false;
     bool show_wind_ = true;
+    bool pde_auto_color_scale_ = true;
+    float pde_color_scale_runtime_ = 4.0e-4f;
     int menu_index_ = 0;
     int menu_rows_ = 0;
-    float pde_display_max_ = 1.0e-8f;
-    float last_sim_time_s_ = 0.0f;
     MassDisplayUnit mass_unit_ = MassDisplayUnit::MicrogramsPerSquareMeter;
 };
 

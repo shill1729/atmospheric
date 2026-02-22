@@ -115,7 +115,7 @@ Negative values are clamped to zero.
 - Time stepping: explicit forward Euler in time
 - Spatial discretization:
   - advection: first-order upwind
-  - diffusion: second-order central finite-difference fluxes with scalar diffusivity $\kappa(t,x)$
+  - diffusion: either scalarized $\kappa=\tfrac12 \mathrm{tr}(D)$ or full tensor flux $\nabla \cdot (D\nabla c)$
 
 ## Dependencies
 
@@ -188,6 +188,7 @@ Example:
 - `W`: cycle wind model
 - `K`: cycle diffusivity model
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
+- `C`: toggle PDE color scaling mode (auto/fixed)
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -209,6 +210,7 @@ include/
     Application.hpp                  # SFML app, rendering, HUD/menu/input
   core/
     Config.hpp                       # Global simulation/app parameters
+    Validation.hpp                   # Centralized configuration validation
     Types.hpp                        # Vec2/Mat2 aliases (Eigen)
   numerics/
     ParticleSystem.hpp               # SDE particle integrator + trails
@@ -221,12 +223,16 @@ include/
 
 src/
   app/Application.cpp
+  core/Validation.cpp
   numerics/ParticleSystem.cpp
   numerics/AdvectionDiffusionSolver.cpp
   science/Fields.cpp
   science/SourceModel.cpp
   sim/Simulator.cpp
   main.cpp                           # CLI parsing + app bootstrap
+
+tests/
+  self_check.cpp                     # Lightweight ctest regression checks
 
 fonts/
   arial.ttf
@@ -256,7 +262,6 @@ fonts/
 
 ## Features TBA
 
-1. Full tensor-diffusion PDE discretization in flux form $\nabla\cdot(D\nabla c)$.
-2. Config file IO for reproducible runs.
-3. Colormap and dynamic range controls for PDE panel.
-4. Optional measurement stations and inverse-source workflow.
+1. Config file IO for reproducible runs.
+2. Optional measurement stations and inverse-source workflow.
+3. Expanded automated numerical regression tests.

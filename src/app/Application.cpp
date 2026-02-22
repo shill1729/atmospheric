@@ -43,6 +43,8 @@ const char* boundary_mode_label(BoundaryMode mode) {
     }
     return "periodic";
 }
+
+constexpr float PDE_FIXED_COLOR_SCALE = 4.0e-4f;
 }
 
 Application::Application(const Config& config)
@@ -58,7 +60,7 @@ Application::Application(const Config& config)
 
     left_panel_ = sf::FloatRect({pad, top_offset}, {panel_width, panel_height});
     right_panel_ = sf::FloatRect({2.0f * pad + panel_width, top_offset}, {panel_width, panel_height});
-    menu_rows_ = 10;
+    menu_rows_ = 11;
 }
 
 void Application::run() {
@@ -127,6 +129,9 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::P) {
                 simulator_.cycle_pde_diffusion_mode(1);
             }
+            if (key->code == sf::Keyboard::Key::C) {
+                pde_auto_color_scale_ = !pde_auto_color_scale_;
+            }
             if (key->code == sf::Keyboard::Key::U) {
                 mass_unit_ = (mass_unit_ == MassDisplayUnit::MicrogramsPerSquareMeter)
                     ? MassDisplayUnit::GramsPerSquareMeter
@@ -147,10 +152,6 @@ void Application::process_events() {
 
 void Application::update(float frame_dt) {
     simulator_.step(frame_dt);
-    if (simulator_.time_s() < last_sim_time_s_) {
-        pde_display_max_ = 1.0e-8f;
-    }
-    last_sim_time_s_ = simulator_.time_s();
 }
 
 void Application::render() {
@@ -474,6 +475,7 @@ void Application::draw_hud_cards() {
            << "\nwind: " << simulator_.wind_model_name()
            << "\ndiff: " << simulator_.diffusion_model_name()
            << "\nPDE diff: " << simulator_.pde_diffusion_mode_name()
+           << "\nPDE color: " << (pde_auto_color_scale_ ? "Auto" : "Fixed")
            << "\nBH case: " << (simulator_.brownian_heat_case() ? "ON" : "off");
 
     std::ostringstream source_text;
@@ -517,7 +519,7 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "L-click source | W wind | K diff | P PDE diff | Space pause | Esc preferences | F1 controls",
+        "L-click source | W wind | K diff | P PDE diff | C color scale | Esc preferences | F1 controls",
         13);
     control_text.setPosition({34.0f, 171.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
@@ -529,7 +531,7 @@ void Application::draw_menu_overlay() {
     dim.setFillColor(sf::Color(6, 10, 16, 170));
     window_.draw(dim);
 
-    const sf::Vector2f panel_size(620.0f, 572.0f);
+    const sf::Vector2f panel_size(620.0f, 620.0f);
     const sf::Vector2f panel_pos(
         0.5f * (static_cast<float>(window_.getSize().x) - panel_size.x),
         0.5f * (static_cast<float>(window_.getSize().y) - panel_size.y));
@@ -546,7 +548,7 @@ void Application::draw_menu_overlay() {
     title.setFillColor(sf::Color(210, 234, 250));
     window_.draw(title);
 
-    std::array<std::string, 10> rows;
+    std::array<std::string, 11> rows;
     std::ostringstream speed;
     speed << std::fixed << std::setprecision(2) << "Simulation Speed      x" << simulator_.time_scale();
     rows[0] = speed.str();
@@ -557,8 +559,9 @@ void Application::draw_menu_overlay() {
     rows[5] = std::string("Wind Vectors          ") + (show_wind_ ? "On" : "Off");
     rows[6] = std::string("Brownian/Heat Case    ") + (simulator_.brownian_heat_case() ? "ON" : "Off");
     rows[7] = std::string("Mass Units            ") + mass_unit_label(mass_unit_);
-    rows[8] = "Trail Length          " + std::to_string(simulator_.trail_length());
-    rows[9] = "Reset Simulation";
+    rows[8] = std::string("PDE Color Scale       ") + (pde_auto_color_scale_ ? "Auto" : "Fixed");
+    rows[9] = "Trail Length          " + std::to_string(simulator_.trail_length());
+    rows[10] = "Reset Simulation";
 
     const float start_y = panel_pos.y + 62.0f;
     for (int i = 0; i < static_cast<int>(rows.size()); ++i) {
@@ -613,6 +616,7 @@ void Application::draw_help_overlay() {
         "W       : cycle wind field model\n"
         "K       : cycle SDE diffusivity model\n"
         "P       : cycle PDE diffusion mode\n"
+        "C       : toggle PDE color scale mode\n"
         "B       : cycle boundary condition\n"
         "H       : toggle Brownian/Heat special case\n"
         "U       : toggle mass units\n"
@@ -663,9 +667,12 @@ void Application::apply_menu_adjustment(int direction) {
             : MassDisplayUnit::MicrogramsPerSquareMeter;
         break;
     case 8:
-        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        pde_auto_color_scale_ = !pde_auto_color_scale_;
         break;
     case 9:
+        simulator_.adjust_trail_length(direction > 0 ? 1 : -1);
+        break;
+    case 10:
         simulator_.reset();
         break;
     default:
@@ -680,14 +687,15 @@ void Application::draw_pde_heatmap() {
         return;
     }
 
-    float cmax = pde.max_concentration();
-    cmax = std::max(cmax, 1.0e-8f);
-    if (cmax > pde_display_max_) {
-        pde_display_max_ += 0.2f * (cmax - pde_display_max_);
+    const float max_c = pde.max_concentration();
+    if (pde_auto_color_scale_) {
+        const float target = std::max(1.0e-9f, 0.15f * max_c);
+        pde_color_scale_runtime_ = 0.92f * pde_color_scale_runtime_ + 0.08f * target;
     } else {
-        pde_display_max_ = std::max(cmax, pde_display_max_ * 0.998f);
+        pde_color_scale_runtime_ = PDE_FIXED_COLOR_SCALE;
     }
-
+    const float denom = std::log1p(std::max(pde_color_scale_runtime_, 1.0e-10f));
+    
     const int nx = pde.nx();
     const int ny = pde.ny();
     const float sx = right_panel_.size.x / static_cast<float>(nx - 1);
@@ -703,10 +711,10 @@ void Application::draw_pde_heatmap() {
             const float c01 = c[idx(i, j + 1)];
             const float c11 = c[idx(i + 1, j + 1)];
 
-            const float n00 = std::log1p(c00) / std::log1p(pde_display_max_);
-            const float n10 = std::log1p(c10) / std::log1p(pde_display_max_);
-            const float n01 = std::log1p(c01) / std::log1p(pde_display_max_);
-            const float n11 = std::log1p(c11) / std::log1p(pde_display_max_);
+            const float n00 = std::clamp(std::log1p(c00) / denom, 0.0f, 1.0f);
+            const float n10 = std::clamp(std::log1p(c10) / denom, 0.0f, 1.0f);
+            const float n01 = std::clamp(std::log1p(c01) / denom, 0.0f, 1.0f);
+            const float n11 = std::clamp(std::log1p(c11) / denom, 0.0f, 1.0f);
 
             const sf::Vector2f p00(right_panel_.position.x + i * sx, right_panel_.position.y + j * sy);
             const sf::Vector2f p10(right_panel_.position.x + (i + 1) * sx, right_panel_.position.y + j * sy);
