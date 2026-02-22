@@ -9,6 +9,8 @@ find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 find_package(Eigen3 REQUIRED NO_MODULE)
 
 add_executable(atmospheric
+    src/adjoint/AdjointSolver.cpp
+    src/adjoint/SourceEstimator.cpp
     src/app/Application.cpp
     src/core/RuntimeSettings.cpp
     src/core/Validation.cpp

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adjoint/SourceEstimator.hpp"
 #include "core/Config.hpp"
 #include "core/Types.hpp"
 #include "sim/SensorManager.hpp"
@@ -8,6 +9,8 @@
 #include "ui/MenuModel.hpp"
 
 #include <SFML/Graphics.hpp>
+#include <string>
+#include <vector>
 
 namespace atm {
 
@@ -28,6 +31,7 @@ private:
     void render();
     void draw_wind_field();
     void draw_pde_heatmap();
+    void draw_adjoint_overlay();
     void draw_sensor_overlay();
     void draw_hud_cards();
     void draw_control_strip();
@@ -44,11 +48,25 @@ private:
     bool right_panel_contains(const sf::Vector2i& pixel) const;
     Vec2 right_panel_pixel_to_domain(const sf::Vector2i& pixel) const;
     sf::Vector2f domain_to_right_panel(const Vec2& x) const;
+    void run_source_estimation();
+    void clear_source_estimation();
+
+    struct SourceEstimationView {
+        bool has_result = false;
+        Vec2 x_star = Vec2::Zero();
+        float t_star_s = 0.0f;
+        int nx = 0;
+        int ny = 0;
+        std::vector<float> p_star;
+        std::string status;
+    };
 
     SimulationController controller_;
     MenuModel menu_model_;
     TopToolbar top_toolbar_;
     SensorManager sensor_manager_;
+    SourceEstimator source_estimator_;
+    SourceEstimationView source_estimation_;
 
     sf::RenderWindow window_;
     sf::Font font_;
@@ -60,6 +78,7 @@ private:
     bool menu_open_ = false;
     bool help_open_ = false;
     bool show_wind_ = true;
+    bool show_adjoint_overlay_ = true;
     bool pde_auto_color_scale_ = true;
     float pde_fixed_color_scale_ = 1.0e-4f;
     float pde_color_scale_runtime_ = 4.0e-4f;

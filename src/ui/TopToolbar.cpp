@@ -22,8 +22,24 @@ sf::FloatRect pde_menu_rect() {
     return sf::FloatRect({toolbar_button_rect(2).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {300.0f, 184.0f});
 }
 
+sf::FloatRect file_menu_rect() {
+    return sf::FloatRect({toolbar_button_rect(0).position.x + 8.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {220.0f, 90.0f});
+}
+
 sf::FloatRect options_menu_rect() {
     return sf::FloatRect({toolbar_button_rect(1).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {360.0f, 412.0f});
+}
+
+bool handle_file_menu_click(const sf::Vector2i& pixel, const sf::FloatRect& panel, TopToolbarClickResult& out) {
+    const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
+    const sf::FloatRect estimate_btn({panel.position.x + 12.0f, panel.position.y + 34.0f}, {188.0f, 24.0f});
+    if (estimate_btn.contains(p)) {
+        out.request_source_estimate = true;
+        out.consumed = true;
+        return true;
+    }
+    out.consumed = true;
+    return true;
 }
 
 bool handle_pde_menu_click(
@@ -286,6 +302,34 @@ void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const Menu
 }
 
 void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const {
+    if (menu_model.active_top_menu() == MenuModel::TopMenu::File) {
+        const sf::FloatRect panel = file_menu_rect();
+        sf::RectangleShape bg({panel.size.x, panel.size.y});
+        bg.setPosition({panel.position.x, panel.position.y});
+        bg.setFillColor(sf::Color(20, 30, 44, 244));
+        bg.setOutlineThickness(1.0f);
+        bg.setOutlineColor(sf::Color(96, 134, 170, 230));
+        window.draw(bg);
+
+        sf::Text title(font, "File", 15);
+        title.setPosition({panel.position.x + 10.0f, panel.position.y + 8.0f});
+        title.setFillColor(sf::Color(220, 236, 250));
+        window.draw(title);
+
+        sf::RectangleShape btn({188.0f, 24.0f});
+        btn.setPosition({panel.position.x + 12.0f, panel.position.y + 34.0f});
+        btn.setFillColor(sf::Color(52, 76, 102, 240));
+        btn.setOutlineThickness(1.0f);
+        btn.setOutlineColor(sf::Color(112, 148, 184, 235));
+        window.draw(btn);
+
+        sf::Text btn_text(font, "Estimate Source (Paused)", 13);
+        btn_text.setPosition({panel.position.x + 20.0f, panel.position.y + 37.0f});
+        btn_text.setFillColor(sf::Color(228, 241, 252));
+        window.draw(btn_text);
+        return;
+    }
+
     if (menu_model.active_top_menu() == MenuModel::TopMenu::Options) {
         const sf::FloatRect panel = options_menu_rect();
         sf::RectangleShape bg({panel.size.x, panel.size.y});
@@ -487,6 +531,11 @@ TopToolbarClickResult TopToolbar::handle_click(
 
     if (menu_model.active_top_menu() == MenuModel::TopMenu::Pde && pde_menu_rect().contains(p)) {
         handle_pde_menu_click(pixel, pde_menu_rect(), menu_model, controller, out);
+        return out;
+    }
+    if (menu_model.active_top_menu() == MenuModel::TopMenu::File && file_menu_rect().contains(p)) {
+        handle_file_menu_click(pixel, file_menu_rect(), out);
+        menu_model.close_all();
         return out;
     }
     if (menu_model.active_top_menu() == MenuModel::TopMenu::Options && options_menu_rect().contains(p)) {

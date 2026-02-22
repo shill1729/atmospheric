@@ -25,6 +25,8 @@ public:
     void toggle_boundary_mode();
     BoundaryMode boundary_mode() const;
     Vec2 wind_at(const Vec2& x) const;
+    Vec2 wind_at_time(float time_s, const Vec2& x) const;
+    Mat2 diffusivity_at_time(float time_s, const Vec2& x) const;
     void scale_time(float factor);
     void set_time_scale(float value);
     void reset_time_scale();

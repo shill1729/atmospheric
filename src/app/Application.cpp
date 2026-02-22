@@ -55,7 +55,7 @@ Application::Application(const Config& config)
     window_.setFramerateLimit(60);
 
     const float pad = 24.0f;
-    const float top_offset = 190.0f;
+    const float top_offset = 286.0f;
     const float panel_width = (static_cast<float>(config.app.window_width) - 3.0f * pad) * 0.5f;
     const float panel_height = static_cast<float>(config.app.window_height) - top_offset - 2.0f * pad;
 
@@ -111,6 +111,7 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::R) {
                 sim().reset();
                 sensor_manager_.clear();
+                clear_source_estimation();
             }
             if (key->code == sf::Keyboard::Key::B) {
                 sim().toggle_boundary_mode();
@@ -145,6 +146,12 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::H) {
                 sim().toggle_brownian_heat_case();
             }
+            if (key->code == sf::Keyboard::Key::E) {
+                run_source_estimation();
+            }
+            if (key->code == sf::Keyboard::Key::J) {
+                show_adjoint_overlay_ = !show_adjoint_overlay_;
+            }
         }
 
         if (const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
@@ -160,7 +167,11 @@ void Application::process_events() {
                 }
                 if (toolbar_click.recreated_simulator) {
                     sensor_manager_.clear();
+                    clear_source_estimation();
                     menu_open_ = false;
+                }
+                if (toolbar_click.request_source_estimate) {
+                    run_source_estimation();
                 }
                 if (toolbar_click.consumed) {
                     continue;
@@ -198,6 +209,7 @@ void Application::render() {
     right_rect.setOutlineThickness(2.0f);
     window_.draw(right_rect);
     draw_pde_heatmap();
+    draw_adjoint_overlay();
     draw_sensor_overlay();
 
     if (show_wind_) {
@@ -266,6 +278,18 @@ void Application::render() {
             marker.setPosition(domain_to_left_panel(src.position));
             window_.draw(marker);
         }
+    }
+
+    if (source_estimation_.has_result) {
+        sf::CircleShape marker(4.0f);
+        marker.setOrigin({4.0f, 4.0f});
+        marker.setFillColor(sf::Color(255, 220, 40, 235));
+        marker.setOutlineColor(sf::Color::Black);
+        marker.setOutlineThickness(1.0f);
+        marker.setPosition(domain_to_left_panel(source_estimation_.x_star));
+        window_.draw(marker);
+        marker.setPosition(domain_to_right_panel(source_estimation_.x_star));
+        window_.draw(marker);
     }
 
     sf::Text left_label(font_, "SDE Particle Panel", 16);
@@ -565,15 +589,15 @@ void Application::draw_hud_cards() {
     const float left = 24.0f;
     const float gap = 12.0f;
     const float card_w = 250.0f;
-    const float card_h = 148.0f;
+    const float card_h = 170.0f;
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
     draw_card(left + 2.0f * (card_w + gap), top, card_w, card_h, "Physics", physics.str());
 }
 
 void Application::draw_control_strip() {
-    sf::RectangleShape strip({860.0f, 28.0f});
-    strip.setPosition({24.0f, 166.0f});
+    sf::RectangleShape strip({980.0f, 44.0f});
+    strip.setPosition({24.0f, 214.0f});
     strip.setFillColor(sf::Color(10, 16, 24, 188));
     strip.setOutlineThickness(1.0f);
     strip.setOutlineColor(sf::Color(70, 108, 145, 180));
@@ -581,11 +605,19 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Options | PDE  | L-click source/sensor | W wind | K diff | Esc preferences | F1 controls",
+        "Toolbar: File | Options | PDE | L-click source/sensor | E estimate | J adjoint view | F1 controls",
         13);
-    control_text.setPosition({34.0f, 171.0f});
+    control_text.setPosition({34.0f, 218.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
     window_.draw(control_text);
+
+    const std::string status = source_estimation_.status.empty()
+        ? "Estimator: idle"
+        : ("Estimator: " + source_estimation_.status);
+    sf::Text status_text(font_, status, 12);
+    status_text.setPosition({34.0f, 235.0f});
+    status_text.setFillColor(sf::Color(196, 216, 232));
+    window_.draw(status_text);
 }
 
 
@@ -672,6 +704,8 @@ void Application::draw_help_overlay() {
         "Top bar : File / Options / PDE menus\n"
         "L-click left panel  : place source\n"
         "L-click right panel : place sensor\n"
+        "E       : run source estimation (paused)\n"
+        "J       : toggle adjoint overlay\n"
         "Space   : pause/resume\n"
         "R       : reset simulation\n"
         "Esc     : open/close preferences\n"
@@ -740,6 +774,7 @@ void Application::apply_menu_adjustment(int direction) {
     case 10:
         sim().reset();
         sensor_manager_.clear();
+        clear_source_estimation();
         break;
     default:
         break;
@@ -849,6 +884,98 @@ void Application::draw_sensor_overlay() {
         window_.draw(label);
         ++sensor_id;
     }
+}
+
+void Application::draw_adjoint_overlay() {
+    if (!show_adjoint_overlay_ || !source_estimation_.has_result || source_estimation_.p_star.empty()
+        || source_estimation_.nx < 2 || source_estimation_.ny < 2) {
+        return;
+    }
+
+    const int nx = source_estimation_.nx;
+    const int ny = source_estimation_.ny;
+    const auto& p = source_estimation_.p_star;
+    float pmax = 0.0f;
+    for (float v : p) {
+        pmax = std::max(pmax, v);
+    }
+    if (pmax <= 1.0e-16f) {
+        return;
+    }
+
+    const float sx = right_panel_.size.x / static_cast<float>(nx - 1);
+    const float sy = right_panel_.size.y / static_cast<float>(ny - 1);
+    sf::VertexArray mesh(sf::PrimitiveType::Triangles, static_cast<std::size_t>((nx - 1) * (ny - 1) * 6));
+    std::size_t vi = 0;
+    auto i2 = [nx](int i, int j) { return static_cast<std::size_t>(j * nx + i); };
+
+    for (int j = 0; j < ny - 1; ++j) {
+        for (int i = 0; i < nx - 1; ++i) {
+            const float n00 = std::clamp(p[i2(i, j)] / pmax, 0.0f, 1.0f);
+            const float n10 = std::clamp(p[i2(i + 1, j)] / pmax, 0.0f, 1.0f);
+            const float n01 = std::clamp(p[i2(i, j + 1)] / pmax, 0.0f, 1.0f);
+            const float n11 = std::clamp(p[i2(i + 1, j + 1)] / pmax, 0.0f, 1.0f);
+
+            auto c = [](float t) {
+                return sf::Color(
+                    static_cast<std::uint8_t>(255.0f * std::clamp(t, 0.0f, 1.0f)),
+                    static_cast<std::uint8_t>(180.0f * std::clamp(1.0f - t, 0.0f, 1.0f)),
+                    80,
+                    static_cast<std::uint8_t>(120.0f * std::clamp(t, 0.0f, 1.0f)));
+            };
+
+            const sf::Vector2f p00(right_panel_.position.x + i * sx, right_panel_.position.y + j * sy);
+            const sf::Vector2f p10(right_panel_.position.x + (i + 1) * sx, right_panel_.position.y + j * sy);
+            const sf::Vector2f p01(right_panel_.position.x + i * sx, right_panel_.position.y + (j + 1) * sy);
+            const sf::Vector2f p11(
+                right_panel_.position.x + (i + 1) * sx, right_panel_.position.y + (j + 1) * sy);
+
+            mesh[vi].position = p00;
+            mesh[vi].color = c(n00);
+            ++vi;
+            mesh[vi].position = p10;
+            mesh[vi].color = c(n10);
+            ++vi;
+            mesh[vi].position = p11;
+            mesh[vi].color = c(n11);
+            ++vi;
+            mesh[vi].position = p00;
+            mesh[vi].color = c(n00);
+            ++vi;
+            mesh[vi].position = p11;
+            mesh[vi].color = c(n11);
+            ++vi;
+            mesh[vi].position = p01;
+            mesh[vi].color = c(n01);
+            ++vi;
+        }
+    }
+    window_.draw(mesh);
+}
+
+void Application::run_source_estimation() {
+    if (!sim().paused()) {
+        source_estimation_.status = "Pause simulation before running estimation.";
+        return;
+    }
+
+    const auto result = source_estimator_.estimate(sensor_manager_.sensors(), sim());
+    source_estimation_.status = result.message;
+    if (!result.success) {
+        source_estimation_.has_result = false;
+        return;
+    }
+
+    source_estimation_.has_result = true;
+    source_estimation_.x_star = result.x_star;
+    source_estimation_.t_star_s = result.t_star_s;
+    source_estimation_.nx = result.nx;
+    source_estimation_.ny = result.ny;
+    source_estimation_.p_star = result.p_star;
+}
+
+void Application::clear_source_estimation() {
+    source_estimation_ = SourceEstimationView{};
 }
 
 Simulator& Application::sim() {

@@ -85,6 +85,14 @@ Vec2 Simulator::wind_at(const Vec2& x) const {
     return fields_.wind(time_s_, x);
 }
 
+Vec2 Simulator::wind_at_time(float time_s, const Vec2& x) const {
+    return fields_.wind(time_s, x);
+}
+
+Mat2 Simulator::diffusivity_at_time(float time_s, const Vec2& x) const {
+    return fields_.diffusivity(time_s, x);
+}
+
 void Simulator::scale_time(float factor) {
     time_scale_runtime_ = std::clamp(time_scale_runtime_ * factor, 0.25f, 120.0f);
 }

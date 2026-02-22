@@ -11,6 +11,7 @@ struct TopToolbarClickResult {
     bool consumed = false;
     bool settings_changed = false;
     bool recreated_simulator = false;
+    bool request_source_estimate = false;
 };
 
 class TopToolbar {
