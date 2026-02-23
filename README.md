@@ -110,7 +110,7 @@ The app computes
 $$
 Z(t)=\int_\Omega \phi(t,x)\,dx,\quad
 t^*=\arg\max_t Z(t),\quad
-x^*=\arg\max_x p(t^*,x),\quad
+x^*=\arg\max_x \int_0^T p(t,x)dt,\quad
 p=\phi/Z.
 $$
 
@@ -247,7 +247,7 @@ Example:
 - `C`: toggle PDE color scaling mode (auto/fixed)
 - `E`: run source estimation (requires paused state)
 - `J`: toggle adjoint overlay on the right panel
-- Top toolbar `PDE`: editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
+- ECS `PDE Settings` panel (top-right): editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
 - Top toolbar `Options`: editable pending settings for `time scale`, `max particles`, `deposition`,
   `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`, `history cap`), and source parameters
   (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)

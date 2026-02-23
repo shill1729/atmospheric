@@ -5,7 +5,9 @@
 #include "core/Types.hpp"
 #include "sim/SensorManager.hpp"
 #include "sim/SimulationController.hpp"
+#include "ui/RetroTheme.hpp"
 #include "ui/TopToolbar.hpp"
+#include "ui/UiEcs.hpp"
 #include "ui/MenuModel.hpp"
 
 #include <SFML/Graphics.hpp>
@@ -50,6 +52,10 @@ private:
     sf::Vector2f domain_to_right_panel(const Vec2& x) const;
     void run_source_estimation();
     void clear_source_estimation();
+    void build_ecs_ui();
+    void sync_ecs_ui_state();
+    void handle_ecs_action(const ui::UiEvent& event);
+    void apply_settings_report(const ApplySettingsReport& report);
 
     struct SourceEstimationView {
         bool has_result = false;
@@ -66,6 +72,8 @@ private:
     SimulationController controller_;
     MenuModel menu_model_;
     TopToolbar top_toolbar_;
+    ui::UiScene ecs_ui_scene_;
+    ui::RetroTheme ecs_theme_;
     SensorManager sensor_manager_;
     SourceEstimator source_estimator_;
     SourceEstimationView source_estimation_;
@@ -81,6 +89,7 @@ private:
     bool help_open_ = false;
     bool show_wind_ = true;
     bool show_adjoint_overlay_ = true;
+    bool show_ecs_quick_panel_ = true;
     bool pde_auto_color_scale_ = true;
     float concentration_scale_ug_per_m2_ = 1.0e5f;
     float mixing_height_m_ = 1.0f;
@@ -92,6 +101,17 @@ private:
     Vec2 last_source_click_ = Vec2::Zero();
     int source_click_count_since_reset_ = 0;
     MassDisplayUnit mass_unit_ = MassDisplayUnit::MicrogramsPerSquareMeter;
+
+    ui::Entity ecs_panel_title_ = ui::kInvalidEntity;
+    ui::Entity ecs_pause_button_ = ui::kInvalidEntity;
+    ui::Entity ecs_reset_button_ = ui::kInvalidEntity;
+    ui::Entity ecs_estimate_button_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_title_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_nx_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_ny_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_dt_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_mode_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_pde_dirty_value_ = ui::kInvalidEntity;
 };
 
 } // namespace atm

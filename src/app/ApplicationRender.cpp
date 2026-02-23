@@ -239,6 +239,7 @@ void Application::render() {
     if (!toolbar_open) {
         draw_hud_cards();
         draw_control_strip();
+        ecs_ui_scene_.draw(window_, font_, ecs_theme_);
     }
     if (menu_open_) {
         draw_menu_overlay();
@@ -430,7 +431,7 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Options | PDE | L-click source/sensor | E estimate | J adjoint view | F1 controls",
+        "Toolbar: File | Options | ECS PDE panel | L-click source/sensor | E estimate | J adjoint view | F1 controls",
         13);
     control_text.setPosition({34.0f, 218.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
@@ -507,7 +508,8 @@ void Application::draw_help_overlay() {
 
     const std::string body =
         "Primary\n"
-        "Top bar : File / Options / PDE menus\n"
+        "Top bar : File / Options menus\n"
+        "ECS panel: PDE settings (nx, ny, dt, diffusion)\n"
         "L-click left panel  : place source\n"
         "L-click right panel : place sensor\n"
         "E       : run source estimation (paused)\n"

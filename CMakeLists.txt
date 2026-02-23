@@ -24,7 +24,9 @@ add_executable(atmospheric
     src/sim/SimulationController.cpp
     src/sim/Simulator.cpp
     src/ui/MenuModel.cpp
+    src/ui/RetroTheme.cpp
     src/ui/TopToolbar.cpp
+    src/ui/UiEcs.cpp
     src/main.cpp
 )
 

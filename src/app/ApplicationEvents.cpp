@@ -12,6 +12,11 @@ void Application::process_events() {
             continue;
         }
 
+        if (const auto* moved = event->getIf<sf::Event::MouseMoved>()) {
+            ecs_ui_scene_.handle_mouse_move(
+                sf::Vector2f(static_cast<float>(moved->position.x), static_cast<float>(moved->position.y)));
+        }
+
         if (const auto* key = event->getIf<sf::Event::KeyPressed>()) {
             if (key->code == sf::Keyboard::Key::F1) {
                 help_open_ = !help_open_;
@@ -88,27 +93,30 @@ void Application::process_events() {
 
         if (const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
             if (click->button == sf::Mouse::Button::Left) {
+                std::vector<ui::UiEvent> ui_events;
+                if (ecs_ui_scene_.handle_left_press(
+                        sf::Vector2f(static_cast<float>(click->position.x), static_cast<float>(click->position.y)),
+                        ui_events)) {
+                    for (const auto& ui_event : ui_events) {
+                        handle_ecs_action(ui_event);
+                    }
+                    sync_ecs_ui_state();
+                    continue;
+                }
+
                 const TopToolbarClickResult toolbar_click
                     = top_toolbar_.handle_click(click->position, menu_model_, controller_);
                 if (toolbar_click.settings_changed) {
-                    const RuntimeSettings settings = controller_.current_settings();
-                    pde_fixed_color_scale_ = std::max(1.0e-8f, settings.pde_fixed_color_scale);
-                    pde_color_scale_runtime_ = pde_fixed_color_scale_;
-                    sensor_manager_.set_sample_period(settings.sensor_sample_period_s);
-                    sensor_manager_.set_noise_std(settings.sensor_noise_std);
-                    sensor_manager_.set_history_capacity(static_cast<std::size_t>(settings.sensor_history_capacity));
-                }
-                if (toolbar_click.recreated_simulator) {
-                    sensor_manager_.clear();
-                    clear_source_estimation();
-                    menu_open_ = false;
-                    has_last_source_click_ = false;
-                    source_click_count_since_reset_ = 0;
+                    ApplySettingsReport report;
+                    report.changed = true;
+                    report.recreated_simulator = toolbar_click.recreated_simulator;
+                    apply_settings_report(report);
                 }
                 if (toolbar_click.request_source_estimate) {
                     run_source_estimation();
                 }
                 if (toolbar_click.consumed) {
+                    sync_ecs_ui_state();
                     continue;
                 }
             }

@@ -1,6 +1,8 @@
 #include "app/Application.hpp"
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 
 namespace atm {
 
@@ -29,6 +31,8 @@ Application::Application(const Config& config)
     pde_color_scale_runtime_ = pde_fixed_color_scale_;
     concentration_scale_ug_per_m2_ = std::max(1.0e-12f, config.app.concentration_scale_ug_per_m2);
     mixing_height_m_ = std::max(1.0e-6f, config.app.mixing_height_m);
+    ecs_theme_ = ui::make_default_retro_theme();
+    build_ecs_ui();
 }
 
 void Application::run() {
@@ -43,6 +47,322 @@ void Application::run() {
 void Application::update(float frame_dt) {
     sim().step(frame_dt);
     sensor_manager_.step(sim().time_s(), sim().pde(), sim().config().domain);
+    sync_ecs_ui_state();
+}
+
+void Application::build_ecs_ui() {
+    ecs_ui_scene_.clear();
+    if (!show_ecs_quick_panel_) {
+        return;
+    }
+
+    const sf::Vector2u window_size = window_.getSize();
+    const float panel_w = 250.0f;
+    const float panel_h = 164.0f;
+    const float panel_x = static_cast<float>(window_size.x) - panel_w - 22.0f;
+    const float panel_y = 42.0f;
+
+    auto& registry = ecs_ui_scene_.registry();
+    ui::add_panel(registry, sf::FloatRect({panel_x, panel_y}, {panel_w, panel_h}), 200, ecs_theme_.panel_face);
+    ecs_panel_title_ = ui::add_label(
+        registry,
+        sf::FloatRect({panel_x + 8.0f, panel_y + 6.0f}, {panel_w - 16.0f, 20.0f}),
+        201,
+        "Quick Actions",
+        sf::Vector2f(0.0f, 0.0f),
+        14,
+        ecs_theme_.text_primary);
+
+    const float button_x = panel_x + 12.0f;
+    const float button_w = panel_w - 24.0f;
+    ecs_pause_button_ = ui::add_button(
+        registry,
+        sf::FloatRect({button_x, panel_y + 34.0f}, {button_w, 28.0f}),
+        202,
+        "Pause",
+        "toggle_pause",
+        ecs_theme_);
+    ecs_reset_button_ = ui::add_button(
+        registry,
+        sf::FloatRect({button_x, panel_y + 68.0f}, {button_w, 28.0f}),
+        202,
+        "Reset",
+        "reset_simulation",
+        ecs_theme_);
+    ecs_estimate_button_ = ui::add_button(
+        registry,
+        sf::FloatRect({button_x, panel_y + 102.0f}, {button_w, 28.0f}),
+        202,
+        "Estimate Source",
+        "estimate_source",
+        ecs_theme_);
+
+    const float pde_x = panel_x - 352.0f;
+    const float pde_y = 42.0f;
+    const float pde_w = 336.0f;
+    const float pde_h = 212.0f;
+    ui::add_panel(registry, sf::FloatRect({pde_x, pde_y}, {pde_w, pde_h}), 200, ecs_theme_.panel_face);
+    ecs_pde_title_ = ui::add_label(
+        registry,
+        sf::FloatRect({pde_x + 8.0f, pde_y + 6.0f}, {pde_w - 16.0f, 20.0f}),
+        201,
+        "PDE Settings",
+        sf::Vector2f(0.0f, 0.0f),
+        14,
+        ecs_theme_.text_primary);
+
+    const float row_start = pde_y + 36.0f;
+    const float row_h = 30.0f;
+    const float label_x = pde_x + 14.0f;
+    const float value_x = pde_x + 130.0f;
+    const float minus_x = pde_x + pde_w - 64.0f;
+    const float plus_x = pde_x + pde_w - 36.0f;
+
+    ui::add_label(
+        registry,
+        sf::FloatRect({label_x, row_start + row_h * 0.0f}, {100.0f, 18.0f}),
+        201,
+        "Grid Nx",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.text_primary);
+    ecs_pde_nx_value_ = ui::add_label(
+        registry,
+        sf::FloatRect({value_x, row_start + row_h * 0.0f}, {110.0f, 18.0f}),
+        201,
+        "-",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.accent);
+    ui::add_button(
+        registry, sf::FloatRect({minus_x, row_start + row_h * 0.0f - 3.0f}, {22.0f, 22.0f}), 202, "-", "pde_nx_dec",
+        ecs_theme_);
+    ui::add_button(
+        registry, sf::FloatRect({plus_x, row_start + row_h * 0.0f - 3.0f}, {22.0f, 22.0f}), 202, "+", "pde_nx_inc",
+        ecs_theme_);
+
+    ui::add_label(
+        registry,
+        sf::FloatRect({label_x, row_start + row_h * 1.0f}, {100.0f, 18.0f}),
+        201,
+        "Grid Ny",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.text_primary);
+    ecs_pde_ny_value_ = ui::add_label(
+        registry,
+        sf::FloatRect({value_x, row_start + row_h * 1.0f}, {110.0f, 18.0f}),
+        201,
+        "-",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.accent);
+    ui::add_button(
+        registry, sf::FloatRect({minus_x, row_start + row_h * 1.0f - 3.0f}, {22.0f, 22.0f}), 202, "-", "pde_ny_dec",
+        ecs_theme_);
+    ui::add_button(
+        registry, sf::FloatRect({plus_x, row_start + row_h * 1.0f - 3.0f}, {22.0f, 22.0f}), 202, "+", "pde_ny_inc",
+        ecs_theme_);
+
+    ui::add_label(
+        registry,
+        sf::FloatRect({label_x, row_start + row_h * 2.0f}, {100.0f, 18.0f}),
+        201,
+        "dt",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.text_primary);
+    ecs_pde_dt_value_ = ui::add_label(
+        registry,
+        sf::FloatRect({value_x, row_start + row_h * 2.0f}, {110.0f, 18.0f}),
+        201,
+        "-",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.accent);
+    ui::add_button(
+        registry, sf::FloatRect({minus_x, row_start + row_h * 2.0f - 3.0f}, {22.0f, 22.0f}), 202, "-", "pde_dt_dec",
+        ecs_theme_);
+    ui::add_button(
+        registry, sf::FloatRect({plus_x, row_start + row_h * 2.0f - 3.0f}, {22.0f, 22.0f}), 202, "+", "pde_dt_inc",
+        ecs_theme_);
+
+    ui::add_label(
+        registry,
+        sf::FloatRect({label_x, row_start + row_h * 3.0f}, {100.0f, 18.0f}),
+        201,
+        "Diffusion",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.text_primary);
+    ecs_pde_mode_value_ = ui::add_label(
+        registry,
+        sf::FloatRect({value_x, row_start + row_h * 3.0f}, {130.0f, 18.0f}),
+        201,
+        "-",
+        sf::Vector2f(0.0f, 0.0f),
+        13,
+        ecs_theme_.accent);
+    ui::add_button(
+        registry,
+        sf::FloatRect({minus_x, row_start + row_h * 3.0f - 3.0f}, {22.0f, 22.0f}),
+        202,
+        "<",
+        "pde_mode_prev",
+        ecs_theme_);
+    ui::add_button(
+        registry,
+        sf::FloatRect({plus_x, row_start + row_h * 3.0f - 3.0f}, {22.0f, 22.0f}),
+        202,
+        ">",
+        "pde_mode_next",
+        ecs_theme_);
+
+    ecs_pde_dirty_value_ = ui::add_label(
+        registry,
+        sf::FloatRect({label_x, pde_y + pde_h - 42.0f}, {180.0f, 18.0f}),
+        201,
+        "",
+        sf::Vector2f(0.0f, 0.0f),
+        12,
+        ecs_theme_.accent);
+
+    ui::add_button(
+        registry,
+        sf::FloatRect({pde_x + 14.0f, pde_y + pde_h - 30.0f}, {88.0f, 24.0f}),
+        202,
+        "Apply",
+        "pde_apply",
+        ecs_theme_);
+    ui::add_button(
+        registry,
+        sf::FloatRect({pde_x + 108.0f, pde_y + pde_h - 30.0f}, {88.0f, 24.0f}),
+        202,
+        "Revert",
+        "pde_revert",
+        ecs_theme_);
+
+    sync_ecs_ui_state();
+}
+
+void Application::sync_ecs_ui_state() {
+    auto& registry = ecs_ui_scene_.registry();
+    if (auto* button = registry.find_button(ecs_pause_button_)) {
+        button->text = sim().paused() ? "Resume" : "Pause";
+        button->pressed = false;
+    }
+    if (auto* button = registry.find_button(ecs_reset_button_)) {
+        button->pressed = false;
+    }
+    if (auto* button = registry.find_button(ecs_estimate_button_)) {
+        button->pressed = false;
+        button->enabled = sim().paused();
+    }
+
+    const RuntimeSettings& pending = menu_model_.pending_settings();
+    if (auto* label = registry.find_label(ecs_pde_nx_value_)) {
+        label->text = std::to_string(pending.pde_grid_nx);
+    }
+    if (auto* label = registry.find_label(ecs_pde_ny_value_)) {
+        label->text = std::to_string(pending.pde_grid_ny);
+    }
+    if (auto* label = registry.find_label(ecs_pde_dt_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(3) << pending.dt;
+        label->text = ss.str();
+    }
+    if (auto* label = registry.find_label(ecs_pde_mode_value_)) {
+        label->text = pending.pde_diffusion_mode == AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace
+            ? "Scalarized"
+            : "Full Tensor";
+    }
+    if (auto* label = registry.find_label(ecs_pde_dirty_value_)) {
+        label->text = menu_model_.dirty() ? "Pending changes" : "No pending changes";
+        label->color = menu_model_.dirty() ? sf::Color(160, 64, 32) : sf::Color(44, 96, 124);
+    }
+}
+
+void Application::handle_ecs_action(const ui::UiEvent& event) {
+    if (event.action == "toggle_pause") {
+        sim().toggle_paused();
+        return;
+    }
+    if (event.action == "reset_simulation") {
+        sim().reset();
+        sensor_manager_.clear();
+        clear_source_estimation();
+        has_last_source_click_ = false;
+        source_click_count_since_reset_ = 0;
+        return;
+    }
+    if (event.action == "estimate_source") {
+        run_source_estimation();
+        return;
+    }
+    if (event.action == "pde_nx_dec") {
+        menu_model_.adjust_pde_grid_nx(-2);
+        return;
+    }
+    if (event.action == "pde_nx_inc") {
+        menu_model_.adjust_pde_grid_nx(2);
+        return;
+    }
+    if (event.action == "pde_ny_dec") {
+        menu_model_.adjust_pde_grid_ny(-2);
+        return;
+    }
+    if (event.action == "pde_ny_inc") {
+        menu_model_.adjust_pde_grid_ny(2);
+        return;
+    }
+    if (event.action == "pde_dt_dec") {
+        menu_model_.adjust_dt(-0.01f);
+        return;
+    }
+    if (event.action == "pde_dt_inc") {
+        menu_model_.adjust_dt(0.01f);
+        return;
+    }
+    if (event.action == "pde_mode_prev") {
+        menu_model_.cycle_pde_diffusion_mode(-1);
+        return;
+    }
+    if (event.action == "pde_mode_next") {
+        menu_model_.cycle_pde_diffusion_mode(1);
+        return;
+    }
+    if (event.action == "pde_revert") {
+        menu_model_.discard_changes();
+        return;
+    }
+    if (event.action == "pde_apply") {
+        const ApplySettingsReport report = controller_.apply_settings(menu_model_.pending_settings());
+        if (report.changed) {
+            menu_model_.sync_from_current(controller_.current_settings());
+        }
+        apply_settings_report(report);
+    }
+}
+
+void Application::apply_settings_report(const ApplySettingsReport& report) {
+    if (!report.changed) {
+        return;
+    }
+
+    const RuntimeSettings settings = controller_.current_settings();
+    pde_fixed_color_scale_ = std::max(1.0e-8f, settings.pde_fixed_color_scale);
+    pde_color_scale_runtime_ = pde_fixed_color_scale_;
+    sensor_manager_.set_sample_period(settings.sensor_sample_period_s);
+    sensor_manager_.set_noise_std(settings.sensor_noise_std);
+    sensor_manager_.set_history_capacity(static_cast<std::size_t>(settings.sensor_history_capacity));
+
+    if (report.recreated_simulator) {
+        sensor_manager_.clear();
+        clear_source_estimation();
+        menu_open_ = false;
+        has_last_source_click_ = false;
+        source_click_count_since_reset_ = 0;
+    }
 }
 
 bool Application::left_panel_contains(const sf::Vector2i& pixel) const {

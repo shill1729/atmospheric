@@ -288,10 +288,9 @@ void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const Menu
     bar.setOutlineColor(sf::Color(72, 102, 132, 220));
     window.draw(bar);
 
-    const std::array<std::pair<MenuModel::TopMenu, const char*>, 3> items{{
+    const std::array<std::pair<MenuModel::TopMenu, const char*>, 2> items{{
         {MenuModel::TopMenu::File, "File"},
         {MenuModel::TopMenu::Options, "Options"},
-        {MenuModel::TopMenu::Pde, "PDE"},
     }};
 
     for (int i = 0; i < static_cast<int>(items.size()); ++i) {
@@ -522,14 +521,12 @@ TopToolbarClickResult TopToolbar::handle_click(
     TopToolbarClickResult out;
     const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
     const bool had_open_menu = menu_model.active_top_menu() != MenuModel::TopMenu::None;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 2; ++i) {
         if (toolbar_button_rect(i).contains(p)) {
             if (i == 0) {
                 menu_model.toggle_top_menu(MenuModel::TopMenu::File);
             } else if (i == 1) {
                 menu_model.toggle_top_menu(MenuModel::TopMenu::Options);
-            } else {
-                menu_model.toggle_top_menu(MenuModel::TopMenu::Pde);
             }
             if (menu_model.active_top_menu() == MenuModel::TopMenu::Options
                 || menu_model.active_top_menu() == MenuModel::TopMenu::Pde) {
