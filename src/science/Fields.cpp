@@ -75,6 +75,8 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
         return wind_jet_shear(time_s, x);
     case WindPreset::VortexPair:
         return wind_vortex_pair(time_s, x);
+    case WindPreset::ShearVortexBlend:
+        return wind_shear_vortex_blend(time_s, x);
     case WindPreset::Cellular:
         return wind_cellular(time_s, x);
     case WindPreset::Zero:
@@ -161,7 +163,7 @@ Vec2 Fields::grad_scalar_diffusivity(float time_s, const Vec2& x) const {
 
 void Fields::cycle_wind_preset(int direction) {
     int id = static_cast<int>(wind_preset_);
-    const int n = 4;
+    const int n = 5;
     id = (id + direction) % n;
     if (id < 0) {
         id += n;
@@ -183,6 +185,8 @@ std::string_view Fields::wind_preset_name() const {
         return "Jet Shear";
     case WindPreset::VortexPair:
         return "Vortex Pair";
+    case WindPreset::ShearVortexBlend:
+        return "Shear <-> Vortex";
     case WindPreset::Cellular:
         return "Cellular Vortices";
     case WindPreset::Zero:
@@ -274,6 +278,27 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
     const float u = dpsi_dy + 2.0f;
     const float v = -dpsi_dx;
     return Vec2(u, v);
+}
+
+Vec2 Fields::wind_shear_vortex_blend(float time_s, const Vec2& x) const {
+    // One full cycle: hold shear -> linear ramp to vortex -> hold vortex -> linear ramp back.
+    constexpr float PERIOD_S = 160.0f;
+    const float phase = std::fmod(std::max(0.0f, time_s), PERIOD_S) / PERIOD_S;
+
+    float alpha = 0.0f;
+    if (phase < 0.25f) {
+        alpha = 0.0f;
+    } else if (phase < 0.5f) {
+        alpha = (phase - 0.25f) / 0.25f;
+    } else if (phase < 0.75f) {
+        alpha = 1.0f;
+    } else {
+        alpha = 1.0f - (phase - 0.75f) / 0.25f;
+    }
+
+    const Vec2 shear = wind_jet_shear(time_s, x);
+    const Vec2 vortex = wind_vortex_pair(time_s, x);
+    return (1.0f - alpha) * shear + alpha * vortex;
 }
 
 } // namespace atm

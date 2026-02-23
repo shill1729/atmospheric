@@ -12,8 +12,9 @@ public:
     enum class WindPreset {
         JetShear = 0,
         VortexPair = 1,
-        Cellular = 2,
-        Zero = 3
+        ShearVortexBlend = 2,
+        Cellular = 3,
+        Zero = 4
     };
     enum class DiffusivityPreset {
         ConstantScalar = 0,
@@ -43,6 +44,7 @@ public:
 private:
     Vec2 wind_jet_shear(float time_s, const Vec2& x) const;
     Vec2 wind_vortex_pair(float time_s, const Vec2& x) const;
+    Vec2 wind_shear_vortex_blend(float time_s, const Vec2& x) const;
     Vec2 wind_cellular(float time_s, const Vec2& x) const;
 
     const DomainConfig& domain_;

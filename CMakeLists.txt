@@ -12,6 +12,8 @@ add_executable(atmospheric
     src/adjoint/AdjointSolver.cpp
     src/adjoint/SourceEstimator.cpp
     src/app/Application.cpp
+    src/app/ApplicationEvents.cpp
+    src/app/ApplicationRender.cpp
     src/core/RuntimeSettings.cpp
     src/core/Validation.cpp
     src/numerics/AdvectionDiffusionSolver.cpp

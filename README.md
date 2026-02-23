@@ -101,20 +101,19 @@ f(t,x)=\sum_i \alpha_i\,\mathbf{1}_{\tilde c(t,x_i)>c_T}\,\beta_i
 $$
 
 Current defaults in code:
-- equal sensor weights (\(\alpha_i=1\))
-- fixed detection threshold \(c_T\)
-- \(\beta_i\) normalized per bump over the computational domain
+- equal sensor weights ($\alpha_i=1$)
+- fixed detection threshold $c_T$
+- $\beta_i$ normalized per bump over the computational domain
 - forcing is piecewise-constant in time from recorded sensor samples
 
 The app computes
-\[
+$$
 Z(t)=\int_\Omega \phi(t,x)\,dx,\quad
 t^*=\arg\max_t Z(t),\quad
 x^*=\arg\max_x p(t^*,x),\quad
 p=\phi/Z.
-\]
+$$
 
-This avoids the degenerate \(P(t)=\int_\Omega p(t,x)\,dx\equiv 1\) criterion.
 
 ## Initial and Boundary Conditions
 
