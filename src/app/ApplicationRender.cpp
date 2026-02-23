@@ -48,11 +48,12 @@ const char* boundary_mode_label(BoundaryMode mode) {
 }
 
 sf::Color adjoint_color(float t) {
+    const float u = std::clamp(t, 0.0f, 1.0f);
     return sf::Color(
-        static_cast<std::uint8_t>(255.0f * std::clamp(t, 0.0f, 1.0f)),
-        static_cast<std::uint8_t>(180.0f * std::clamp(1.0f - t, 0.0f, 1.0f)),
+        static_cast<std::uint8_t>(255.0f * u),
+        static_cast<std::uint8_t>(220.0f * (1.0f - u)),
         80,
-        static_cast<std::uint8_t>(120.0f * std::clamp(t, 0.0f, 1.0f)));
+        static_cast<std::uint8_t>(40.0f + 200.0f * u));
 }
 
 sf::Vector2f centered_position(const sf::RenderWindow& window, const sf::Vector2f& panel_size) {
@@ -438,7 +439,12 @@ void Application::draw_control_strip() {
     const std::string status = source_estimation_.status.empty()
         ? "Estimator: idle"
         : ("Estimator: " + source_estimation_.status);
-    sf::Text status_text(font_, status, 12);
+    std::ostringstream status_line;
+    status_line << status;
+    if (source_estimation_.has_error_m) {
+        status_line << " | error=" << std::fixed << std::setprecision(1) << source_estimation_.error_m << " m";
+    }
+    sf::Text status_text(font_, status_line.str(), 12);
     status_text.setPosition({34.0f, 235.0f});
     status_text.setFillColor(sf::Color(196, 216, 232));
     window_.draw(status_text);
@@ -620,7 +626,8 @@ void Application::draw_adjoint_overlay() {
     }
 
     auto i2 = [nx](int i, int j) { return static_cast<std::size_t>(j * nx + i); };
-    const auto sample = [&](int i, int j) { return p[i2(i, j)] / pmax; };
+    constexpr float OVERLAY_GAIN = 2.25f;
+    const auto sample = [&](int i, int j) { return OVERLAY_GAIN * (p[i2(i, j)] / pmax); };
     const sf::VertexArray mesh
         = make_scalar_field_mesh(right_panel_, nx, ny, sample, [](float n) { return adjoint_color(n); });
     window_.draw(mesh);

@@ -7,7 +7,12 @@ namespace atm {
 Application::Application(const Config& config)
     : controller_(config)
     , menu_model_(controller_.current_settings())
-    , sensor_manager_(config.app.sensor_sample_period_s, config.app.sensor_noise_std, config.app.sensor_history_capacity)
+    , sensor_manager_(
+          config.app.sensor_sample_period_s,
+          config.app.sensor_noise_std,
+          config.app.sensor_history_capacity,
+          config.app.sensor_physical_sample_period_s,
+          config.app.sensor_spatial_avg_radius_m)
     , window_(sf::VideoMode({config.app.window_width, config.app.window_height}), "Atmospheric Tool - Phase 1")
     , font_("fonts/arial.ttf") {
     window_.setFramerateLimit(60);

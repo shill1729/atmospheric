@@ -148,6 +148,7 @@ SourceEstimateResult SourceEstimator::estimate(const std::vector<SensorManager::
 
     const auto sol = solver_.solve_backward(t_start, t_end, solve_cfg, wind_fn, diffusivity_fn, forcing_fn);
 
+    std::vector<float> z_by_snapshot(sol.snapshots.size(), 0.0f);
     float best_z = -std::numeric_limits<float>::infinity();
     int best_snapshot = -1;
     for (int k = 0; k < static_cast<int>(sol.snapshots.size()); ++k) {
@@ -156,6 +157,7 @@ SourceEstimateResult SourceEstimator::estimate(const std::vector<SensorManager::
         for (float v : snap) {
             z += v * cell_area;
         }
+        z_by_snapshot[static_cast<std::size_t>(k)] = z;
         if (z > best_z) {
             best_z = z;
             best_snapshot = k;
@@ -168,12 +170,67 @@ SourceEstimateResult SourceEstimator::estimate(const std::vector<SensorManager::
         return out;
     }
 
-    const auto& phi_star = sol.snapshots[static_cast<std::size_t>(best_snapshot)].phi;
     out.nx = nx;
     out.ny = ny;
-    out.p_star.assign(phi_star.size(), 0.0f);
-    for (std::size_t k = 0; k < phi_star.size(); ++k) {
-        out.p_star[k] = phi_star[k] / best_z;
+    out.p_star.assign(n, 0.0f);
+
+    // Build time-integrated posterior over space from per-snapshot normalized PDFs.
+    float total_time_weight = 0.0f;
+    for (int k = 0; k < static_cast<int>(sol.snapshots.size()); ++k) {
+        const float z = z_by_snapshot[static_cast<std::size_t>(k)];
+        if (z <= 1.0e-12f) {
+            continue;
+        }
+
+        float w = 0.0f;
+        if (sol.snapshots.size() == 1) {
+            w = 1.0f;
+        } else if (k == 0) {
+            w = 0.5f
+                * std::abs(
+                    sol.snapshots[static_cast<std::size_t>(1)].time_s
+                    - sol.snapshots[static_cast<std::size_t>(0)].time_s);
+        } else if (k == static_cast<int>(sol.snapshots.size()) - 1) {
+            w = 0.5f
+                * std::abs(
+                    sol.snapshots[static_cast<std::size_t>(k)].time_s
+                    - sol.snapshots[static_cast<std::size_t>(k - 1)].time_s);
+        } else {
+            w = 0.5f
+                * std::abs(
+                    sol.snapshots[static_cast<std::size_t>(k + 1)].time_s
+                    - sol.snapshots[static_cast<std::size_t>(k - 1)].time_s);
+        }
+        if (w <= 0.0f) {
+            continue;
+        }
+
+        const auto& phi = sol.snapshots[static_cast<std::size_t>(k)].phi;
+        for (std::size_t i = 0; i < n; ++i) {
+            out.p_star[i] += (phi[i] / z) * w;
+        }
+        total_time_weight += w;
+    }
+
+    if (total_time_weight <= 1.0e-12f) {
+        out.insufficient_signal = true;
+        out.message = "Adjoint solve completed, but no usable temporal posterior was formed.";
+        return out;
+    }
+    for (float& v : out.p_star) {
+        v /= total_time_weight;
+    }
+    float z_space = 0.0f;
+    for (float v : out.p_star) {
+        z_space += v * cell_area;
+    }
+    if (z_space <= 1.0e-12f) {
+        out.insufficient_signal = true;
+        out.message = "Adjoint solve completed, but posterior normalization failed.";
+        return out;
+    }
+    for (float& v : out.p_star) {
+        v /= z_space;
     }
 
     int best_i = 0;

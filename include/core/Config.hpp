@@ -35,7 +35,9 @@ struct AppConfig {
     unsigned int window_height = 860;
     float pde_fixed_color_scale = 1.0e-4f;
     float sensor_sample_period_s = 5.0f;
-    float sensor_noise_std = 0.0f;
+    float sensor_noise_std = 1.0e-8f;
+    float sensor_physical_sample_period_s = 1.0f;
+    float sensor_spatial_avg_radius_m = 40.0f;
     std::size_t sensor_history_capacity = 30;
     float concentration_scale_ug_per_m2 = 1.0e5f;
     float mixing_height_m = 1.0f;

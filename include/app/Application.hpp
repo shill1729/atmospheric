@@ -59,6 +59,8 @@ private:
         int ny = 0;
         std::vector<float> p_star;
         std::string status;
+        bool has_error_m = false;
+        float error_m = 0.0f;
     };
 
     SimulationController controller_;
@@ -86,6 +88,9 @@ private:
     float pde_color_scale_runtime_ = 4.0e-4f;
     int menu_index_ = 0;
     int menu_rows_ = 0;
+    bool has_last_source_click_ = false;
+    Vec2 last_source_click_ = Vec2::Zero();
+    int source_click_count_since_reset_ = 0;
     MassDisplayUnit mass_unit_ = MassDisplayUnit::MicrogramsPerSquareMeter;
 };
 

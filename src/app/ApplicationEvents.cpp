@@ -42,6 +42,8 @@ void Application::process_events() {
                 sim().reset();
                 sensor_manager_.clear();
                 clear_source_estimation();
+                has_last_source_click_ = false;
+                source_click_count_since_reset_ = 0;
             }
             if (key->code == sf::Keyboard::Key::B) {
                 sim().toggle_boundary_mode();
@@ -100,6 +102,8 @@ void Application::process_events() {
                     sensor_manager_.clear();
                     clear_source_estimation();
                     menu_open_ = false;
+                    has_last_source_click_ = false;
+                    source_click_count_since_reset_ = 0;
                 }
                 if (toolbar_click.request_source_estimate) {
                     run_source_estimation();
@@ -109,7 +113,15 @@ void Application::process_events() {
                 }
             }
             if (click->button == sf::Mouse::Button::Left && left_panel_contains(click->position)) {
-                sim().set_source(left_panel_pixel_to_domain(click->position));
+                const Vec2 source_pos = left_panel_pixel_to_domain(click->position);
+                const std::size_t before = sim().source().active_count();
+                sim().set_source(source_pos);
+                const std::size_t after = sim().source().active_count();
+                if (after > before) {
+                    last_source_click_ = source_pos;
+                    has_last_source_click_ = true;
+                    ++source_click_count_since_reset_;
+                }
             } else if (click->button == sf::Mouse::Button::Left && right_panel_contains(click->position)) {
                 sensor_manager_.add_sensor(right_panel_pixel_to_domain(click->position), sim().time_s());
             }
@@ -155,6 +167,8 @@ void Application::apply_menu_adjustment(int direction) {
         sim().reset();
         sensor_manager_.clear();
         clear_source_estimation();
+        has_last_source_click_ = false;
+        source_click_count_since_reset_ = 0;
         break;
     default:
         break;
@@ -171,6 +185,7 @@ void Application::run_source_estimation() {
     source_estimation_.status = result.message;
     if (!result.success) {
         source_estimation_.has_result = false;
+        source_estimation_.has_error_m = false;
         return;
     }
 
@@ -180,6 +195,12 @@ void Application::run_source_estimation() {
     source_estimation_.nx = result.nx;
     source_estimation_.ny = result.ny;
     source_estimation_.p_star = result.p_star;
+    source_estimation_.has_error_m = false;
+    source_estimation_.error_m = 0.0f;
+    if (has_last_source_click_ && source_click_count_since_reset_ == 1) {
+        source_estimation_.has_error_m = true;
+        source_estimation_.error_m = (source_estimation_.x_star - last_source_click_).norm();
+    }
 }
 
 void Application::clear_source_estimation() {

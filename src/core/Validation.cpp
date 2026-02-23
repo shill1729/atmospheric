@@ -82,6 +82,12 @@ std::vector<std::string> validate_config(const Config& config) {
     if (!is_finite_non_negative(config.app.sensor_noise_std)) {
         errors.emplace_back("sensor noise std must be a finite number >= 0");
     }
+    if (!is_finite_positive(config.app.sensor_physical_sample_period_s)) {
+        errors.emplace_back("sensor physical sample period must be a finite number > 0");
+    }
+    if (!is_finite_non_negative(config.app.sensor_spatial_avg_radius_m)) {
+        errors.emplace_back("sensor spatial averaging radius must be a finite number >= 0");
+    }
     if (config.app.sensor_history_capacity < 1) {
         errors.emplace_back("sensor history capacity must be >= 1");
     }

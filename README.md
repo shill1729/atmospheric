@@ -133,8 +133,8 @@ $$
   - reflecting index mirroring
   - absorbing boundary with zero exterior concentration (Dirichlet-like)
 - **Adjoint (source estimator):** 2D lateral inflow/outflow style BCs
-  - inflow (\(w\cdot n<0\)): \(\phi=0\)
-  - outflow (\(w\cdot n\ge 0\)): Robin-type \(D\partial_n\phi + (w\cdot n)\phi=0\) (discretized)
+  - inflow ($w\cdot n<0$): $\phi=0$
+  - outflow ($w\cdot n\ge 0$): Robin-type $D\partial_n\phi + (w\cdot n)\phi=0$ (discretized)
 
 ## Numerical Methods Summary
 
@@ -155,15 +155,15 @@ $$
 
 ### Adjoint solver
 
-- Solve direction: backward in physical time (\(t\in[t_0,T]\)) with terminal condition \(\phi(T)=0\)
-- Grid: separate uniform Cartesian adjoint grid (default \(96\times96\))
+- Solve direction: backward in physical time ($t\in[t_0,T]$) with terminal condition $\phi(T,x)=0$
+- Grid: separate uniform Cartesian adjoint grid (default $96\times96$)
 - Time stepping: explicit update on adjoint grid
-- Advection: first-order upwind for \(w\cdot\nabla\phi\)
+- Advection: first-order upwind for $w\cdot\nabla\phi$
 - Diffusion mode: matched to current PDE mode
   - scalarized trace mode
   - full tensor flux mode
 - Forcing: built from recorded sensor history (threshold-gated Gaussian bumps)
-- Output: posterior-like field \(p(t^*,x)\), estimated \((x^*,t^*)\), overlay heatmap
+- Output: posterior-like field $p(t^*,x)$, estimated $(x^*,t^*)$, overlay heatmap
 
 ## Dependencies
 
@@ -215,6 +215,8 @@ cmake --build build-release -j
 --source-lifespan X
 --source-sigma X
 --source-max N
+--sensor-physical-period X
+--sensor-spatial-radius X
 --sensor-history-capacity N
 --conc-scale X
 --mixing-height X
@@ -265,6 +267,9 @@ Concentration display calibration:
 - `--conc-scale` sets `conc_scale` (ug/m^2 per model unit).
 - `--mixing-height` is the assumed vertical mixing depth (meters).
 - `--sensor-history-capacity` sets max observations retained per sensor history.
+- Sensors now sample physically at `--sensor-physical-period` (default `1s`) and report period-averaged observations
+  every `sensor sample period` (default `5s`).
+- `--sensor-spatial-radius` sets disk-like local spatial averaging radius around each sensor (meters).
 
 Menu controls:
 - `Up/Down`: select option

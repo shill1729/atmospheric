@@ -20,16 +20,25 @@ public:
 
     struct Sensor {
         Vec2 position = Vec2::Zero();
-        float next_sample_time_s = 0.0f;
+        float next_physical_sample_time_s = 0.0f;
+        float next_report_time_s = 0.0f;
+        float window_sum = 0.0f;
+        int window_count = 0;
         std::vector<Observation> history;
     };
 
-    SensorManager(float sample_period_s, float noise_std, std::size_t history_capacity = 30);
+    SensorManager(
+        float sample_period_s, float noise_std, std::size_t history_capacity = 30, float physical_sample_period_s = 1.0f,
+        float spatial_average_radius_m = 0.0f);
 
     void set_sample_period(float seconds);
     float sample_period() const;
     void set_noise_std(float stddev);
     float noise_std() const;
+    void set_physical_sample_period(float seconds);
+    float physical_sample_period() const;
+    void set_spatial_average_radius(float radius_m);
+    float spatial_average_radius() const;
     void set_history_capacity(std::size_t capacity);
     std::size_t history_capacity() const;
 
@@ -45,6 +54,8 @@ private:
     std::vector<Sensor> sensors_;
     float sample_period_s_ = 5.0f;
     float noise_std_ = 0.0f;
+    float physical_sample_period_s_ = 1.0f;
+    float spatial_average_radius_m_ = 0.0f;
     std::size_t history_capacity_ = 30;
     std::mt19937 rng_;
     std::normal_distribution<float> standard_normal_;

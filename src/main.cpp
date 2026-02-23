@@ -30,6 +30,8 @@ void print_help(const char* exe) {
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
         << "  --source-sigma X          Source spatial spread (meters)\n"
         << "  --source-max N            Maximum simultaneous active sources\n"
+        << "  --sensor-physical-period X  Sensor physical sample period (seconds)\n"
+        << "  --sensor-spatial-radius X   Sensor spatial averaging radius (meters)\n"
         << "  --sensor-history-capacity N  Max observations retained per sensor\n"
         << "  --conc-scale X            ug/m^2 per model concentration unit\n"
         << "  --mixing-height X         Mixing-height assumption in meters (for ug/m^3 display)\n";
@@ -156,6 +158,14 @@ int main(int argc, char** argv) {
             }
             if (arg == "--sensor-history-capacity") {
                 config.app.sensor_history_capacity = parse_size(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--sensor-physical-period") {
+                config.app.sensor_physical_sample_period_s = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--sensor-spatial-radius") {
+                config.app.sensor_spatial_avg_radius_m = parse_float(need_value(arg), arg);
                 continue;
             }
             if (arg == "--conc-scale") {
