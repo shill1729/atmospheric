@@ -23,6 +23,7 @@ public:
         float next_physical_sample_time_s = 0.0f;
         float next_report_time_s = 0.0f;
         float window_sum = 0.0f;
+        float window_noisy_sum = 0.0f;
         int window_count = 0;
         std::vector<Observation> history;
     };

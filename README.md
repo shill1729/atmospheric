@@ -27,7 +27,7 @@ $$
 \Omega = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}] \subset \mathbb{R}^2.
 $$
 
-A synthetic source $k$ is centered at $x_k(t)$ and emits at rate $q_k(t)$, with
+A synthetic source $k$ is centered at fixed location $x_k$ and emits at rate $q_k(t)$, with
 
 $$
 q_k(t) = q_0 e^{-\gamma (t-t_k)}, \quad t_k \le t \le t_k + T_s,
@@ -38,7 +38,7 @@ and $q_k(t)=0$ after lifespan $T_s$.
 The total spatial source density is a sum of Gaussian emitters:
 
 $$
-s(t,x) = \sum_{k=1}^{K(t)} q_k(t)\,\frac{1}{2\pi\sigma^2}\exp\left(-\frac{\|x-x_k(t)\|^2}{2\sigma^2}\right),
+s(t,x) = \sum_{k=1}^{K(t)} q_k(t)\,\frac{1}{2\pi\sigma^2}\exp\left(-\frac{\|x-x_k\|^2}{2\sigma^2}\right),
 $$
 
 ### SDE viewpoint (tagged particles)
@@ -247,13 +247,17 @@ Example:
 - `C`: toggle PDE color scaling mode (auto/fixed)
 - `E`: run source estimation (requires paused state)
 - `J`: toggle adjoint overlay on the right panel
-- ECS `PDE Settings` panel (top-right): editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
-- ECS `Runtime Options` panel (top-right): editable pending settings for `time scale`, `max particles`, `deposition`,
-  `source emission`, `source lifespan`, and `PDE fixed color scale`, with explicit `Apply/Revert`
-- Top toolbar `Options`: advanced editable pending settings for `time scale`, `max particles`, `deposition`,
-  `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`, `history cap`), and source parameters
-  (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)
-- Top toolbar `File`: `Estimate Source (Paused)` action
+- Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
+- Top toolbar `File` actions:
+  - `Estimate Source (Paused)`
+  - `Apply Queued Changes`
+  - `Revert Queued Changes`
+  - `Restore Launch Defaults`
+- Parameter edits in `Source/Numerics/Sensors/Display/PDE` are queued; apply from `File`.
+- Numeric edit UX in top menus:
+  - `-` / `+` buttons for stepped adjustments
+  - click value field to type
+  - `Enter` commit, `Backspace` delete, `Esc` cancel
 - `H`: toggle Brownian/Heat special case
 - `U`: toggle HUD mass units (`g/m^2` vs `ug/m^2`)
 - `Space`: pause/resume
@@ -271,9 +275,11 @@ Concentration display calibration:
 - `--sensor-history-capacity` sets max observations retained per sensor history.
 - Sensors now sample physically at `--sensor-physical-period` (default `1s`) and report period-averaged observations
   every `sensor sample period` (default `5s`).
+- Sensor on-plot labels show each sensor's latest report value (`ug/m^3`) or `N/A` before first report.
+- Reported sensor value is the window average of noisy physical samples in that report interval.
 - `--sensor-spatial-radius` sets disk-like local spatial averaging radius around each sensor (meters).
 
-Menu controls:
+Legacy menu controls (modal preferences overlay):
 - `Up/Down`: select option
 - `Left/Right/Enter`: adjust/apply
 
@@ -304,6 +310,7 @@ include/
   ui/
     MenuModel.hpp                    # Toolbar menu state + pending edits
     TopToolbar.hpp                   # Toolbar rendering + click handling
+    UiEcs.hpp                        # Legacy ECS quick-panel scaffolding (currently disabled by default)
 
 src/
   adjoint/AdjointSolver.cpp
@@ -319,6 +326,7 @@ src/
   sim/Simulator.cpp
   ui/MenuModel.cpp
   ui/TopToolbar.cpp
+  ui/UiEcs.cpp
   main.cpp                           # CLI parsing + app bootstrap
 
 tests/
@@ -358,6 +366,7 @@ fonts/
 - Forcing uses sample-and-hold from sensor history (no interpolation/smoother yet).
 - No Kalman/filtering-based data assimilation yet.
 - No persistent preferences/config save file yet.
+- Legacy ECS quick panels remain in code as deprecated scaffolding; current default GUI uses top-toolbar dropdown menus.
 
 ## Features TBA
 

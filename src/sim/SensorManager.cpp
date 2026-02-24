@@ -68,6 +68,7 @@ void SensorManager::add_sensor(const Vec2& position, float current_time_s) {
     sensor.next_physical_sample_time_s = current_time_s + physical_sample_period_s_;
     sensor.next_report_time_s = current_time_s + sample_period_s_;
     sensor.window_sum = 0.0f;
+    sensor.window_noisy_sum = 0.0f;
     sensor.window_count = 0;
     sensors_.push_back(sensor);
 }
@@ -86,22 +87,30 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
 
             if (sensor.next_physical_sample_time_s <= sensor.next_report_time_s) {
                 const float c = sample_concentration_bilinear(pde, domain, sensor.position);
+                float noisy = c;
+                if (noise_std_ > 0.0f) {
+                    noisy += noise_std_ * standard_normal_(rng_);
+                    noisy = std::max(0.0f, noisy);
+                }
                 sensor.window_sum += c;
+                sensor.window_noisy_sum += noisy;
                 ++sensor.window_count;
                 sensor.next_physical_sample_time_s += physical_sample_period_s_;
                 continue;
             }
 
             float concentration = 0.0f;
+            float noisy = 0.0f;
             if (sensor.window_count > 0) {
                 concentration = sensor.window_sum / static_cast<float>(sensor.window_count);
+                noisy = sensor.window_noisy_sum / static_cast<float>(sensor.window_count);
             } else {
                 concentration = sample_concentration_bilinear(pde, domain, sensor.position);
-            }
-            float noisy = concentration;
-            if (noise_std_ > 0.0f) {
-                noisy += noise_std_ * standard_normal_(rng_);
-                noisy = std::max(0.0f, noisy);
+                noisy = concentration;
+                if (noise_std_ > 0.0f) {
+                    noisy += noise_std_ * standard_normal_(rng_);
+                    noisy = std::max(0.0f, noisy);
+                }
             }
 
             sensor.history.push_back(Observation{sensor.next_report_time_s, concentration, noisy});
@@ -110,6 +119,7 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
             }
 
             sensor.window_sum = 0.0f;
+            sensor.window_noisy_sum = 0.0f;
             sensor.window_count = 0;
             sensor.next_report_time_s += sample_period_s_;
         }

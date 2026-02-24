@@ -384,9 +384,10 @@ void Application::draw_hud_cards() {
            << "\nPDE max c: " << std::scientific << std::setprecision(2) << pde_max_ug_m3 << " ug/m^3";
 
     std::ostringstream source_text;
+    const float emitted_per_step = sim().last_emission_rate_per_second() * sim().config().numerics.dt;
     source_text << std::scientific << std::setprecision(2)
                 << "q_total(t): " << source.emission_rate()
-                << "\nemitted: " << sim().last_emitted_total() << " / step"
+                << "\nemitted: " << emitted_per_step << " / step"
                 << "\nsources: " << source.active_count() << " / " << source.max_sources()
                 << "\nparticles: " << particles.particles().size()
                 << "\nnewest: "
@@ -416,7 +417,7 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Options | PDE | L-click source/sensor | E estimate | F1 help",
+        "Toolbar: File | Source | Numerics | Sensors | Display | PDE | E estimate | F1 help",
         13);
     control_text.setPosition({34.0f, 230.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
@@ -493,7 +494,7 @@ void Application::draw_help_overlay() {
 
     const std::string body =
         "Primary\n"
-        "Top bar : File / Options / PDE menus\n"
+        "Top bar : File / Source / Numerics / Sensors / Display / PDE\n"
         "L-click left panel  : place source\n"
         "L-click right panel : place sensor\n"
         "E       : run source estimation (paused)\n"
@@ -559,6 +560,7 @@ void Application::draw_sensor_overlay() {
     if (sensors.empty()) {
         return;
     }
+    const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
 
     sf::CircleShape marker(3.5f);
     marker.setOrigin({3.5f, 3.5f});
@@ -573,11 +575,21 @@ void Application::draw_sensor_overlay() {
         window_.draw(marker);
 
         std::ostringstream ss;
-        ss << "S" << sensor_id;
+        ss << "S" << sensor_id << ": ";
+        if (sensor.history.empty()) {
+            ss << "N/A";
+        } else {
+            const float noisy_ug_m3 = sensor.history.back().noisy_concentration * c_factor;
+            ss << std::scientific << std::setprecision(2) << noisy_ug_m3 << " ug/m^3";
+        }
         sf::Text label(font_, ss.str(), 11);
-        const float max_x = right_panel_.position.x + right_panel_.size.x - 30.0f;
-        const float label_x = std::clamp(p.x + 7.0f, right_panel_.position.x + 2.0f, max_x);
-        const float label_y = std::max(right_panel_.position.y + 2.0f, p.y - 13.0f);
+        const sf::FloatRect bounds = label.getLocalBounds();
+        const float min_x = right_panel_.position.x + 2.0f;
+        const float max_x = right_panel_.position.x + right_panel_.size.x - bounds.size.x - 6.0f;
+        const float min_y = right_panel_.position.y + 2.0f;
+        const float max_y = right_panel_.position.y + right_panel_.size.y - bounds.size.y - 6.0f;
+        const float label_x = std::clamp(p.x + 7.0f, min_x, max_x);
+        const float label_y = std::clamp(p.y - 13.0f, min_y, max_y);
         label.setPosition({label_x, label_y});
         label.setFillColor(sf::Color(255, 250, 204, 235));
         window_.draw(label);
