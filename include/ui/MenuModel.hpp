@@ -2,6 +2,8 @@
 
 #include "core/RuntimeSettings.hpp"
 
+#include <string>
+
 namespace atm {
 
 class MenuModel {
@@ -9,8 +11,32 @@ public:
     enum class TopMenu {
         None,
         File,
-        Options,
+        Source,
+        Numerics,
+        Sensors,
+        Display,
         Pde
+    };
+
+    enum class EditableField {
+        None,
+        TimeScale,
+        MaxParticles,
+        DepositionRate,
+        ConstantScalarDiffusivity,
+        SourceBaseEmission,
+        SourceDecayRate,
+        SourceLifespan,
+        SourceSigma,
+        SourceMaxSources,
+        PdeFixedColorScale,
+        SensorSamplePeriod,
+        SensorNoiseStd,
+        SensorHistoryCapacity,
+        PdeGridNx,
+        PdeGridNy,
+        Dt,
+        PdeDiffusionMode
     };
 
     explicit MenuModel(const RuntimeSettings& initial);
@@ -44,10 +70,25 @@ public:
     void discard_changes();
     void commit_pending_as_current();
 
+    void start_edit(EditableField field, const std::string& initial_text);
+    bool editing() const;
+    EditableField active_edit_field() const;
+    const std::string& edit_buffer() const;
+    void backspace_edit_char();
+    void append_edit_char(char32_t unicode);
+    bool commit_edit();
+    void cancel_edit();
+
 private:
+    void stop_editing();
+    static float clampf(float v, float lo, float hi);
+    static int clampi(int v, int lo, int hi);
+
     RuntimeSettings current_;
     RuntimeSettings pending_;
     TopMenu active_top_menu_ = TopMenu::None;
+    EditableField active_edit_field_ = EditableField::None;
+    std::string edit_buffer_;
 };
 
 } // namespace atm

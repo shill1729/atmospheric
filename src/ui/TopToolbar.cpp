@@ -4,516 +4,492 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <utility>
 
 namespace atm {
 namespace {
-constexpr float TOP_TOOLBAR_HEIGHT = 30.0f;
-constexpr float TOP_TOOLBAR_BUTTON_W = 88.0f;
-constexpr float TOP_TOOLBAR_BUTTON_H = 24.0f;
 
-sf::FloatRect toolbar_button_rect(int index) {
-    const float x = 10.0f + static_cast<float>(index) * (TOP_TOOLBAR_BUTTON_W + 8.0f);
-    const float y = 3.0f;
-    return sf::FloatRect({x, y}, {TOP_TOOLBAR_BUTTON_W, TOP_TOOLBAR_BUTTON_H});
+constexpr float kToolbarHeight = 34.0f;
+constexpr float kTopButtonWidth = 96.0f;
+constexpr float kTopButtonHeight = 24.0f;
+constexpr float kTopButtonGap = 8.0f;
+constexpr float kTopButtonX0 = 10.0f;
+constexpr float kTopButtonY = 5.0f;
+
+constexpr float kPanelTopOffset = 8.0f;
+constexpr float kRowY0 = 42.0f;
+constexpr float kRowStep = 30.0f;
+constexpr float kMinusW = 24.0f;
+constexpr float kValueW = 118.0f;
+constexpr float kPlusW = 24.0f;
+constexpr float kControlH = 20.0f;
+constexpr float kControlYInset = 1.0f;
+constexpr float kRightInset = 12.0f;
+constexpr float kControlsGap = 6.0f;
+
+struct TopMenuEntry {
+    MenuModel::TopMenu menu;
+    const char* label;
+};
+
+constexpr std::array<TopMenuEntry, 6> kTopMenus{{
+    {MenuModel::TopMenu::File, "File"},
+    {MenuModel::TopMenu::Source, "Source"},
+    {MenuModel::TopMenu::Numerics, "Numerics"},
+    {MenuModel::TopMenu::Sensors, "Sensors"},
+    {MenuModel::TopMenu::Display, "Display"},
+    {MenuModel::TopMenu::Pde, "PDE"},
+}};
+
+sf::FloatRect top_button_rect(int index) {
+    const float x = kTopButtonX0 + static_cast<float>(index) * (kTopButtonWidth + kTopButtonGap);
+    return sf::FloatRect({x, kTopButtonY}, {kTopButtonWidth, kTopButtonHeight});
 }
 
-sf::FloatRect pde_menu_rect() {
-    return sf::FloatRect({toolbar_button_rect(2).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {300.0f, 184.0f});
-}
-
-sf::FloatRect file_menu_rect() {
-    return sf::FloatRect({toolbar_button_rect(0).position.x + 8.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {220.0f, 90.0f});
-}
-
-sf::FloatRect options_menu_rect() {
-    return sf::FloatRect({toolbar_button_rect(1).position.x + 16.0f, TOP_TOOLBAR_HEIGHT + 8.0f}, {360.0f, 440.0f});
-}
-
-bool handle_file_menu_click(const sf::Vector2i& pixel, const sf::FloatRect& panel, TopToolbarClickResult& out) {
-    const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
-    const sf::FloatRect estimate_btn({panel.position.x + 12.0f, panel.position.y + 34.0f}, {188.0f, 24.0f});
-    if (estimate_btn.contains(p)) {
-        out.request_source_estimate = true;
-        out.consumed = true;
-        return true;
-    }
-    out.consumed = true;
-    return true;
-}
-
-bool handle_pde_menu_click(
-    const sf::Vector2i& pixel, const sf::FloatRect& panel, MenuModel& menu_model, SimulationController& controller,
-    TopToolbarClickResult& out) {
-    const float x0 = panel.position.x + panel.size.x - 56.0f;
-    const float x1 = x0 - 24.0f;
-    const float y_nx = panel.position.y + 38.0f;
-    const float y_ny = panel.position.y + 66.0f;
-    const float y_dt = panel.position.y + 94.0f;
-    const float y_mode = panel.position.y + 122.0f;
-    const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
-
-    auto hit_small = [&](float x, float y) { return sf::FloatRect({x, y}, {20.0f, 18.0f}).contains(p); };
-
-    if (hit_small(x1, y_nx)) {
-        menu_model.adjust_pde_grid_nx(-2);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x0, y_nx)) {
-        menu_model.adjust_pde_grid_nx(2);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x1, y_ny)) {
-        menu_model.adjust_pde_grid_ny(-2);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x0, y_ny)) {
-        menu_model.adjust_pde_grid_ny(2);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x1, y_dt)) {
-        menu_model.adjust_dt(-0.01f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x0, y_dt)) {
-        menu_model.adjust_dt(0.01f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x1, y_mode)) {
-        menu_model.cycle_pde_diffusion_mode(-1);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x0, y_mode)) {
-        menu_model.cycle_pde_diffusion_mode(1);
-        out.consumed = true;
-        return true;
-    }
-
-    const sf::FloatRect apply({panel.position.x + 12.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
-    const sf::FloatRect cancel({panel.position.x + 108.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
-    if (apply.contains(p)) {
-        const ApplySettingsReport report = controller.apply_settings(menu_model.pending_settings());
-        out.consumed = true;
-        if (report.changed) {
-            out.settings_changed = true;
-            out.recreated_simulator = report.recreated_simulator;
-            menu_model.sync_from_current(controller.current_settings());
+int top_menu_index(MenuModel::TopMenu menu) {
+    for (int i = 0; i < static_cast<int>(kTopMenus.size()); ++i) {
+        if (kTopMenus[static_cast<std::size_t>(i)].menu == menu) {
+            return i;
         }
-        return true;
     }
-    if (cancel.contains(p)) {
-        menu_model.discard_changes();
-        out.consumed = true;
-        return true;
-    }
-
-    out.consumed = true;
-    return true;
+    return 0;
 }
 
-bool handle_options_menu_click(
-    const sf::Vector2i& pixel, const sf::FloatRect& panel, MenuModel& menu_model, SimulationController& controller,
-    TopToolbarClickResult& out) {
-    const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
-    const float x_plus = panel.position.x + panel.size.x - 36.0f;
-    const float x_minus = x_plus - 24.0f;
-    auto hit_small = [&](float x, float y) { return sf::FloatRect({x, y}, {20.0f, 18.0f}).contains(p); };
-    auto row_y = [&](int row) { return panel.position.y + 38.0f + static_cast<float>(row) * 28.0f; };
-
-    if (hit_small(x_minus, row_y(0))) {
-        menu_model.adjust_time_scale(-0.25f);
-        out.consumed = true;
-        return true;
+sf::FloatRect menu_panel_rect(MenuModel::TopMenu menu) {
+    const sf::FloatRect anchor = top_button_rect(top_menu_index(menu));
+    const float x = anchor.position.x + 2.0f;
+    const float y = kToolbarHeight + kPanelTopOffset;
+    switch (menu) {
+    case MenuModel::TopMenu::File:
+        return sf::FloatRect({x, y}, {286.0f, 176.0f});
+    case MenuModel::TopMenu::Source:
+        return sf::FloatRect({x, y}, {430.0f, 214.0f});
+    case MenuModel::TopMenu::Numerics:
+        return sf::FloatRect({x, y}, {430.0f, 184.0f});
+    case MenuModel::TopMenu::Sensors:
+        return sf::FloatRect({x, y}, {430.0f, 154.0f});
+    case MenuModel::TopMenu::Display:
+        return sf::FloatRect({x, y}, {430.0f, 94.0f});
+    case MenuModel::TopMenu::Pde:
+        return sf::FloatRect({x, y}, {430.0f, 184.0f});
+    case MenuModel::TopMenu::None:
+    default:
+        return sf::FloatRect({x, y}, {0.0f, 0.0f});
     }
-    if (hit_small(x_plus, row_y(0))) {
-        menu_model.adjust_time_scale(0.25f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(1))) {
-        menu_model.adjust_max_particles(-10);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(1))) {
-        menu_model.adjust_max_particles(10);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(2))) {
-        menu_model.adjust_deposition_rate(-0.0025f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(2))) {
-        menu_model.adjust_deposition_rate(0.0025f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(3))) {
-        menu_model.adjust_constant_scalar_diffusivity(-1.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(3))) {
-        menu_model.adjust_constant_scalar_diffusivity(1.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(4))) {
-        menu_model.adjust_source_base_emission(-0.05f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(4))) {
-        menu_model.adjust_source_base_emission(0.05f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(5))) {
-        menu_model.adjust_source_decay_rate(-0.005f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(5))) {
-        menu_model.adjust_source_decay_rate(0.005f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(6))) {
-        menu_model.adjust_source_lifespan(-1.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(6))) {
-        menu_model.adjust_source_lifespan(1.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(7))) {
-        menu_model.adjust_source_sigma(-2.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(7))) {
-        menu_model.adjust_source_sigma(2.0f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(8))) {
-        menu_model.adjust_source_max_sources(-1);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(8))) {
-        menu_model.adjust_source_max_sources(1);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(9))) {
-        menu_model.adjust_pde_fixed_color_scale(-1.0e-4f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(9))) {
-        menu_model.adjust_pde_fixed_color_scale(1.0e-4f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(10))) {
-        menu_model.adjust_sensor_sample_period_s(-0.5f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(10))) {
-        menu_model.adjust_sensor_sample_period_s(0.5f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(11))) {
-        menu_model.adjust_sensor_noise_std(-0.01f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(11))) {
-        menu_model.adjust_sensor_noise_std(0.01f);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_minus, row_y(12))) {
-        menu_model.adjust_sensor_history_capacity(-1);
-        out.consumed = true;
-        return true;
-    }
-    if (hit_small(x_plus, row_y(12))) {
-        menu_model.adjust_sensor_history_capacity(1);
-        out.consumed = true;
-        return true;
-    }
-
-    const sf::FloatRect apply({panel.position.x + 12.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
-    const sf::FloatRect cancel({panel.position.x + 108.0f, panel.position.y + panel.size.y - 34.0f}, {88.0f, 24.0f});
-    if (apply.contains(p)) {
-        const ApplySettingsReport report = controller.apply_settings(menu_model.pending_settings());
-        out.consumed = true;
-        if (report.changed) {
-            out.settings_changed = true;
-            out.recreated_simulator = report.recreated_simulator;
-            menu_model.sync_from_current(controller.current_settings());
-        }
-        return true;
-    }
-    if (cancel.contains(p)) {
-        menu_model.discard_changes();
-        out.consumed = true;
-        return true;
-    }
-    out.consumed = true;
-    return true;
 }
+
+sf::FloatRect file_action_rect(const sf::FloatRect& panel, int index) {
+    const float x = panel.position.x + 12.0f;
+    const float y = panel.position.y + 36.0f + static_cast<float>(index) * 32.0f;
+    return sf::FloatRect({x, y}, {panel.size.x - 24.0f, 24.0f});
+}
+
+float row_y(const sf::FloatRect& panel, int row) {
+    return panel.position.y + kRowY0 + static_cast<float>(row) * kRowStep;
+}
+
+sf::FloatRect minus_rect(const sf::FloatRect& panel, int row) {
+    const float y = row_y(panel, row) + kControlYInset;
+    const float x = panel.position.x + panel.size.x - kRightInset - kPlusW - kControlsGap - kValueW - kControlsGap - kMinusW;
+    return sf::FloatRect({x, y}, {kMinusW, kControlH});
+}
+
+sf::FloatRect value_rect(const sf::FloatRect& panel, int row) {
+    const float y = row_y(panel, row) + kControlYInset;
+    const float x = panel.position.x + panel.size.x - kRightInset - kPlusW - kControlsGap - kValueW;
+    return sf::FloatRect({x, y}, {kValueW, kControlH});
+}
+
+sf::FloatRect plus_rect(const sf::FloatRect& panel, int row) {
+    const float y = row_y(panel, row) + kControlYInset;
+    const float x = panel.position.x + panel.size.x - kRightInset - kPlusW;
+    return sf::FloatRect({x, y}, {kPlusW, kControlH});
+}
+
+std::string format_fixed(float v, int precision) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(precision) << v;
+    return ss.str();
+}
+
+std::string diffusion_mode_label(AdvectionDiffusionSolver::DiffusionMode mode) {
+    return mode == AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace ? "Scalarized (1)" : "Full Tensor (0)";
+}
+
+std::string editable_field_string(const RuntimeSettings& pending, MenuModel::EditableField field) {
+    switch (field) {
+    case MenuModel::EditableField::TimeScale:
+        return format_fixed(pending.time_scale, 2);
+    case MenuModel::EditableField::MaxParticles:
+        return std::to_string(pending.max_particles);
+    case MenuModel::EditableField::DepositionRate:
+        return format_fixed(pending.deposition_rate, 4);
+    case MenuModel::EditableField::ConstantScalarDiffusivity:
+        return format_fixed(pending.constant_scalar_diffusivity, 3);
+    case MenuModel::EditableField::SourceBaseEmission:
+        return format_fixed(pending.source_base_emission, 3);
+    case MenuModel::EditableField::SourceDecayRate:
+        return format_fixed(pending.source_decay_rate, 4);
+    case MenuModel::EditableField::SourceLifespan:
+        return format_fixed(pending.source_lifespan, 1);
+    case MenuModel::EditableField::SourceSigma:
+        return format_fixed(pending.source_sigma, 1);
+    case MenuModel::EditableField::SourceMaxSources:
+        return std::to_string(pending.source_max_sources);
+    case MenuModel::EditableField::PdeFixedColorScale:
+        return format_fixed(pending.pde_fixed_color_scale, 4);
+    case MenuModel::EditableField::SensorSamplePeriod:
+        return format_fixed(pending.sensor_sample_period_s, 2);
+    case MenuModel::EditableField::SensorNoiseStd:
+        return format_fixed(pending.sensor_noise_std, 3);
+    case MenuModel::EditableField::SensorHistoryCapacity:
+        return std::to_string(pending.sensor_history_capacity);
+    case MenuModel::EditableField::PdeGridNx:
+        return std::to_string(pending.pde_grid_nx);
+    case MenuModel::EditableField::PdeGridNy:
+        return std::to_string(pending.pde_grid_ny);
+    case MenuModel::EditableField::Dt:
+        return format_fixed(pending.dt, 3);
+    case MenuModel::EditableField::PdeDiffusionMode:
+        return std::to_string(static_cast<int>(pending.pde_diffusion_mode));
+    case MenuModel::EditableField::None:
+    default:
+        return std::string();
+    }
+}
+
+std::string display_field_string(const RuntimeSettings& pending, MenuModel::EditableField field) {
+    if (field == MenuModel::EditableField::PdeDiffusionMode) {
+        return diffusion_mode_label(pending.pde_diffusion_mode);
+    }
+    return editable_field_string(pending, field);
+}
+
+void draw_panel_frame(sf::RenderWindow& window, const sf::Font& font, const sf::FloatRect& panel, const char* title) {
+    sf::RectangleShape bg({panel.size.x, panel.size.y});
+    bg.setPosition({panel.position.x, panel.position.y});
+    bg.setFillColor(sf::Color(18, 28, 42, 244));
+    bg.setOutlineThickness(1.0f);
+    bg.setOutlineColor(sf::Color(98, 132, 168, 230));
+    window.draw(bg);
+
+    sf::Text title_text(font, title, 15);
+    title_text.setPosition({panel.position.x + 10.0f, panel.position.y + 8.0f});
+    title_text.setFillColor(sf::Color(224, 236, 248));
+    window.draw(title_text);
+}
+
+void draw_small_button(
+    sf::RenderWindow& window, const sf::Font& font, const sf::FloatRect& rect, const std::string& label, bool active_color) {
+    sf::RectangleShape b({rect.size.x, rect.size.y});
+    b.setPosition({rect.position.x, rect.position.y});
+    b.setFillColor(active_color ? sf::Color(53, 79, 106, 240) : sf::Color(46, 62, 80, 224));
+    b.setOutlineThickness(1.0f);
+    b.setOutlineColor(sf::Color(112, 148, 184, 235));
+    window.draw(b);
+
+    sf::Text t(font, label, 13);
+    t.setPosition({rect.position.x + 8.0f, rect.position.y - 1.0f});
+    t.setFillColor(sf::Color(230, 241, 252));
+    window.draw(t);
+}
+
+void draw_action_button(
+    sf::RenderWindow& window, const sf::Font& font, const sf::FloatRect& rect, const char* text, bool emphasized) {
+    sf::RectangleShape b({rect.size.x, rect.size.y});
+    b.setPosition({rect.position.x, rect.position.y});
+    b.setFillColor(emphasized ? sf::Color(52, 116, 78, 245) : sf::Color(52, 76, 102, 240));
+    b.setOutlineThickness(1.0f);
+    b.setOutlineColor(emphasized ? sf::Color(108, 170, 126, 235) : sf::Color(112, 148, 184, 235));
+    window.draw(b);
+
+    sf::Text label(font, text, 13);
+    label.setPosition({rect.position.x + 10.0f, rect.position.y + 3.0f});
+    label.setFillColor(sf::Color(230, 241, 252));
+    window.draw(label);
+}
+
+void draw_setting_row(
+    sf::RenderWindow& window, const sf::Font& font, const sf::FloatRect& panel, int row, const char* label,
+    const std::string& value, const std::string& minus_text, const std::string& plus_text, bool editing) {
+    const float y = row_y(panel, row);
+    sf::Text l(font, label, 14);
+    l.setPosition({panel.position.x + 14.0f, y});
+    l.setFillColor(sf::Color(196, 214, 232));
+    window.draw(l);
+
+    const sf::FloatRect v_rect = value_rect(panel, row);
+    sf::RectangleShape value_bg({v_rect.size.x, v_rect.size.y});
+    value_bg.setPosition({v_rect.position.x, v_rect.position.y});
+    value_bg.setFillColor(editing ? sf::Color(38, 70, 102, 245) : sf::Color(34, 52, 74, 230));
+    value_bg.setOutlineThickness(1.0f);
+    value_bg.setOutlineColor(editing ? sf::Color(144, 188, 230, 240) : sf::Color(104, 140, 176, 228));
+    window.draw(value_bg);
+
+    sf::Text v(font, value, 13);
+    v.setPosition({v_rect.position.x + 8.0f, v_rect.position.y + 1.0f});
+    v.setFillColor(sf::Color(232, 243, 255));
+    window.draw(v);
+
+    draw_small_button(window, font, minus_rect(panel, row), minus_text, false);
+    draw_small_button(window, font, plus_rect(panel, row), plus_text, false);
+}
+
+void adjust_field(MenuModel& menu_model, MenuModel::EditableField field, int direction) {
+    switch (field) {
+    case MenuModel::EditableField::TimeScale:
+        menu_model.adjust_time_scale(direction * 0.25f);
+        break;
+    case MenuModel::EditableField::MaxParticles:
+        menu_model.adjust_max_particles(direction * 1000);
+        break;
+    case MenuModel::EditableField::DepositionRate:
+        menu_model.adjust_deposition_rate(direction * 0.0025f);
+        break;
+    case MenuModel::EditableField::ConstantScalarDiffusivity:
+        menu_model.adjust_constant_scalar_diffusivity(direction * 1.0f);
+        break;
+    case MenuModel::EditableField::SourceBaseEmission:
+        menu_model.adjust_source_base_emission(direction * 0.05f);
+        break;
+    case MenuModel::EditableField::SourceDecayRate:
+        menu_model.adjust_source_decay_rate(direction * 0.005f);
+        break;
+    case MenuModel::EditableField::SourceLifespan:
+        menu_model.adjust_source_lifespan(direction * 1.0f);
+        break;
+    case MenuModel::EditableField::SourceSigma:
+        menu_model.adjust_source_sigma(direction * 2.0f);
+        break;
+    case MenuModel::EditableField::SourceMaxSources:
+        menu_model.adjust_source_max_sources(direction);
+        break;
+    case MenuModel::EditableField::PdeFixedColorScale:
+        menu_model.adjust_pde_fixed_color_scale(direction * 1.0e-4f);
+        break;
+    case MenuModel::EditableField::SensorSamplePeriod:
+        menu_model.adjust_sensor_sample_period_s(direction * 0.5f);
+        break;
+    case MenuModel::EditableField::SensorNoiseStd:
+        menu_model.adjust_sensor_noise_std(direction * 0.01f);
+        break;
+    case MenuModel::EditableField::SensorHistoryCapacity:
+        menu_model.adjust_sensor_history_capacity(direction * 10);
+        break;
+    case MenuModel::EditableField::PdeGridNx:
+        menu_model.adjust_pde_grid_nx(direction * 2);
+        break;
+    case MenuModel::EditableField::PdeGridNy:
+        menu_model.adjust_pde_grid_ny(direction * 2);
+        break;
+    case MenuModel::EditableField::Dt:
+        menu_model.adjust_dt(direction * 0.01f);
+        break;
+    case MenuModel::EditableField::PdeDiffusionMode:
+        menu_model.cycle_pde_diffusion_mode(direction >= 0 ? 1 : -1);
+        break;
+    case MenuModel::EditableField::None:
+    default:
+        break;
+    }
+}
+
+bool handle_setting_row_click(
+    const sf::Vector2f& p, const sf::FloatRect& panel, int row, MenuModel::EditableField field, MenuModel& menu_model) {
+    if (minus_rect(panel, row).contains(p)) {
+        adjust_field(menu_model, field, -1);
+        return true;
+    }
+    if (plus_rect(panel, row).contains(p)) {
+        adjust_field(menu_model, field, 1);
+        return true;
+    }
+    if (value_rect(panel, row).contains(p) && field != MenuModel::EditableField::None) {
+        const RuntimeSettings& pending = menu_model.pending_settings();
+        menu_model.start_edit(field, editable_field_string(pending, field));
+        return true;
+    }
+    return false;
+}
+
 } // namespace
 
 void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const {
-    sf::RectangleShape bar({static_cast<float>(window.getSize().x), TOP_TOOLBAR_HEIGHT});
+    sf::RectangleShape bar({static_cast<float>(window.getSize().x), kToolbarHeight});
     bar.setPosition({0.0f, 0.0f});
-    bar.setFillColor(sf::Color(16, 22, 31, 240));
+    bar.setFillColor(sf::Color(14, 20, 30, 244));
     bar.setOutlineThickness(1.0f);
-    bar.setOutlineColor(sf::Color(72, 102, 132, 220));
+    bar.setOutlineColor(sf::Color(78, 106, 136, 225));
     window.draw(bar);
 
-    const std::array<std::pair<MenuModel::TopMenu, const char*>, 2> items{{
-        {MenuModel::TopMenu::File, "File"},
-        {MenuModel::TopMenu::Options, "Options"},
-    }};
-
-    for (int i = 0; i < static_cast<int>(items.size()); ++i) {
-        const sf::FloatRect r = toolbar_button_rect(i);
+    for (int i = 0; i < static_cast<int>(kTopMenus.size()); ++i) {
+        const sf::FloatRect r = top_button_rect(i);
+        const bool active = (menu_model.active_top_menu() == kTopMenus[static_cast<std::size_t>(i)].menu);
         sf::RectangleShape button({r.size.x, r.size.y});
         button.setPosition({r.position.x, r.position.y});
-        const bool active = menu_model.active_top_menu() == items[i].first;
         button.setFillColor(active ? sf::Color(58, 90, 124, 240) : sf::Color(28, 38, 52, 220));
         button.setOutlineThickness(1.0f);
         button.setOutlineColor(sf::Color(98, 132, 166, 220));
         window.draw(button);
 
-        sf::Text text(font, items[i].second, 14);
+        sf::Text text(font, kTopMenus[static_cast<std::size_t>(i)].label, 14);
         text.setPosition({r.position.x + 10.0f, r.position.y + 3.0f});
         text.setFillColor(sf::Color(218, 232, 245));
         window.draw(text);
     }
+
+    if (menu_model.dirty()) {
+        sf::Text dirty(font, "Queued changes pending", 13);
+        dirty.setPosition({kTopButtonX0 + 6.0f * (kTopButtonWidth + kTopButtonGap) + 16.0f, 9.0f});
+        dirty.setFillColor(sf::Color(255, 214, 140));
+        window.draw(dirty);
+    }
 }
 
 void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const {
-    if (menu_model.active_top_menu() == MenuModel::TopMenu::File) {
-        const sf::FloatRect panel = file_menu_rect();
-        sf::RectangleShape bg({panel.size.x, panel.size.y});
-        bg.setPosition({panel.position.x, panel.position.y});
-        bg.setFillColor(sf::Color(20, 30, 44, 244));
-        bg.setOutlineThickness(1.0f);
-        bg.setOutlineColor(sf::Color(96, 134, 170, 230));
-        window.draw(bg);
-
-        sf::Text title(font, "File", 15);
-        title.setPosition({panel.position.x + 10.0f, panel.position.y + 8.0f});
-        title.setFillColor(sf::Color(220, 236, 250));
-        window.draw(title);
-
-        sf::RectangleShape btn({188.0f, 24.0f});
-        btn.setPosition({panel.position.x + 12.0f, panel.position.y + 34.0f});
-        btn.setFillColor(sf::Color(52, 76, 102, 240));
-        btn.setOutlineThickness(1.0f);
-        btn.setOutlineColor(sf::Color(112, 148, 184, 235));
-        window.draw(btn);
-
-        sf::Text btn_text(font, "Estimate Source (Paused)", 13);
-        btn_text.setPosition({panel.position.x + 20.0f, panel.position.y + 37.0f});
-        btn_text.setFillColor(sf::Color(228, 241, 252));
-        window.draw(btn_text);
+    const MenuModel::TopMenu top_menu = menu_model.active_top_menu();
+    if (top_menu == MenuModel::TopMenu::None) {
         return;
     }
 
-    if (menu_model.active_top_menu() == MenuModel::TopMenu::Options) {
-        const sf::FloatRect panel = options_menu_rect();
-        sf::RectangleShape bg({panel.size.x, panel.size.y});
-        bg.setPosition({panel.position.x, panel.position.y});
-        bg.setFillColor(sf::Color(20, 30, 44, 244));
-        bg.setOutlineThickness(1.0f);
-        bg.setOutlineColor(sf::Color(96, 134, 170, 230));
-        window.draw(bg);
-
-        const RuntimeSettings& pending = menu_model.pending_settings();
-        sf::Text title(font, "Options", 15);
-        title.setPosition({panel.position.x + 10.0f, panel.position.y + 8.0f});
-        title.setFillColor(sf::Color(220, 236, 250));
-        window.draw(title);
-
-        auto draw_row = [&](int row, const std::string& label, const std::string& value) {
-            const float y = panel.position.y + 38.0f + static_cast<float>(row) * 28.0f;
-            sf::Text l(font, label, 14);
-            l.setPosition({panel.position.x + 12.0f, y});
-            l.setFillColor(sf::Color(196, 214, 232));
-            window.draw(l);
-            sf::Text v(font, value, 14);
-            v.setPosition({panel.position.x + 212.0f, y});
-            v.setFillColor(sf::Color(233, 244, 255));
-            window.draw(v);
-        };
-        auto draw_float = [&](float value, int precision = 3) {
-            std::ostringstream ss;
-            ss << std::fixed << std::setprecision(precision) << value;
-            return ss.str();
-        };
-
-        draw_row(0, "Time Scale", draw_float(pending.time_scale, 2));
-        draw_row(1, "Max Particles", std::to_string(pending.max_particles));
-        draw_row(2, "Deposition", draw_float(pending.deposition_rate, 4));
-        draw_row(3, "Const kappa", draw_float(pending.constant_scalar_diffusivity, 2));
-        draw_row(4, "Source Emission", draw_float(pending.source_base_emission, 3));
-        draw_row(5, "Source Decay", draw_float(pending.source_decay_rate, 4));
-        draw_row(6, "Source Lifespan", draw_float(pending.source_lifespan, 1));
-        draw_row(7, "Source Sigma", draw_float(pending.source_sigma, 1));
-        draw_row(8, "Source Max", std::to_string(pending.source_max_sources));
-        draw_row(9, "PDE Fixed Scale", draw_float(pending.pde_fixed_color_scale, 4));
-        draw_row(10, "Sensor Period (s)", draw_float(pending.sensor_sample_period_s, 2));
-        draw_row(11, "Sensor Noise", draw_float(pending.sensor_noise_std, 3));
-        draw_row(12, "Sensor Hist Cap", std::to_string(pending.sensor_history_capacity));
-
-        auto draw_small_button = [&](float x, float y, const char* label) {
-            sf::RectangleShape b({20.0f, 18.0f});
-            b.setPosition({x, y});
-            b.setFillColor(sf::Color(52, 76, 102, 240));
-            b.setOutlineThickness(1.0f);
-            b.setOutlineColor(sf::Color(112, 148, 184, 235));
-            window.draw(b);
-            sf::Text t(font, label, 13);
-            t.setPosition({x + 6.0f, y - 1.0f});
-            t.setFillColor(sf::Color(228, 241, 252));
-            window.draw(t);
-        };
-        const float x_plus = panel.position.x + panel.size.x - 36.0f;
-        const float x_minus = x_plus - 24.0f;
-        for (int row = 0; row < 13; ++row) {
-            const float y = panel.position.y + 38.0f + static_cast<float>(row) * 28.0f;
-            draw_small_button(x_minus, y, "-");
-            draw_small_button(x_plus, y, "+");
-        }
-
-        sf::RectangleShape apply({88.0f, 24.0f});
-        apply.setPosition({panel.position.x + 12.0f, panel.position.y + panel.size.y - 34.0f});
-        apply.setFillColor(menu_model.dirty() ? sf::Color(48, 120, 76, 245) : sf::Color(50, 70, 58, 220));
-        apply.setOutlineThickness(1.0f);
-        apply.setOutlineColor(sf::Color(108, 170, 126, 230));
-        window.draw(apply);
-        sf::Text apply_text(font, "Apply", 14);
-        apply_text.setPosition({panel.position.x + 37.0f, panel.position.y + panel.size.y - 31.0f});
-        apply_text.setFillColor(sf::Color(234, 249, 238));
-        window.draw(apply_text);
-
-        sf::RectangleShape cancel({88.0f, 24.0f});
-        cancel.setPosition({panel.position.x + 108.0f, panel.position.y + panel.size.y - 34.0f});
-        cancel.setFillColor(sf::Color(68, 80, 92, 235));
-        cancel.setOutlineThickness(1.0f);
-        cancel.setOutlineColor(sf::Color(118, 136, 154, 230));
-        window.draw(cancel);
-        sf::Text cancel_text(font, "Revert", 14);
-        cancel_text.setPosition({panel.position.x + 129.0f, panel.position.y + panel.size.y - 31.0f});
-        cancel_text.setFillColor(sf::Color(226, 232, 238));
-        window.draw(cancel_text);
-        return;
-    }
-
-    if (menu_model.active_top_menu() != MenuModel::TopMenu::Pde) {
-        return;
-    }
-
-    const sf::FloatRect panel = pde_menu_rect();
-    sf::RectangleShape bg({panel.size.x, panel.size.y});
-    bg.setPosition({panel.position.x, panel.position.y});
-    bg.setFillColor(sf::Color(20, 30, 44, 244));
-    bg.setOutlineThickness(1.0f);
-    bg.setOutlineColor(sf::Color(96, 134, 170, 230));
-    window.draw(bg);
-
+    const sf::FloatRect panel = menu_panel_rect(top_menu);
     const RuntimeSettings& pending = menu_model.pending_settings();
-    sf::Text title(font, "PDE Settings", 15);
-    title.setPosition({panel.position.x + 10.0f, panel.position.y + 8.0f});
-    title.setFillColor(sf::Color(220, 236, 250));
-    window.draw(title);
+    const bool editing = menu_model.editing();
+    const MenuModel::EditableField active_field = menu_model.active_edit_field();
 
-    auto draw_row = [&](float y, const std::string& label, const std::string& value) {
-        sf::Text l(font, label, 14);
-        l.setPosition({panel.position.x + 12.0f, y});
-        l.setFillColor(sf::Color(196, 214, 232));
-        window.draw(l);
-        sf::Text v(font, value, 14);
-        v.setPosition({panel.position.x + 168.0f, y});
-        v.setFillColor(sf::Color(233, 244, 255));
-        window.draw(v);
-    };
+    if (top_menu == MenuModel::TopMenu::File) {
+        draw_panel_frame(window, font, panel, "File");
 
-    draw_row(panel.position.y + 38.0f, "Grid Nx", std::to_string(pending.pde_grid_nx));
-    draw_row(panel.position.y + 66.0f, "Grid Ny", std::to_string(pending.pde_grid_ny));
-    {
-        std::ostringstream dt;
-        dt << std::fixed << std::setprecision(3) << pending.dt;
-        draw_row(panel.position.y + 94.0f, "dt", dt.str());
+        draw_action_button(window, font, file_action_rect(panel, 0), "Estimate Source (Paused)", false);
+        draw_action_button(window, font, file_action_rect(panel, 1), "Apply Queued Changes", menu_model.dirty());
+        draw_action_button(window, font, file_action_rect(panel, 2), "Revert Queued Changes", menu_model.dirty());
+        draw_action_button(window, font, file_action_rect(panel, 3), "Restore Launch Defaults", false);
+        return;
     }
-    draw_row(
-        panel.position.y + 122.0f,
-        "Diffusion",
-        pending.pde_diffusion_mode == AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace ? "Scalarized"
-                                                                                                : "Full Tensor");
 
-    auto draw_small_button = [&](float x, float y, const char* label) {
-        sf::RectangleShape b({20.0f, 18.0f});
-        b.setPosition({x, y});
-        b.setFillColor(sf::Color(52, 76, 102, 240));
-        b.setOutlineThickness(1.0f);
-        b.setOutlineColor(sf::Color(112, 148, 184, 235));
-        window.draw(b);
-        sf::Text t(font, label, 13);
-        t.setPosition({x + 6.0f, y - 1.0f});
-        t.setFillColor(sf::Color(228, 241, 252));
-        window.draw(t);
-    };
-    const float btn_x = panel.position.x + panel.size.x - 56.0f;
-    draw_small_button(btn_x, panel.position.y + 38.0f, "+");
-    draw_small_button(btn_x - 24.0f, panel.position.y + 38.0f, "-");
-    draw_small_button(btn_x, panel.position.y + 66.0f, "+");
-    draw_small_button(btn_x - 24.0f, panel.position.y + 66.0f, "-");
-    draw_small_button(btn_x, panel.position.y + 94.0f, "+");
-    draw_small_button(btn_x - 24.0f, panel.position.y + 94.0f, "-");
-    draw_small_button(btn_x, panel.position.y + 122.0f, ">");
-    draw_small_button(btn_x - 24.0f, panel.position.y + 122.0f, "<");
+    if (top_menu == MenuModel::TopMenu::Source) {
+        draw_panel_frame(window, font, panel, "Source");
+        draw_setting_row(
+            window, font, panel, 0, "Base Emission", editing && active_field == MenuModel::EditableField::SourceBaseEmission
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SourceBaseEmission),
+            "-", "+", editing && active_field == MenuModel::EditableField::SourceBaseEmission);
+        draw_setting_row(
+            window, font, panel, 1, "Decay Rate", editing && active_field == MenuModel::EditableField::SourceDecayRate
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SourceDecayRate),
+            "-", "+", editing && active_field == MenuModel::EditableField::SourceDecayRate);
+        draw_setting_row(
+            window, font, panel, 2, "Lifespan (s)", editing && active_field == MenuModel::EditableField::SourceLifespan
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SourceLifespan),
+            "-", "+", editing && active_field == MenuModel::EditableField::SourceLifespan);
+        draw_setting_row(
+            window, font, panel, 3, "Sigma", editing && active_field == MenuModel::EditableField::SourceSigma
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SourceSigma),
+            "-", "+", editing && active_field == MenuModel::EditableField::SourceSigma);
+        draw_setting_row(
+            window, font, panel, 4, "Max Sources", editing && active_field == MenuModel::EditableField::SourceMaxSources
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SourceMaxSources),
+            "-", "+", editing && active_field == MenuModel::EditableField::SourceMaxSources);
+        return;
+    }
 
-    sf::RectangleShape apply({88.0f, 24.0f});
-    apply.setPosition({panel.position.x + 12.0f, panel.position.y + panel.size.y - 34.0f});
-    apply.setFillColor(menu_model.dirty() ? sf::Color(48, 120, 76, 245) : sf::Color(50, 70, 58, 220));
-    apply.setOutlineThickness(1.0f);
-    apply.setOutlineColor(sf::Color(108, 170, 126, 230));
-    window.draw(apply);
-    sf::Text apply_text(font, "Apply", 14);
-    apply_text.setPosition({panel.position.x + 37.0f, panel.position.y + panel.size.y - 31.0f});
-    apply_text.setFillColor(sf::Color(234, 249, 238));
-    window.draw(apply_text);
+    if (top_menu == MenuModel::TopMenu::Numerics) {
+        draw_panel_frame(window, font, panel, "Numerics");
+        draw_setting_row(
+            window, font, panel, 0, "Time Scale", editing && active_field == MenuModel::EditableField::TimeScale
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::TimeScale),
+            "-", "+", editing && active_field == MenuModel::EditableField::TimeScale);
+        draw_setting_row(
+            window, font, panel, 1, "Max Particles", editing && active_field == MenuModel::EditableField::MaxParticles
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::MaxParticles),
+            "-", "+", editing && active_field == MenuModel::EditableField::MaxParticles);
+        draw_setting_row(
+            window, font, panel, 2, "Deposition", editing && active_field == MenuModel::EditableField::DepositionRate
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::DepositionRate),
+            "-", "+", editing && active_field == MenuModel::EditableField::DepositionRate);
+        draw_setting_row(
+            window, font, panel, 3, "Const Diffusivity",
+            editing && active_field == MenuModel::EditableField::ConstantScalarDiffusivity ? menu_model.edit_buffer() + "_"
+                                                                                             : display_field_string(
+                                                                                                   pending,
+                                                                                                   MenuModel::EditableField::
+                                                                                                       ConstantScalarDiffusivity),
+            "-", "+", editing && active_field == MenuModel::EditableField::ConstantScalarDiffusivity);
+        return;
+    }
 
-    sf::RectangleShape cancel({88.0f, 24.0f});
-    cancel.setPosition({panel.position.x + 108.0f, panel.position.y + panel.size.y - 34.0f});
-    cancel.setFillColor(sf::Color(68, 80, 92, 235));
-    cancel.setOutlineThickness(1.0f);
-    cancel.setOutlineColor(sf::Color(118, 136, 154, 230));
-    window.draw(cancel);
-    sf::Text cancel_text(font, "Revert", 14);
-    cancel_text.setPosition({panel.position.x + 129.0f, panel.position.y + panel.size.y - 31.0f});
-    cancel_text.setFillColor(sf::Color(226, 232, 238));
-    window.draw(cancel_text);
+    if (top_menu == MenuModel::TopMenu::Sensors) {
+        draw_panel_frame(window, font, panel, "Sensors");
+        draw_setting_row(
+            window, font, panel, 0, "Sample Period (s)",
+            editing && active_field == MenuModel::EditableField::SensorSamplePeriod ? menu_model.edit_buffer() + "_"
+                                                                                      : display_field_string(
+                                                                                            pending,
+                                                                                            MenuModel::EditableField::
+                                                                                                SensorSamplePeriod),
+            "-", "+", editing && active_field == MenuModel::EditableField::SensorSamplePeriod);
+        draw_setting_row(
+            window, font, panel, 1, "Noise Std", editing && active_field == MenuModel::EditableField::SensorNoiseStd
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::SensorNoiseStd),
+            "-", "+", editing && active_field == MenuModel::EditableField::SensorNoiseStd);
+        draw_setting_row(
+            window, font, panel, 2, "History Capacity",
+            editing && active_field == MenuModel::EditableField::SensorHistoryCapacity ? menu_model.edit_buffer() + "_"
+                                                                                         : display_field_string(
+                                                                                               pending,
+                                                                                               MenuModel::EditableField::
+                                                                                                   SensorHistoryCapacity),
+            "-", "+", editing && active_field == MenuModel::EditableField::SensorHistoryCapacity);
+        return;
+    }
+
+    if (top_menu == MenuModel::TopMenu::Display) {
+        draw_panel_frame(window, font, panel, "Display");
+        draw_setting_row(
+            window, font, panel, 0, "PDE Fixed Color Scale",
+            editing && active_field == MenuModel::EditableField::PdeFixedColorScale ? menu_model.edit_buffer() + "_"
+                                                                                      : display_field_string(
+                                                                                            pending,
+                                                                                            MenuModel::EditableField::
+                                                                                                PdeFixedColorScale),
+            "-", "+", editing && active_field == MenuModel::EditableField::PdeFixedColorScale);
+        return;
+    }
+
+    if (top_menu == MenuModel::TopMenu::Pde) {
+        draw_panel_frame(window, font, panel, "PDE");
+        draw_setting_row(
+            window, font, panel, 0, "Grid Nx", editing && active_field == MenuModel::EditableField::PdeGridNx
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::PdeGridNx),
+            "-", "+", editing && active_field == MenuModel::EditableField::PdeGridNx);
+        draw_setting_row(
+            window, font, panel, 1, "Grid Ny", editing && active_field == MenuModel::EditableField::PdeGridNy
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::PdeGridNy),
+            "-", "+", editing && active_field == MenuModel::EditableField::PdeGridNy);
+        draw_setting_row(
+            window, font, panel, 2, "dt", editing && active_field == MenuModel::EditableField::Dt
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::Dt),
+            "-", "+", editing && active_field == MenuModel::EditableField::Dt);
+        draw_setting_row(
+            window, font, panel, 3, "Diffusion Mode",
+            editing && active_field == MenuModel::EditableField::PdeDiffusionMode ? menu_model.edit_buffer() + "_"
+                                                                                    : display_field_string(
+                                                                                          pending,
+                                                                                          MenuModel::EditableField::
+                                                                                              PdeDiffusionMode),
+            "<", ">", editing && active_field == MenuModel::EditableField::PdeDiffusionMode);
+        return;
+    }
 }
 
 TopToolbarClickResult TopToolbar::handle_click(
@@ -521,45 +497,144 @@ TopToolbarClickResult TopToolbar::handle_click(
     TopToolbarClickResult out;
     const sf::Vector2f p(static_cast<float>(pixel.x), static_cast<float>(pixel.y));
     const bool had_open_menu = menu_model.active_top_menu() != MenuModel::TopMenu::None;
-    for (int i = 0; i < 2; ++i) {
-        if (toolbar_button_rect(i).contains(p)) {
-            if (i == 0) {
-                menu_model.toggle_top_menu(MenuModel::TopMenu::File);
-            } else if (i == 1) {
-                menu_model.toggle_top_menu(MenuModel::TopMenu::Options);
-            }
-            if (menu_model.active_top_menu() == MenuModel::TopMenu::Options
-                || menu_model.active_top_menu() == MenuModel::TopMenu::Pde) {
-                menu_model.sync_from_current(controller.current_settings());
-            }
+
+    for (int i = 0; i < static_cast<int>(kTopMenus.size()); ++i) {
+        if (!top_button_rect(i).contains(p)) {
+            continue;
+        }
+
+        if (menu_model.active_top_menu() == MenuModel::TopMenu::None && !menu_model.dirty()) {
+            menu_model.sync_from_current(controller.current_settings());
+        }
+
+        menu_model.toggle_top_menu(kTopMenus[static_cast<std::size_t>(i)].menu);
+        out.consumed = true;
+        return out;
+    }
+
+    const MenuModel::TopMenu active_menu = menu_model.active_top_menu();
+    if (active_menu == MenuModel::TopMenu::None) {
+        if (p.y <= kToolbarHeight) {
+            out.consumed = true;
+        }
+        return out;
+    }
+
+    const sf::FloatRect panel = menu_panel_rect(active_menu);
+    if (!panel.contains(p)) {
+        menu_model.close_all();
+        out.consumed = true;
+        return out;
+    }
+
+    if (active_menu == MenuModel::TopMenu::File) {
+        if (file_action_rect(panel, 0).contains(p)) {
+            out.request_source_estimate = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        if (file_action_rect(panel, 1).contains(p)) {
+            out.request_apply_queued_settings = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        if (file_action_rect(panel, 2).contains(p)) {
+            out.request_revert_queued_settings = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        if (file_action_rect(panel, 3).contains(p)) {
+            out.request_restore_defaults = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        out.consumed = true;
+        return out;
+    }
+
+    if (active_menu == MenuModel::TopMenu::Source) {
+        if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::SourceBaseEmission, menu_model)
+            || handle_setting_row_click(p, panel, 1, MenuModel::EditableField::SourceDecayRate, menu_model)
+            || handle_setting_row_click(p, panel, 2, MenuModel::EditableField::SourceLifespan, menu_model)
+            || handle_setting_row_click(p, panel, 3, MenuModel::EditableField::SourceSigma, menu_model)
+            || handle_setting_row_click(p, panel, 4, MenuModel::EditableField::SourceMaxSources, menu_model)) {
+            out.consumed = true;
+            return out;
+        }
+    } else if (active_menu == MenuModel::TopMenu::Numerics) {
+        if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::TimeScale, menu_model)
+            || handle_setting_row_click(p, panel, 1, MenuModel::EditableField::MaxParticles, menu_model)
+            || handle_setting_row_click(p, panel, 2, MenuModel::EditableField::DepositionRate, menu_model)
+            || handle_setting_row_click(p, panel, 3, MenuModel::EditableField::ConstantScalarDiffusivity, menu_model)) {
+            out.consumed = true;
+            return out;
+        }
+    } else if (active_menu == MenuModel::TopMenu::Sensors) {
+        if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::SensorSamplePeriod, menu_model)
+            || handle_setting_row_click(p, panel, 1, MenuModel::EditableField::SensorNoiseStd, menu_model)
+            || handle_setting_row_click(p, panel, 2, MenuModel::EditableField::SensorHistoryCapacity, menu_model)) {
+            out.consumed = true;
+            return out;
+        }
+    } else if (active_menu == MenuModel::TopMenu::Display) {
+        if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::PdeFixedColorScale, menu_model)) {
+            out.consumed = true;
+            return out;
+        }
+    } else if (active_menu == MenuModel::TopMenu::Pde) {
+        if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::PdeGridNx, menu_model)
+            || handle_setting_row_click(p, panel, 1, MenuModel::EditableField::PdeGridNy, menu_model)
+            || handle_setting_row_click(p, panel, 2, MenuModel::EditableField::Dt, menu_model)
+            || handle_setting_row_click(p, panel, 3, MenuModel::EditableField::PdeDiffusionMode, menu_model)) {
             out.consumed = true;
             return out;
         }
     }
 
-    if (menu_model.active_top_menu() == MenuModel::TopMenu::Pde && pde_menu_rect().contains(p)) {
-        handle_pde_menu_click(pixel, pde_menu_rect(), menu_model, controller, out);
-        return out;
-    }
-    if (menu_model.active_top_menu() == MenuModel::TopMenu::File && file_menu_rect().contains(p)) {
-        handle_file_menu_click(pixel, file_menu_rect(), out);
-        menu_model.close_all();
-        return out;
-    }
-    if (menu_model.active_top_menu() == MenuModel::TopMenu::Options && options_menu_rect().contains(p)) {
-        handle_options_menu_click(pixel, options_menu_rect(), menu_model, controller, out);
-        return out;
-    }
-
-    if (p.y <= TOP_TOOLBAR_HEIGHT || menu_model.active_top_menu() != MenuModel::TopMenu::None) {
-        menu_model.close_all();
-        out.consumed = true;
-        return out;
-    }
+    out.consumed = true;
     if (had_open_menu) {
-        out.consumed = true;
+        return out;
     }
     return out;
+}
+
+bool TopToolbar::handle_text_input(char32_t unicode, MenuModel& menu_model) const {
+    if (!menu_model.editing()) {
+        return false;
+    }
+
+    if (unicode >= 32) {
+        menu_model.append_edit_char(unicode);
+    }
+    return true;
+}
+
+bool TopToolbar::handle_key_input(sf::Keyboard::Key key, MenuModel& menu_model) const {
+    if (menu_model.editing()) {
+        if (key == sf::Keyboard::Key::Enter) {
+            menu_model.commit_edit();
+            return true;
+        }
+        if (key == sf::Keyboard::Key::Backspace) {
+            menu_model.backspace_edit_char();
+            return true;
+        }
+        if (key == sf::Keyboard::Key::Escape) {
+            menu_model.cancel_edit();
+            return true;
+        }
+        return true;
+    }
+
+    if (key == sf::Keyboard::Key::Escape && menu_model.active_top_menu() != MenuModel::TopMenu::None) {
+        menu_model.close_all();
+        return true;
+    }
+    return false;
 }
 
 bool TopToolbar::has_open_menu(const MenuModel& menu_model) const {

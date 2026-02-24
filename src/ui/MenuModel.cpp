@@ -1,6 +1,7 @@
 #include "ui/MenuModel.hpp"
 
 #include <algorithm>
+#include <cctype>
 
 namespace atm {
 
@@ -14,10 +15,12 @@ MenuModel::TopMenu MenuModel::active_top_menu() const {
 }
 
 void MenuModel::toggle_top_menu(TopMenu menu) {
+    stop_editing();
     active_top_menu_ = (active_top_menu_ == menu) ? TopMenu::None : menu;
 }
 
 void MenuModel::close_all() {
+    stop_editing();
     active_top_menu_ = TopMenu::None;
 }
 
@@ -28,6 +31,7 @@ const RuntimeSettings& MenuModel::pending_settings() const {
 void MenuModel::sync_from_current(const RuntimeSettings& current) {
     current_ = current;
     pending_ = current;
+    stop_editing();
 }
 
 bool MenuModel::dirty() const {
@@ -109,10 +113,143 @@ void MenuModel::cycle_pde_diffusion_mode(int direction) {
 
 void MenuModel::discard_changes() {
     pending_ = current_;
+    stop_editing();
 }
 
 void MenuModel::commit_pending_as_current() {
     current_ = pending_;
+}
+
+void MenuModel::start_edit(EditableField field, const std::string& initial_text) {
+    active_edit_field_ = field;
+    edit_buffer_ = initial_text;
+}
+
+bool MenuModel::editing() const {
+    return active_edit_field_ != EditableField::None;
+}
+
+MenuModel::EditableField MenuModel::active_edit_field() const {
+    return active_edit_field_;
+}
+
+const std::string& MenuModel::edit_buffer() const {
+    return edit_buffer_;
+}
+
+void MenuModel::backspace_edit_char() {
+    if (!edit_buffer_.empty()) {
+        edit_buffer_.pop_back();
+    }
+}
+
+void MenuModel::append_edit_char(char32_t unicode) {
+    if (!editing()) {
+        return;
+    }
+    if (unicode > 127) {
+        return;
+    }
+    const char ch = static_cast<char>(unicode);
+    const bool ok = std::isdigit(static_cast<unsigned char>(ch)) || ch == '.' || ch == '-' || ch == '+' || ch == 'e'
+        || ch == 'E';
+    if (ok) {
+        edit_buffer_.push_back(ch);
+    }
+}
+
+bool MenuModel::commit_edit() {
+    if (!editing()) {
+        return false;
+    }
+    if (edit_buffer_.empty()) {
+        stop_editing();
+        return false;
+    }
+
+    try {
+        switch (active_edit_field_) {
+        case EditableField::TimeScale:
+            pending_.time_scale = clampf(std::stof(edit_buffer_), 0.25f, 120.0f);
+            break;
+        case EditableField::MaxParticles:
+            pending_.max_particles = clampi(std::stoi(edit_buffer_), 1, 500000);
+            break;
+        case EditableField::DepositionRate:
+            pending_.deposition_rate = clampf(std::stof(edit_buffer_), 0.0f, 5.0f);
+            break;
+        case EditableField::ConstantScalarDiffusivity:
+            pending_.constant_scalar_diffusivity = clampf(std::stof(edit_buffer_), 0.001f, 5000.0f);
+            break;
+        case EditableField::SourceBaseEmission:
+            pending_.source_base_emission = clampf(std::stof(edit_buffer_), 0.0f, 100.0f);
+            break;
+        case EditableField::SourceDecayRate:
+            pending_.source_decay_rate = clampf(std::stof(edit_buffer_), 0.0f, 10.0f);
+            break;
+        case EditableField::SourceLifespan:
+            pending_.source_lifespan = clampf(std::stof(edit_buffer_), 0.1f, 36000.0f);
+            break;
+        case EditableField::SourceSigma:
+            pending_.source_sigma = clampf(std::stof(edit_buffer_), 0.1f, 5000.0f);
+            break;
+        case EditableField::SourceMaxSources:
+            pending_.source_max_sources = clampi(std::stoi(edit_buffer_), 1, 256);
+            break;
+        case EditableField::PdeFixedColorScale:
+            pending_.pde_fixed_color_scale = clampf(std::stof(edit_buffer_), 1.0e-8f, 1.0e3f);
+            break;
+        case EditableField::SensorSamplePeriod:
+            pending_.sensor_sample_period_s = clampf(std::stof(edit_buffer_), 0.1f, 3600.0f);
+            break;
+        case EditableField::SensorNoiseStd:
+            pending_.sensor_noise_std = clampf(std::stof(edit_buffer_), 0.0f, 100.0f);
+            break;
+        case EditableField::SensorHistoryCapacity:
+            pending_.sensor_history_capacity = clampi(std::stoi(edit_buffer_), 1, 100000);
+            break;
+        case EditableField::PdeGridNx:
+            pending_.pde_grid_nx = clampi(std::stoi(edit_buffer_), 2, 1024);
+            break;
+        case EditableField::PdeGridNy:
+            pending_.pde_grid_ny = clampi(std::stoi(edit_buffer_), 2, 1024);
+            break;
+        case EditableField::Dt:
+            pending_.dt = clampf(std::stof(edit_buffer_), 0.001f, 10.0f);
+            break;
+        case EditableField::PdeDiffusionMode: {
+            int id = clampi(std::stoi(edit_buffer_), 0, 1);
+            pending_.pde_diffusion_mode = static_cast<AdvectionDiffusionSolver::DiffusionMode>(id);
+            break;
+        }
+        case EditableField::None:
+            stop_editing();
+            return false;
+        }
+    } catch (...) {
+        stop_editing();
+        return false;
+    }
+
+    stop_editing();
+    return true;
+}
+
+void MenuModel::cancel_edit() {
+    stop_editing();
+}
+
+void MenuModel::stop_editing() {
+    active_edit_field_ = EditableField::None;
+    edit_buffer_.clear();
+}
+
+float MenuModel::clampf(float v, float lo, float hi) {
+    return std::clamp(v, lo, hi);
+}
+
+int MenuModel::clampi(int v, int lo, int hi) {
+    return std::clamp(v, lo, hi);
 }
 
 } // namespace atm

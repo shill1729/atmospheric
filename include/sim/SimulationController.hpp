@@ -23,8 +23,10 @@ public:
 
     RuntimeSettings current_settings() const;
     ApplySettingsReport apply_settings(const RuntimeSettings& next);
+    ApplySettingsReport restore_launch_defaults();
 
 private:
+    const Config launch_config_;
     Config config_;
     std::unique_ptr<Simulator> simulator_;
 };

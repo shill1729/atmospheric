@@ -248,7 +248,9 @@ Example:
 - `E`: run source estimation (requires paused state)
 - `J`: toggle adjoint overlay on the right panel
 - ECS `PDE Settings` panel (top-right): editable pending settings for `grid nx/ny`, `dt`, and PDE diffusion mode, with explicit `Apply/Revert`
-- Top toolbar `Options`: editable pending settings for `time scale`, `max particles`, `deposition`,
+- ECS `Runtime Options` panel (top-right): editable pending settings for `time scale`, `max particles`, `deposition`,
+  `source emission`, `source lifespan`, and `PDE fixed color scale`, with explicit `Apply/Revert`
+- Top toolbar `Options`: advanced editable pending settings for `time scale`, `max particles`, `deposition`,
   `constant scalar diffusivity`, `PDE fixed color scale`, sensor parameters (`sample period`, `noise std`, `history cap`), and source parameters
   (`emission`, `decay`, `lifespan`, `sigma`, `max sources`)
 - Top toolbar `File`: `Estimate Source (Paused)` action

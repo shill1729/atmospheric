@@ -18,6 +18,10 @@ void Application::process_events() {
         }
 
         if (const auto* key = event->getIf<sf::Event::KeyPressed>()) {
+            if (top_toolbar_.handle_key_input(key->code, menu_model_)) {
+                continue;
+            }
+
             if (key->code == sf::Keyboard::Key::F1) {
                 help_open_ = !help_open_;
                 continue;
@@ -91,6 +95,12 @@ void Application::process_events() {
             }
         }
 
+        if (const auto* text = event->getIf<sf::Event::TextEntered>()) {
+            if (top_toolbar_.handle_text_input(text->unicode, menu_model_)) {
+                continue;
+            }
+        }
+
         if (const auto* click = event->getIf<sf::Event::MouseButtonPressed>()) {
             if (click->button == sf::Mouse::Button::Left) {
                 std::vector<ui::UiEvent> ui_events;
@@ -114,6 +124,21 @@ void Application::process_events() {
                 }
                 if (toolbar_click.request_source_estimate) {
                     run_source_estimation();
+                }
+                if (toolbar_click.request_apply_queued_settings) {
+                    const ApplySettingsReport report = controller_.apply_settings(menu_model_.pending_settings());
+                    if (report.changed) {
+                        menu_model_.sync_from_current(controller_.current_settings());
+                    }
+                    apply_settings_report(report);
+                }
+                if (toolbar_click.request_revert_queued_settings) {
+                    menu_model_.discard_changes();
+                }
+                if (toolbar_click.request_restore_defaults) {
+                    const ApplySettingsReport report = controller_.restore_launch_defaults();
+                    menu_model_.sync_from_current(controller_.current_settings());
+                    apply_settings_report(report);
                 }
                 if (toolbar_click.consumed) {
                     sync_ecs_ui_state();

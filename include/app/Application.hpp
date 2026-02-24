@@ -89,7 +89,7 @@ private:
     bool help_open_ = false;
     bool show_wind_ = true;
     bool show_adjoint_overlay_ = true;
-    bool show_ecs_quick_panel_ = true;
+    bool show_ecs_quick_panel_ = false;
     bool pde_auto_color_scale_ = true;
     float concentration_scale_ug_per_m2_ = 1.0e5f;
     float mixing_height_m_ = 1.0f;
@@ -112,6 +112,14 @@ private:
     ui::Entity ecs_pde_dt_value_ = ui::kInvalidEntity;
     ui::Entity ecs_pde_mode_value_ = ui::kInvalidEntity;
     ui::Entity ecs_pde_dirty_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_title_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_speed_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_particles_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_deposition_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_emission_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_lifespan_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_fixed_scale_value_ = ui::kInvalidEntity;
+    ui::Entity ecs_opt_dirty_value_ = ui::kInvalidEntity;
 };
 
 } // namespace atm

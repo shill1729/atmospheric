@@ -7,7 +7,8 @@
 namespace atm {
 
 SimulationController::SimulationController(const Config& config)
-    : config_(config)
+    : launch_config_(config)
+    , config_(config)
     , simulator_(std::make_unique<Simulator>(config_)) {
 }
 
@@ -83,6 +84,23 @@ ApplySettingsReport SimulationController::apply_settings(const RuntimeSettings& 
 
     simulator().set_pde_diffusion_mode(next.pde_diffusion_mode);
     report.changed = true;
+    return report;
+}
+
+ApplySettingsReport SimulationController::restore_launch_defaults() {
+    ApplySettingsReport report;
+    const RuntimeSettings current = current_settings();
+    const RuntimeSettings initial = make_runtime_settings(
+        launch_config_, AdvectionDiffusionSolver::DiffusionMode::FullTensorFlux);
+    if (same_runtime_settings(current, initial)) {
+        return report;
+    }
+
+    config_ = launch_config_;
+    simulator_ = std::make_unique<Simulator>(config_);
+    report.changed = true;
+    report.recreated_simulator = true;
+    report.reset_state = true;
     return report;
 }
 

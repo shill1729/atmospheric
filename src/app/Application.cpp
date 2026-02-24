@@ -58,7 +58,7 @@ void Application::build_ecs_ui() {
 
     const sf::Vector2u window_size = window_.getSize();
     const float panel_w = 250.0f;
-    const float panel_h = 164.0f;
+    const float panel_h = 196.0f;
     const float panel_x = static_cast<float>(window_size.x) - panel_w - 22.0f;
     const float panel_y = 42.0f;
 
@@ -91,7 +91,7 @@ void Application::build_ecs_ui() {
         ecs_theme_);
     ecs_estimate_button_ = ui::add_button(
         registry,
-        sf::FloatRect({button_x, panel_y + 102.0f}, {button_w, 28.0f}),
+        sf::FloatRect({button_x, panel_y + 124.0f}, {button_w, 28.0f}),
         202,
         "Estimate Source",
         "estimate_source",
@@ -100,7 +100,7 @@ void Application::build_ecs_ui() {
     const float pde_x = panel_x - 352.0f;
     const float pde_y = 42.0f;
     const float pde_w = 336.0f;
-    const float pde_h = 212.0f;
+    const float pde_h = 196.0f;
     ui::add_panel(registry, sf::FloatRect({pde_x, pde_y}, {pde_w, pde_h}), 200, ecs_theme_.panel_face);
     ecs_pde_title_ = ui::add_label(
         registry,
@@ -218,28 +218,85 @@ void Application::build_ecs_ui() {
         "pde_mode_next",
         ecs_theme_);
 
-    ecs_pde_dirty_value_ = ui::add_label(
-        registry,
-        sf::FloatRect({label_x, pde_y + pde_h - 42.0f}, {180.0f, 18.0f}),
-        201,
-        "",
-        sf::Vector2f(0.0f, 0.0f),
-        12,
-        ecs_theme_.accent);
-
     ui::add_button(
         registry,
-        sf::FloatRect({pde_x + 14.0f, pde_y + pde_h - 30.0f}, {88.0f, 24.0f}),
+        sf::FloatRect({pde_x + 14.0f, pde_y + pde_h - 32.0f}, {88.0f, 24.0f}),
         202,
         "Apply",
         "pde_apply",
         ecs_theme_);
     ui::add_button(
         registry,
-        sf::FloatRect({pde_x + 108.0f, pde_y + pde_h - 30.0f}, {88.0f, 24.0f}),
+        sf::FloatRect({pde_x + 108.0f, pde_y + pde_h - 32.0f}, {88.0f, 24.0f}),
         202,
         "Revert",
         "pde_revert",
+        ecs_theme_);
+
+    const float opt_x = pde_x - 352.0f;
+    const float opt_y = 42.0f;
+    const float opt_w = 336.0f;
+    const float opt_h = 196.0f;
+    ui::add_panel(registry, sf::FloatRect({opt_x, opt_y}, {opt_w, opt_h}), 200, ecs_theme_.panel_face);
+    ecs_opt_title_ = ui::add_label(
+        registry,
+        sf::FloatRect({opt_x + 8.0f, opt_y + 6.0f}, {opt_w - 16.0f, 20.0f}),
+        201,
+        "Runtime Options",
+        sf::Vector2f(0.0f, 0.0f),
+        14,
+        ecs_theme_.text_primary);
+
+    const float opt_row_start = opt_y + 36.0f;
+    const float opt_row_h = 22.0f;
+    const float opt_label_x = opt_x + 14.0f;
+    const float opt_value_x = opt_x + 150.0f;
+    const float opt_minus_x = opt_x + opt_w - 64.0f;
+    const float opt_plus_x = opt_x + opt_w - 36.0f;
+    auto add_opt_row = [&](int row, const char* label, ui::Entity& value_entity, const char* dec_action,
+                           const char* inc_action) {
+        const float y = opt_row_start + opt_row_h * static_cast<float>(row);
+        ui::add_label(
+            registry,
+            sf::FloatRect({opt_label_x, y}, {126.0f, 18.0f}),
+            201,
+            label,
+            sf::Vector2f(0.0f, 0.0f),
+            13,
+            ecs_theme_.text_primary);
+        value_entity = ui::add_label(
+            registry,
+            sf::FloatRect({opt_value_x, y}, {90.0f, 18.0f}),
+            201,
+            "-",
+            sf::Vector2f(0.0f, 0.0f),
+            13,
+            ecs_theme_.accent);
+        ui::add_button(
+            registry, sf::FloatRect({opt_minus_x, y - 1.0f}, {22.0f, 20.0f}), 202, "-", dec_action, ecs_theme_);
+        ui::add_button(
+            registry, sf::FloatRect({opt_plus_x, y - 1.0f}, {22.0f, 20.0f}), 202, "+", inc_action, ecs_theme_);
+    };
+    add_opt_row(0, "Time Scale", ecs_opt_speed_value_, "opt_speed_dec", "opt_speed_inc");
+    add_opt_row(1, "Max Particles", ecs_opt_particles_value_, "opt_particles_dec", "opt_particles_inc");
+    add_opt_row(2, "Deposition", ecs_opt_deposition_value_, "opt_deposition_dec", "opt_deposition_inc");
+    add_opt_row(3, "Source Emission", ecs_opt_emission_value_, "opt_emission_dec", "opt_emission_inc");
+    add_opt_row(4, "Source Lifespan", ecs_opt_lifespan_value_, "opt_lifespan_dec", "opt_lifespan_inc");
+    add_opt_row(5, "Fixed PDE Scale", ecs_opt_fixed_scale_value_, "opt_scale_dec", "opt_scale_inc");
+
+    ui::add_button(
+        registry,
+        sf::FloatRect({opt_x + 14.0f, opt_y + opt_h - 32.0f}, {88.0f, 24.0f}),
+        202,
+        "Apply",
+        "settings_apply",
+        ecs_theme_);
+    ui::add_button(
+        registry,
+        sf::FloatRect({opt_x + 108.0f, opt_y + opt_h - 32.0f}, {88.0f, 24.0f}),
+        202,
+        "Revert",
+        "settings_revert",
         ecs_theme_);
 
     sync_ecs_ui_state();
@@ -276,9 +333,33 @@ void Application::sync_ecs_ui_state() {
             ? "Scalarized"
             : "Full Tensor";
     }
-    if (auto* label = registry.find_label(ecs_pde_dirty_value_)) {
-        label->text = menu_model_.dirty() ? "Pending changes" : "No pending changes";
-        label->color = menu_model_.dirty() ? sf::Color(160, 64, 32) : sf::Color(44, 96, 124);
+    if (auto* label = registry.find_label(ecs_opt_speed_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(2) << pending.time_scale;
+        label->text = ss.str();
+    }
+    if (auto* label = registry.find_label(ecs_opt_particles_value_)) {
+        label->text = std::to_string(pending.max_particles);
+    }
+    if (auto* label = registry.find_label(ecs_opt_deposition_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(4) << pending.deposition_rate;
+        label->text = ss.str();
+    }
+    if (auto* label = registry.find_label(ecs_opt_emission_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(3) << pending.source_base_emission;
+        label->text = ss.str();
+    }
+    if (auto* label = registry.find_label(ecs_opt_lifespan_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(1) << pending.source_lifespan;
+        label->text = ss.str();
+    }
+    if (auto* label = registry.find_label(ecs_opt_fixed_scale_value_)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(4) << pending.pde_fixed_color_scale;
+        label->text = ss.str();
     }
 }
 
@@ -331,16 +412,64 @@ void Application::handle_ecs_action(const ui::UiEvent& event) {
         menu_model_.cycle_pde_diffusion_mode(1);
         return;
     }
-    if (event.action == "pde_revert") {
+    if (event.action == "pde_revert" || event.action == "settings_revert") {
         menu_model_.discard_changes();
         return;
     }
-    if (event.action == "pde_apply") {
+    if (event.action == "pde_apply" || event.action == "settings_apply") {
         const ApplySettingsReport report = controller_.apply_settings(menu_model_.pending_settings());
         if (report.changed) {
             menu_model_.sync_from_current(controller_.current_settings());
         }
         apply_settings_report(report);
+        return;
+    }
+    if (event.action == "opt_speed_dec") {
+        menu_model_.adjust_time_scale(-0.25f);
+        return;
+    }
+    if (event.action == "opt_speed_inc") {
+        menu_model_.adjust_time_scale(0.25f);
+        return;
+    }
+    if (event.action == "opt_particles_dec") {
+        menu_model_.adjust_max_particles(-10);
+        return;
+    }
+    if (event.action == "opt_particles_inc") {
+        menu_model_.adjust_max_particles(10);
+        return;
+    }
+    if (event.action == "opt_deposition_dec") {
+        menu_model_.adjust_deposition_rate(-0.0025f);
+        return;
+    }
+    if (event.action == "opt_deposition_inc") {
+        menu_model_.adjust_deposition_rate(0.0025f);
+        return;
+    }
+    if (event.action == "opt_emission_dec") {
+        menu_model_.adjust_source_base_emission(-0.05f);
+        return;
+    }
+    if (event.action == "opt_emission_inc") {
+        menu_model_.adjust_source_base_emission(0.05f);
+        return;
+    }
+    if (event.action == "opt_lifespan_dec") {
+        menu_model_.adjust_source_lifespan(-1.0f);
+        return;
+    }
+    if (event.action == "opt_lifespan_inc") {
+        menu_model_.adjust_source_lifespan(1.0f);
+        return;
+    }
+    if (event.action == "opt_scale_dec") {
+        menu_model_.adjust_pde_fixed_color_scale(-1.0e-4f);
+        return;
+    }
+    if (event.action == "opt_scale_inc") {
+        menu_model_.adjust_pde_fixed_color_scale(1.0e-4f);
     }
 }
 

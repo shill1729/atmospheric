@@ -23,10 +23,6 @@ sf::Color heat_color(float v) {
         230);
 }
 
-float mass_scale(MassDisplayUnit unit) {
-    return unit == MassDisplayUnit::MicrogramsPerSquareMeter ? 1.0e6f : 1.0f;
-}
-
 const char* mass_unit_label(MassDisplayUnit unit) {
     return unit == MassDisplayUnit::MicrogramsPerSquareMeter ? "ug/m^2" : "g/m^2";
 }
@@ -352,9 +348,6 @@ void Application::draw_wind_field() {
 void Application::draw_hud_cards() {
     const auto& source = sim().source();
     const auto& particles = sim().particles();
-    const float mscale = mass_scale(mass_unit_);
-    const float sde_mass = sim().sde_total_mass() * mscale;
-    const float pde_mass = sim().pde_total_mass() * mscale;
     const float ratio = sim().mass_ratio_sde_to_pde();
 
     auto draw_card = [&](float x, float y, float w, float h, const std::string& title, const std::string& body) {
@@ -378,6 +371,8 @@ void Application::draw_hud_cards() {
     };
 
     std::ostringstream status;
+    const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
+    const float pde_max_ug_m3 = sim().pde().max_concentration() * c_factor;
     status << std::fixed << std::setprecision(2)
            << "t: " << sim().time_s() << " s"
            << "\nspeed: x" << sim().time_scale()
@@ -385,45 +380,35 @@ void Application::draw_hud_cards() {
            << "\nwind: " << sim().wind_model_name()
            << "\ndiff: " << sim().diffusion_model_name()
            << "\nPDE diff: " << sim().pde_diffusion_mode_name()
-           << "\nPDE color: " << (pde_auto_color_scale_ ? "Auto" : "Fixed")
-           << "\nBH case: " << (sim().brownian_heat_case() ? "ON" : "off");
+           << "\nBC: " << boundary_mode_label(sim().boundary_mode())
+           << "\nPDE max c: " << std::scientific << std::setprecision(2) << pde_max_ug_m3 << " ug/m^3";
 
     std::ostringstream source_text;
     source_text << std::scientific << std::setprecision(2)
                 << "q_total(t): " << source.emission_rate()
                 << "\nemitted: " << sim().last_emitted_total() << " / step"
                 << "\nsources: " << source.active_count() << " / " << source.max_sources()
+                << "\nparticles: " << particles.particles().size()
                 << "\nnewest: "
                 << (source.is_active()
                         ? (std::to_string(static_cast<int>(source.newest_age_s())) + "s / "
                             + std::to_string(static_cast<int>(source.lifespan_s())) + "s")
-                        : std::string("inactive"));
-
-    std::ostringstream physics;
-    const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
-    const float pde_max_ug_m3 = sim().pde().max_concentration() * c_factor;
-    physics << std::fixed << std::setprecision(2)
-            << "particles: " << particles.particles().size()
-            << "\nBC: " << boundary_mode_label(sim().boundary_mode())
-            << "\nPDE max c: " << std::scientific << std::setprecision(3) << pde_max_ug_m3 << " ug/m^3"
-            << "\nM_sde: " << std::scientific << std::setprecision(2) << sde_mass
-            << "\nM_pde: " << std::scientific << std::setprecision(2) << pde_mass
-            << "\nratio: " << std::fixed << std::setprecision(3) << ratio << " (" << mass_unit_label(mass_unit_)
-            << ")";
+                        : std::string("inactive"))
+                << "\nM_sde/M_pde: " << std::fixed << std::setprecision(3) << ratio << " (" << mass_unit_label(mass_unit_)
+                << ")";
 
     const float top = 38.0f;
     const float left = 24.0f;
     const float gap = 12.0f;
     const float card_w = 250.0f;
-    const float card_h = 170.0f;
+    const float card_h = 180.0f;
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
-    draw_card(left + 2.0f * (card_w + gap), top, card_w, card_h, "Physics", physics.str());
 }
 
 void Application::draw_control_strip() {
-    sf::RectangleShape strip({980.0f, 44.0f});
-    strip.setPosition({24.0f, 214.0f});
+    sf::RectangleShape strip({560.0f, 44.0f});
+    strip.setPosition({24.0f, 226.0f});
     strip.setFillColor(sf::Color(10, 16, 24, 188));
     strip.setOutlineThickness(1.0f);
     strip.setOutlineColor(sf::Color(70, 108, 145, 180));
@@ -431,9 +416,9 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Options | ECS PDE panel | L-click source/sensor | E estimate | J adjoint view | F1 controls",
+        "Toolbar: File | Options | PDE | L-click source/sensor | E estimate | F1 help",
         13);
-    control_text.setPosition({34.0f, 218.0f});
+    control_text.setPosition({34.0f, 230.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
     window_.draw(control_text);
 
@@ -446,7 +431,7 @@ void Application::draw_control_strip() {
         status_line << " | error=" << std::fixed << std::setprecision(1) << source_estimation_.error_m << " m";
     }
     sf::Text status_text(font_, status_line.str(), 12);
-    status_text.setPosition({34.0f, 235.0f});
+    status_text.setPosition({34.0f, 247.0f});
     status_text.setFillColor(sf::Color(196, 216, 232));
     window_.draw(status_text);
 }
@@ -508,8 +493,7 @@ void Application::draw_help_overlay() {
 
     const std::string body =
         "Primary\n"
-        "Top bar : File / Options menus\n"
-        "ECS panel: PDE settings (nx, ny, dt, diffusion)\n"
+        "Top bar : File / Options / PDE menus\n"
         "L-click left panel  : place source\n"
         "L-click right panel : place sensor\n"
         "E       : run source estimation (paused)\n"
@@ -589,18 +573,9 @@ void Application::draw_sensor_overlay() {
         window_.draw(marker);
 
         std::ostringstream ss;
-        ss << "S" << sensor_id << " (" << std::fixed << std::setprecision(0) << sensor.position.x() << ","
-           << sensor.position.y() << ") ";
-        if (!sensor.history.empty()) {
-            const auto& obs = sensor.history.back();
-            const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
-            ss << "c=" << std::scientific << std::setprecision(2) << (obs.noisy_concentration * c_factor) << " ug/m^3";
-        } else {
-            ss << "c=n/a";
-        }
-
+        ss << "S" << sensor_id;
         sf::Text label(font_, ss.str(), 11);
-        const float max_x = right_panel_.position.x + right_panel_.size.x - 180.0f;
+        const float max_x = right_panel_.position.x + right_panel_.size.x - 30.0f;
         const float label_x = std::clamp(p.x + 7.0f, right_panel_.position.x + 2.0f, max_x);
         const float label_y = std::max(right_panel_.position.y + 2.0f, p.y - 13.0f);
         label.setPosition({label_x, label_y});
