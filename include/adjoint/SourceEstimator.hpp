@@ -11,7 +11,7 @@
 namespace atm {
 
 struct SourceEstimationConfig {
-    float detection_threshold = 1.0e-6f;
+    float detection_threshold  = 0.000001f;
     float gaussian_sigma = 120.0f;
     int adjoint_grid_nx = 96;
     int adjoint_grid_ny = 96;

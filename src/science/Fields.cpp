@@ -241,7 +241,7 @@ Vec2 Fields::wind_jet_shear(float time_s, const Vec2& x) const {
         + 1.5f * std::cos(4.0f * PI * xs - 0.03f * time_s);
     const float v = 0.8f + 3.0f * std::sin(2.0f * PI * xs - 0.06f * time_s)
         + 1.0f * std::cos(3.0f * PI * ys + 0.04f * time_s);
-    return Vec2(u, v);
+    return 4*Vec2(u, v);
 }
 
 Vec2 Fields::wind_vortex_pair(float time_s, const Vec2& x) const {
