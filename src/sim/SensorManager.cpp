@@ -78,7 +78,8 @@ void SensorManager::clear() {
 }
 
 void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& pde, const DomainConfig& domain) {
-    for (Sensor& sensor : sensors_) {
+    for (std::size_t sensor_idx = 0; sensor_idx < sensors_.size(); ++sensor_idx) {
+        Sensor& sensor = sensors_[sensor_idx];
         while (true) {
             const float next_event_time = std::min(sensor.next_physical_sample_time_s, sensor.next_report_time_s);
             if (current_time_s < next_event_time) {
@@ -117,6 +118,7 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
             if (sensor.history.size() > history_capacity_) {
                 sensor.history.erase(sensor.history.begin());
             }
+            pending_reports_.push_back({sensor_idx, sensor.next_report_time_s, concentration, noisy});
 
             sensor.window_sum = 0.0f;
             sensor.window_noisy_sum = 0.0f;
@@ -128,6 +130,14 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
 
 const std::vector<SensorManager::Sensor>& SensorManager::sensors() const {
     return sensors_;
+}
+
+const std::vector<SensorManager::PendingReport>& SensorManager::pending_reports() const {
+    return pending_reports_;
+}
+
+void SensorManager::clear_pending_reports() {
+    pending_reports_.clear();
 }
 
 float SensorManager::sample_concentration_bilinear(

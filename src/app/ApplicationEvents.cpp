@@ -140,6 +140,31 @@ void Application::process_events() {
                     menu_model_.sync_from_current(controller_.current_settings());
                     apply_settings_report(report);
                 }
+                if (toolbar_click.request_toggle_recording) {
+                    if (data_recorder_.is_recording()) {
+                        data_recorder_.stop_recording();
+                        recording_status_ = "Stopped. "
+                            + std::to_string(data_recorder_.total_readings()) + " readings captured.";
+                    } else {
+                        data_recorder_.start_recording();
+                        recording_status_ = "Recording...";
+                    }
+                }
+                if (toolbar_click.request_export_csv) {
+                    if (!data_recorder_.has_data()) {
+                        recording_status_ = "No data to export. Record a session first.";
+                    } else {
+                        const std::string path = data_recorder_.export_csv(
+                            ".",
+                            std::string(sim().wind_model_name()),
+                            std::string(sim().diffusion_model_name()),
+                            std::string(sim().pde_diffusion_mode_name()),
+                            sim().config().numerics.dt,
+                            sim().time_scale(),
+                            sensor_manager_.sample_period());
+                        recording_status_ = path.empty() ? "Export failed (IO error)." : "Saved: " + path;
+                    }
+                }
                 if (toolbar_click.consumed) {
                     sync_ecs_ui_state();
                     continue;
@@ -210,34 +235,103 @@ void Application::apply_menu_adjustment(int direction) {
 
 void Application::run_source_estimation() {
     if (!sim().paused()) {
-        source_estimation_.status = "Pause simulation before running estimation.";
+        source_estimation_.status = "Pause simulation before running.";
         return;
     }
 
-    const auto result = source_estimator_.estimate(sensor_manager_.sensors(), sim());
-    source_estimation_.status = result.message;
-    if (!result.success) {
-        source_estimation_.has_result = false;
-        source_estimation_.has_error_m = false;
+    const auto& sensors = sensor_manager_.sensors();
+    if (sensors.empty()) {
+        source_estimation_.status = "No sensors placed.";
         return;
     }
 
-    source_estimation_.has_result = true;
-    source_estimation_.x_star = result.x_star;
-    source_estimation_.t_star_s = result.t_star_s;
-    source_estimation_.nx = result.nx;
-    source_estimation_.ny = result.ny;
-    source_estimation_.p_star = result.p_star;
+    const float t_now = sim().time_s();
+    const auto& domain = sim().config().domain;
+    const auto& ecfg = source_estimator_.config();
+
+    const int nx = std::max(2, ecfg.adjoint_grid_nx);
+    const int ny = std::max(2, ecfg.adjoint_grid_ny);
+    const float dx = (domain.x_max - domain.x_min) / static_cast<float>(nx - 1);
+    const float dy = (domain.y_max - domain.y_min) / static_cast<float>(ny - 1);
+    const float cell_area = dx * dy;
+    const float sigma = std::max(1.0f, ecfg.gaussian_sigma);
+    const float inv_2s2 = 1.0f / (2.0f * sigma * sigma);
+    const std::size_t n = static_cast<std::size_t>(nx * ny);
+
+    std::vector<float> initial_phi(n, 0.0f);
+    bool any_signal = false;
+
+    for (const auto& sensor : sensors) {
+        if (sensor.history.empty()) {
+            continue;
+        }
+        const float w = std::max(0.0f, sensor.history.back().noisy_concentration);
+        if (w < ecfg.detection_threshold) {
+            continue;
+        }
+        any_signal = true;
+
+        for (int j = 0; j < ny; ++j) {
+            const float y = domain.y_min + static_cast<float>(j) * dy;
+            for (int i = 0; i < nx; ++i) {
+                const float x = domain.x_min + static_cast<float>(i) * dx;
+                const float ddx = x - sensor.position.x();
+                const float ddy = y - sensor.position.y();
+                initial_phi[static_cast<std::size_t>(j * nx + i)]
+                    += w * std::exp(-(ddx * ddx + ddy * ddy) * inv_2s2);
+            }
+        }
+    }
+
+    if (!any_signal) {
+        source_estimation_.status = "No sensor above detection threshold.";
+        feynman_kac_anim_.active = false;
+        return;
+    }
+
+    float phi_integ = 0.0f;
+    for (float v : initial_phi) {
+        phi_integ += v * cell_area;
+    }
+    if (phi_integ > 1.0e-12f) {
+        const float inv = 1.0f / phi_integ;
+        for (float& v : initial_phi) {
+            v *= inv;
+        }
+    }
+
+    AdjointSolver::Config solve_cfg;
+    solve_cfg.domain = domain;
+    solve_cfg.nx = nx;
+    solve_cfg.ny = ny;
+    solve_cfg.dt_s = std::max(0.05f, ecfg.adjoint_dt_s);
+    solve_cfg.deposition_rate = sim().config().physics.deposition_rate;
+    solve_cfg.diffusion_mode = sim().pde_diffusion_mode() == AdvectionDiffusionSolver::DiffusionMode::FullTensorFlux
+        ? AdjointSolver::DiffusionMode::FullTensorFlux
+        : AdjointSolver::DiffusionMode::ScalarizedTrace;
+
+    auto wind_fn = [&](float time_s, const Vec2& p) { return sim().wind_at_time(time_s, p); };
+    auto diffusivity_fn = [&](float time_s, const Vec2& p) { return sim().diffusivity_at_time(time_s, p); };
+    auto no_forcing = [](float, std::vector<float>&) {};
+
+    const float t_start = std::max(0.0f, t_now - std::max(1.0f, ecfg.max_lookback_s));
+
+    AdjointSolver solver;
+    feynman_kac_anim_.solution
+        = solver.solve_backward(t_start, t_now, solve_cfg, wind_fn, diffusivity_fn, no_forcing, initial_phi);
+    feynman_kac_anim_.frame = 0;
+    feynman_kac_anim_.wall_accum_s = 0.0f;
+    feynman_kac_anim_.active = true;
+
+    source_estimation_.has_result = false;
     source_estimation_.has_error_m = false;
-    source_estimation_.error_m = 0.0f;
-    if (has_last_source_click_ && source_click_count_since_reset_ == 1) {
-        source_estimation_.has_error_m = true;
-        source_estimation_.error_m = (source_estimation_.x_star - last_source_click_).norm();
-    }
+    source_estimation_.status = "FK anim: "
+        + std::to_string(static_cast<int>(feynman_kac_anim_.solution.snapshots.size())) + " frames";
 }
 
 void Application::clear_source_estimation() {
     source_estimation_ = SourceEstimationView{};
+    feynman_kac_anim_ = FeynmanKacAnimation{};
 }
 
 } // namespace atm

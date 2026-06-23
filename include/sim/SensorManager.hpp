@@ -43,16 +43,26 @@ public:
     void set_history_capacity(std::size_t capacity);
     std::size_t history_capacity() const;
 
+    struct PendingReport {
+        std::size_t sensor_index;
+        float time_s;
+        float concentration;
+        float noisy_concentration;
+    };
+
     void add_sensor(const Vec2& position, float current_time_s);
     void clear();
     void step(float current_time_s, const AdvectionDiffusionSolver& pde, const DomainConfig& domain);
 
     const std::vector<Sensor>& sensors() const;
+    const std::vector<PendingReport>& pending_reports() const;
+    void clear_pending_reports();
 
 private:
     float sample_concentration_bilinear(const AdvectionDiffusionSolver& pde, const DomainConfig& domain, const Vec2& p) const;
 
     std::vector<Sensor> sensors_;
+    std::vector<PendingReport> pending_reports_;
     float sample_period_s_ = 5.0f;
     float noise_std_ = 0.0f;
     float physical_sample_period_s_ = 1.0f;

@@ -47,6 +47,33 @@ void Application::run() {
 void Application::update(float frame_dt) {
     sim().step(frame_dt);
     sensor_manager_.step(sim().time_s(), sim().pde(), sim().config().domain);
+
+    if (data_recorder_.is_recording()) {
+        const auto& sensors = sensor_manager_.sensors();
+        for (const auto& report : sensor_manager_.pending_reports()) {
+            if (report.sensor_index < sensors.size()) {
+                const Vec2& pos = sensors[report.sensor_index].position;
+                const Vec2 wind = sim().wind_at_time(report.time_s, pos);
+                data_recorder_.add_reading(
+                    report.sensor_index, pos, report.time_s,
+                    report.noisy_concentration,
+                    concentration_scale_ug_per_m2_, mixing_height_m_, wind);
+            }
+        }
+    }
+    sensor_manager_.clear_pending_reports();
+
+    if (feynman_kac_anim_.active && sim().paused() && !feynman_kac_anim_.solution.snapshots.empty()) {
+        feynman_kac_anim_.wall_accum_s += frame_dt;
+        while (feynman_kac_anim_.wall_accum_s >= feynman_kac_anim_.wall_time_per_frame_s) {
+            feynman_kac_anim_.wall_accum_s -= feynman_kac_anim_.wall_time_per_frame_s;
+            ++feynman_kac_anim_.frame;
+            if (feynman_kac_anim_.frame >= static_cast<int>(feynman_kac_anim_.solution.snapshots.size())) {
+                feynman_kac_anim_.frame = 0;
+            }
+        }
+    }
+
     sync_ecs_ui_state();
 }
 

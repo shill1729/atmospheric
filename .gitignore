@@ -42,3 +42,6 @@
 
 # SFML runtime cache-like leftovers (if any tools drop these)
 *.cache
+
+# CSV
+wildfire_pm25_dataset.csv

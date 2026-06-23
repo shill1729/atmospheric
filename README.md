@@ -253,6 +253,8 @@ Example:
   - `Apply Queued Changes`
   - `Revert Queued Changes`
   - `Restore Launch Defaults`
+  - `Start Recording` / `Stop Recording` — toggle CSV data capture (label reflects state; `* REC` indicator appears in toolbar while active)
+  - `Export CSV` — write captured sensor time series to a CSV file in the current working directory
 - Parameter edits in `Source/Numerics/Sensors/Display/PDE` are queued; apply from `File`.
 - Numeric edit UX in top menus:
   - `-` / `+` buttons for stepped adjustments
@@ -279,6 +281,54 @@ Concentration display calibration:
 - Reported sensor value is the window average of noisy physical samples in that report interval.
 - `--sensor-spatial-radius` sets disk-like local spatial averaging radius around each sensor (meters).
 
+## CSV Export
+
+The forward simulation as observed by the sensor network can be exported to a CSV file for offline analysis.
+
+### Workflow
+
+1. Place sensors on the right panel (left-click).
+2. Optionally adjust the sensor averaging window via **Sensors → Sample Period (s)**. The default (5 s sim-time) averages five 1-second physical samples per report, mimicking a real instrument that samples frequently but reports a window average. For longer synthetic runs where you want to mimic hourly averages of 5-minute readings, increase the sample period accordingly.
+3. Open **File → Start Recording**. The `* REC` indicator appears in the top-right of the toolbar.
+4. Click a source on the left panel and let the plume evolve.
+5. Open **File → Stop Recording**. The status strip shows how many readings were captured.
+6. Open **File → Export CSV**. The file is written to the current working directory and the filename is shown in the status strip.
+
+Recording is independent of the rolling sensor history used by the adjoint estimator — it is unbounded and accumulates for the full duration between start and stop. You can export the same recorded session multiple times (e.g. before and after changing the wind model to compare). Calling **Start Recording** again clears the previous buffer.
+
+### Output format
+
+The file is named to encode the key simulation parameters:
+
+```
+atmospheric_{wind}_{diffusion}_{pde_mode}_dt{dt}_ts{time_scale}_sp{sample_period}s_{YYYYMMDD_HHMMSS}.csv
+```
+
+Example:
+```
+atmospheric_JetShear_ConstantScalar_FullTensor_dt0.010_ts10.0_sp5.0s_20260618_143022.csv
+```
+
+The file begins with `#` metadata comment lines followed by a data header and one row per `(time, sensor)` pair, sorted time-first:
+
+```
+# Atmospheric Tool - Forward Simulation Export
+# Wind model: JetShear
+# Diffusion model: ConstantScalar
+# PDE diffusion mode: Full Tensor Flux
+# dt (s): 0.010
+# Time scale: 10.0
+# Sensor averaging window (s): 5.0
+# Sensors recorded: 3
+# Concentration: sensor window-averaged reading converted to ug/m^3
+time_s,x_m,y_m,concentration_ug_m3,wind_u_m_s,wind_v_m_s
+```
+
+- `time_s` — simulation time at end of the averaging window
+- `x_m`, `y_m` — sensor domain coordinates (meters)
+- `concentration_ug_m3` — noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion
+- `wind_u_m_s`, `wind_v_m_s` — wind vector at the sensor site sampled at report time
+
 Legacy menu controls (modal preferences overlay):
 - `Up/Down`: select option
 - `Left/Right/Enter`: adjust/apply
@@ -297,6 +347,8 @@ include/
     RuntimeSettings.hpp              # UI-editable runtime settings subset
     Validation.hpp                   # Centralized configuration validation
     Types.hpp                        # Vec2/Mat2 aliases (Eigen)
+  export/
+    DataRecorder.hpp                 # CSV recording + export of sensor time series
   numerics/
     ParticleSystem.hpp               # SDE particle integrator + trails
     AdvectionDiffusionSolver.hpp     # PDE grid solver
@@ -356,21 +408,6 @@ fonts/
   - Backward adjoint transport solver (scalarized/full-tensor diffusion modes)
 - `atm::SourceEstimator`
   - Builds adjoint forcing from sensors and extracts \((x^*, t^*)\)
+- `atm::DataRecorder`
+  - Captures sensor window reports during a recording session and exports them as a CSV with simulation metadata
 
-## Current Scope and Limitations
-
-- SDE supports scalar and SPD tensor diffusivity presets (including Brownian/Heat case with $\kappa=\tfrac{1}{2}$ and zero wind).
-- PDE supports both scalarized tensor approximation and full tensor flux diffusion mode.
-- Adjoint source estimation is implemented as a practical MVP from sensor history.
-- Estimator currently assumes single dominant source in reporting (\(x^*,t^*\)); multimodal outputs are not yet surfaced in UI.
-- Forcing uses sample-and-hold from sensor history (no interpolation/smoother yet).
-- No Kalman/filtering-based data assimilation yet.
-- No persistent preferences/config save file yet.
-- Legacy ECS quick panels remain in code as deprecated scaffolding; current default GUI uses top-toolbar dropdown menus.
-
-## Features TBA
-
-1. Config file IO for reproducible runs.
-2. Multimodal source estimation outputs (top-k peaks, confidence diagnostics).
-3. Kalman/filtering and uncertainty-aware assimilation workflows.
-4. Expanded automated numerical regression tests.

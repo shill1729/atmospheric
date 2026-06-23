@@ -248,8 +248,8 @@ void Application::render() {
         dim.setFillColor(sf::Color(6, 10, 16, 120));
         window_.draw(dim);
     }
-    top_toolbar_.draw(window_, font_, menu_model_);
-    top_toolbar_.draw_active_menu(window_, font_, menu_model_);
+    top_toolbar_.draw(window_, font_, menu_model_, data_recorder_.is_recording());
+    top_toolbar_.draw_active_menu(window_, font_, menu_model_, data_recorder_.is_recording());
     window_.display();
 }
 
@@ -431,6 +431,9 @@ void Application::draw_control_strip() {
     if (source_estimation_.has_error_m) {
         status_line << " | error=" << std::fixed << std::setprecision(1) << source_estimation_.error_m << " m";
     }
+    if (!recording_status_.empty()) {
+        status_line << "  |  Recorder: " << recording_status_;
+    }
     sf::Text status_text(font_, status_line.str(), 12);
     status_text.setPosition({34.0f, 247.0f});
     status_text.setFillColor(sf::Color(196, 216, 232));
@@ -598,7 +601,36 @@ void Application::draw_sensor_overlay() {
 }
 
 void Application::draw_adjoint_overlay() {
-    if (!show_adjoint_overlay_ || !source_estimation_.has_result || source_estimation_.p_star.empty()
+    if (!show_adjoint_overlay_) {
+        return;
+    }
+
+    if (feynman_kac_anim_.active && !feynman_kac_anim_.solution.snapshots.empty()) {
+        const int nx = feynman_kac_anim_.solution.nx;
+        const int ny = feynman_kac_anim_.solution.ny;
+        if (nx < 2 || ny < 2) {
+            return;
+        }
+        const int frame = std::clamp(
+            feynman_kac_anim_.frame, 0, static_cast<int>(feynman_kac_anim_.solution.snapshots.size()) - 1);
+        const auto& phi = feynman_kac_anim_.solution.snapshots[static_cast<std::size_t>(frame)].phi;
+        float pmax = 0.0f;
+        for (float v : phi) {
+            pmax = std::max(pmax, v);
+        }
+        if (pmax <= 1.0e-16f) {
+            return;
+        }
+        auto i2 = [nx](int i, int j) { return static_cast<std::size_t>(j * nx + i); };
+        constexpr float OVERLAY_GAIN = 2.25f;
+        const auto sample = [&](int i, int j) { return OVERLAY_GAIN * (phi[i2(i, j)] / pmax); };
+        const sf::VertexArray mesh
+            = make_scalar_field_mesh(right_panel_, nx, ny, sample, [](float n) { return adjoint_color(n); });
+        window_.draw(mesh);
+        return;
+    }
+
+    if (!source_estimation_.has_result || source_estimation_.p_star.empty()
         || source_estimation_.nx < 2 || source_estimation_.ny < 2) {
         return;
     }

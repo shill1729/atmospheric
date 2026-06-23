@@ -43,7 +43,8 @@ public:
 
     Solution solve_backward(
         float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn,
-        const ForcingFn& forcing_fn) const;
+        const ForcingFn& forcing_fn,
+        const std::vector<float>& initial_phi = {}) const;
 };
 
 } // namespace atm

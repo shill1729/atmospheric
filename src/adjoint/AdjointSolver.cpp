@@ -81,7 +81,8 @@ void apply_adjoint_bc(
 
 AdjointSolver::Solution AdjointSolver::solve_backward(
     float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn,
-    const ForcingFn& forcing_fn) const {
+    const ForcingFn& forcing_fn,
+    const std::vector<float>& initial_phi) const {
     Solution out;
     out.nx = std::max(2, cfg.nx);
     out.ny = std::max(2, cfg.ny);
@@ -94,6 +95,9 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
 
     const std::size_t n = static_cast<std::size_t>(out.nx * out.ny);
     std::vector<float> phi(n, 0.0f);
+    if (!initial_phi.empty() && initial_phi.size() == n) {
+        phi = initial_phi;
+    }
     std::vector<float> next(n, 0.0f);
     std::vector<float> forcing(n, 0.0f);
 

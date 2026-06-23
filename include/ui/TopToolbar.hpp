@@ -15,12 +15,14 @@ struct TopToolbarClickResult {
     bool request_apply_queued_settings = false;
     bool request_revert_queued_settings = false;
     bool request_restore_defaults = false;
+    bool request_toggle_recording = false;
+    bool request_export_csv = false;
 };
 
 class TopToolbar {
 public:
-    void draw(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const;
-    void draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const;
+    void draw(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model, bool recording_active) const;
+    void draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model, bool recording_active) const;
     TopToolbarClickResult handle_click(
         const sf::Vector2i& pixel, MenuModel& menu_model, SimulationController& controller) const;
     bool handle_text_input(char32_t unicode, MenuModel& menu_model) const;

@@ -60,7 +60,7 @@ sf::FloatRect menu_panel_rect(MenuModel::TopMenu menu) {
     const float y = kToolbarHeight + kPanelTopOffset;
     switch (menu) {
     case MenuModel::TopMenu::File:
-        return sf::FloatRect({x, y}, {286.0f, 176.0f});
+        return sf::FloatRect({x, y}, {286.0f, 240.0f});
     case MenuModel::TopMenu::Source:
         return sf::FloatRect({x, y}, {430.0f, 214.0f});
     case MenuModel::TopMenu::Numerics:
@@ -313,7 +313,7 @@ bool handle_setting_row_click(
 
 } // namespace
 
-void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const {
+void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model, bool recording_active) const {
     sf::RectangleShape bar({static_cast<float>(window.getSize().x), kToolbarHeight});
     bar.setPosition({0.0f, 0.0f});
     bar.setFillColor(sf::Color(14, 20, 30, 244));
@@ -343,9 +343,16 @@ void TopToolbar::draw(sf::RenderWindow& window, const sf::Font& font, const Menu
         dirty.setFillColor(sf::Color(255, 214, 140));
         window.draw(dirty);
     }
+
+    if (recording_active) {
+        sf::Text rec(font, "* REC", 13);
+        rec.setPosition({static_cast<float>(window.getSize().x) - 62.0f, 9.0f});
+        rec.setFillColor(sf::Color(255, 80, 80, 240));
+        window.draw(rec);
+    }
 }
 
-void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model) const {
+void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font, const MenuModel& menu_model, bool recording_active) const {
     const MenuModel::TopMenu top_menu = menu_model.active_top_menu();
     if (top_menu == MenuModel::TopMenu::None) {
         return;
@@ -363,6 +370,9 @@ void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font
         draw_action_button(window, font, file_action_rect(panel, 1), "Apply Queued Changes", menu_model.dirty());
         draw_action_button(window, font, file_action_rect(panel, 2), "Revert Queued Changes", menu_model.dirty());
         draw_action_button(window, font, file_action_rect(panel, 3), "Restore Launch Defaults", false);
+        draw_action_button(window, font, file_action_rect(panel, 4),
+            recording_active ? "Stop Recording" : "Start Recording", recording_active);
+        draw_action_button(window, font, file_action_rect(panel, 5), "Export CSV", false);
         return;
     }
 
@@ -548,6 +558,18 @@ TopToolbarClickResult TopToolbar::handle_click(
         }
         if (file_action_rect(panel, 3).contains(p)) {
             out.request_restore_defaults = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        if (file_action_rect(panel, 4).contains(p)) {
+            out.request_toggle_recording = true;
+            out.consumed = true;
+            menu_model.close_all();
+            return out;
+        }
+        if (file_action_rect(panel, 5).contains(p)) {
+            out.request_export_csv = true;
             out.consumed = true;
             menu_model.close_all();
             return out;

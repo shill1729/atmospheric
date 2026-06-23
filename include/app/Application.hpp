@@ -3,6 +3,7 @@
 #include "adjoint/SourceEstimator.hpp"
 #include "core/Config.hpp"
 #include "core/Types.hpp"
+#include "export/DataRecorder.hpp"
 #include "sim/SensorManager.hpp"
 #include "sim/SimulationController.hpp"
 #include "ui/RetroTheme.hpp"
@@ -69,6 +70,14 @@ private:
         float error_m = 0.0f;
     };
 
+    struct FeynmanKacAnimation {
+        bool active = false;
+        AdjointSolver::Solution solution;
+        int frame = 0;
+        float wall_time_per_frame_s = 1.0f / 15.0f;
+        float wall_accum_s = 0.0f;
+    };
+
     SimulationController controller_;
     MenuModel menu_model_;
     TopToolbar top_toolbar_;
@@ -77,6 +86,9 @@ private:
     SensorManager sensor_manager_;
     SourceEstimator source_estimator_;
     SourceEstimationView source_estimation_;
+    FeynmanKacAnimation feynman_kac_anim_;
+    DataRecorder data_recorder_;
+    std::string recording_status_;
 
     sf::RenderWindow window_;
     sf::Font font_;
