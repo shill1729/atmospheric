@@ -44,4 +44,4 @@
 *.cache
 
 # CSV
-wildfire_pm25_dataset.csv
+/wildfire_pm25_dataset.csv
