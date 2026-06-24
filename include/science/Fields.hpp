@@ -14,7 +14,9 @@ public:
         VortexPair = 1,
         ShearVortexBlend = 2,
         Cellular = 3,
-        Zero = 4
+        Zero = 4,
+        Uniform = 5,
+        SolidBodyRotation = 6
     };
     enum class DiffusivityPreset {
         ConstantScalar = 0,
@@ -46,6 +48,8 @@ private:
     Vec2 wind_vortex_pair(float time_s, const Vec2& x) const;
     Vec2 wind_shear_vortex_blend(float time_s, const Vec2& x) const;
     Vec2 wind_cellular(float time_s, const Vec2& x) const;
+    Vec2 wind_uniform() const;
+    Vec2 wind_solid_body_rotation(const Vec2& x) const;
 
     const DomainConfig& domain_;
     float constant_scalar_diffusivity_ = 22.0f;

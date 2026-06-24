@@ -247,6 +247,8 @@ Example:
 - `C`: toggle PDE color scaling mode (auto/fixed)
 - `E`: run source estimation (requires paused state)
 - `J`: toggle adjoint overlay on the right panel
+- `L`: clear sensors and load the NY wildfire site network from `wildfire_pm25_dataset.csv` (equirectangular projection, scaled to fit current domain)
+- `N`: apply NY observation preset — physical sample period 300 s, averaging window 3600 s (mimics 5-min readings averaged to 1-hour reports); does not change domain or physics
 - Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
 - Top toolbar `File` actions:
   - `Estimate Source (Paused)`
@@ -280,6 +282,16 @@ Concentration display calibration:
 - Sensor on-plot labels show each sensor's latest report value (`ug/m^3`) or `N/A` before first report.
 - Reported sensor value is the window average of noisy physical samples in that report interval.
 - `--sensor-spatial-radius` sets disk-like local spatial averaging radius around each sensor (meters).
+
+## NY Wildfire Sensor Network
+
+`wildfire_pm25_dataset.csv` contains an hourly PM2.5 time series for 38 sensor sites across the NY metro and Hudson Valley region (Nov 2024 wildfire event).
+
+Press **`L`** to load the site network into the simulation. Site lat/lon coordinates are projected to domain coordinates via an equirectangular approximation centred on the network centroid (lat ≈ 41.02°, lon ≈ −73.96°). The network is then uniformly scaled and centred to fit the active domain with 8% padding, preserving the relative geometry of the sites.
+
+Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages), which can then be combined with the CSV export to produce a synthetic data set whose temporal structure mimics the real instrument cadence.
+
+The `R` (reset) key always clears sensors regardless of how they were placed.
 
 ## CSV Export
 

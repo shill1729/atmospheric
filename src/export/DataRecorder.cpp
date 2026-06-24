@@ -32,6 +32,7 @@ int DataRecorder::total_readings() const {
 
 void DataRecorder::start_recording() {
     records_.clear();
+    source_events_.clear();
     recording_ = true;
 }
 
@@ -41,7 +42,16 @@ void DataRecorder::stop_recording() {
 
 void DataRecorder::clear() {
     records_.clear();
+    source_events_.clear();
     recording_ = false;
+}
+
+void DataRecorder::record_source_event(const Vec2& position, float birth_time_s, float lifespan_s) {
+    source_events_.push_back({position, birth_time_s, lifespan_s, birth_time_s + lifespan_s});
+}
+
+const std::vector<DataRecorder::SourceEvent>& DataRecorder::source_events() const {
+    return source_events_;
 }
 
 void DataRecorder::add_reading(
@@ -64,6 +74,20 @@ void DataRecorder::add_reading(
 
 const std::vector<DataRecorder::SensorRecord>& DataRecorder::records() const {
     return records_;
+}
+
+void DataRecorder::set_geo_projection(const GeoProjection& p) {
+    geo_projection_ = p;
+    has_geo_projection_ = true;
+}
+
+void DataRecorder::clear_geo_projection() {
+    has_geo_projection_ = false;
+    geo_projection_ = {};
+}
+
+bool DataRecorder::has_geo_projection() const {
+    return has_geo_projection_;
 }
 
 namespace {
@@ -118,6 +142,17 @@ std::string DataRecorder::export_csv(
         return {};
     }
 
+    constexpr float R_EARTH = 6371000.0f;
+    constexpr float DEG2RAD = 3.14159265358979323846f / 180.0f;
+
+    auto domain_to_latlon = [&](float x, float y, float& lat, float& lon) {
+        const float xm = (x - geo_projection_.cx_domain) / geo_projection_.scale + geo_projection_.cx_data;
+        const float ym = (y - geo_projection_.cy_domain) / geo_projection_.scale + geo_projection_.cy_data;
+        lat = geo_projection_.lat0_deg - ym / (R_EARTH * DEG2RAD);
+        lon = geo_projection_.lon0_deg + xm / (geo_projection_.cos_lat0 * R_EARTH * DEG2RAD);
+    };
+
+    out << std::fixed << std::setprecision(6);
     out << "# Atmospheric Tool - Forward Simulation Export\n"
         << "# Wind model: " << wind_model << "\n"
         << "# Diffusion model: " << diffusion_model << "\n"
@@ -126,10 +161,32 @@ std::string DataRecorder::export_csv(
         << "# Time scale: " << time_scale << "\n"
         << "# Sensor averaging window (s): " << sensor_sample_period_s << "\n"
         << "# Sensors recorded: " << records_.size() << "\n"
-        << "# Concentration: sensor window-averaged reading converted to ug/m^3\n";
+        << "# Concentration: sensor window-averaged reading converted to ug/m^3\n"
+        << "# Coordinates: "
+        << (has_geo_projection_
+            ? "lat_deg, lon_deg (WGS84, equirectangular back-projection from domain)\n"
+            : "x_m, y_m (simulation domain, metres)\n")
+        << "# Sources: " << source_events_.size() << "\n";
+    for (std::size_t i = 0; i < source_events_.size(); ++i) {
+        const auto& se = source_events_[i];
+        out << "# Source " << (i + 1) << ":";
+        if (has_geo_projection_) {
+            float slat, slon;
+            domain_to_latlon(se.position.x(), se.position.y(), slat, slon);
+            out << " lat=" << slat << " lon=" << slon;
+        } else {
+            out << " x=" << se.position.x() << " y=" << se.position.y();
+        }
+        out << " born=" << se.birth_time_s << "s"
+            << " lifespan=" << se.lifespan_s << "s"
+            << " died=" << se.death_time_s << "s\n";
+    }
 
-    out << "time_s,x_m,y_m,concentration_ug_m3,wind_u_m_s,wind_v_m_s\n";
-    out << std::fixed << std::setprecision(6);
+    if (has_geo_projection_) {
+        out << "time_s,lat_deg,lon_deg,concentration_ug_m3,wind_u_m_s,wind_v_m_s\n";
+    } else {
+        out << "time_s,x_m,y_m,concentration_ug_m3,wind_u_m_s,wind_v_m_s\n";
+    }
 
     struct Entry {
         float time_s;
@@ -152,12 +209,17 @@ std::string DataRecorder::export_csv(
     for (const auto& e : entries) {
         const auto& rec = records_[e.sensor_idx];
         const auto& r = rec.readings[e.reading_idx];
-        out << r.time_s << ","
-            << rec.position.x() << ","
-            << rec.position.y() << ","
-            << r.concentration_ug_m3 << ","
-            << r.wind_u << ","
-            << r.wind_v << "\n";
+        out << r.time_s << ",";
+        if (has_geo_projection_) {
+            float lat, lon;
+            domain_to_latlon(rec.position.x(), rec.position.y(), lat, lon);
+            out << lat << "," << lon;
+        } else {
+            out << rec.position.x() << "," << rec.position.y();
+        }
+        out << "," << r.concentration_ug_m3
+            << "," << r.wind_u
+            << "," << r.wind_v << "\n";
     }
 
     return path;

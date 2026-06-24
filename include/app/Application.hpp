@@ -4,6 +4,7 @@
 #include "core/Config.hpp"
 #include "core/Types.hpp"
 #include "export/DataRecorder.hpp"
+#include "io/SiteLoader.hpp"
 #include "sim/SensorManager.hpp"
 #include "sim/SimulationController.hpp"
 #include "ui/RetroTheme.hpp"
@@ -53,6 +54,8 @@ private:
     sf::Vector2f domain_to_right_panel(const Vec2& x) const;
     void run_source_estimation();
     void clear_source_estimation();
+    void load_ny_sites();
+    void apply_ny_sensor_preset();
     void build_ecs_ui();
     void sync_ecs_ui_state();
     void handle_ecs_action(const ui::UiEvent& event);
@@ -89,6 +92,8 @@ private:
     FeynmanKacAnimation feynman_kac_anim_;
     DataRecorder data_recorder_;
     std::string recording_status_;
+    std::string sites_status_;
+    std::string ny_sites_csv_path_ = "wildfire_pm25_dataset.csv";
 
     sf::RenderWindow window_;
     sf::Font font_;

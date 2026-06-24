@@ -408,7 +408,7 @@ void Application::draw_hud_cards() {
 }
 
 void Application::draw_control_strip() {
-    sf::RectangleShape strip({560.0f, 44.0f});
+    sf::RectangleShape strip({760.0f, 60.0f});
     strip.setPosition({24.0f, 226.0f});
     strip.setFillColor(sf::Color(10, 16, 24, 188));
     strip.setOutlineThickness(1.0f);
@@ -417,27 +417,34 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Source | Numerics | Sensors | Display | PDE | E estimate | F1 help",
+        "Toolbar: File | Source | Numerics | Sensors | Display | PDE | E estimate | L load NY sites | N NY preset | F1 help",
         13);
     control_text.setPosition({34.0f, 230.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));
     window_.draw(control_text);
 
-    const std::string status = source_estimation_.status.empty()
+    const std::string estimator_status = source_estimation_.status.empty()
         ? "Estimator: idle"
         : ("Estimator: " + source_estimation_.status);
-    std::ostringstream status_line;
-    status_line << status;
+    std::ostringstream line2;
+    line2 << estimator_status;
     if (source_estimation_.has_error_m) {
-        status_line << " | error=" << std::fixed << std::setprecision(1) << source_estimation_.error_m << " m";
+        line2 << " | error=" << std::fixed << std::setprecision(1) << source_estimation_.error_m << " m";
     }
     if (!recording_status_.empty()) {
-        status_line << "  |  Recorder: " << recording_status_;
+        line2 << "  |  Rec: " << recording_status_;
     }
-    sf::Text status_text(font_, status_line.str(), 12);
-    status_text.setPosition({34.0f, 247.0f});
-    status_text.setFillColor(sf::Color(196, 216, 232));
-    window_.draw(status_text);
+    sf::Text line2_text(font_, line2.str(), 12);
+    line2_text.setPosition({34.0f, 247.0f});
+    line2_text.setFillColor(sf::Color(196, 216, 232));
+    window_.draw(line2_text);
+
+    if (!sites_status_.empty()) {
+        sf::Text line3_text(font_, sites_status_, 12);
+        line3_text.setPosition({34.0f, 262.0f});
+        line3_text.setFillColor(sf::Color(180, 230, 190));
+        window_.draw(line3_text);
+    }
 }
 
 
@@ -502,8 +509,10 @@ void Application::draw_help_overlay() {
         "L-click right panel : place sensor\n"
         "E       : run source estimation (paused)\n"
         "J       : toggle adjoint overlay\n"
+        "L       : load NY wildfire sensor network (clears current sensors)\n"
+        "N       : apply NY observation preset (phys 300 s, avg 3600 s)\n"
         "Space   : pause/resume\n"
-        "R       : reset simulation\n"
+        "R       : reset simulation (clears sensors)\n"
         "Esc     : open/close preferences\n"
         "F1      : open/close this controls window\n"
         "\n"

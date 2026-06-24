@@ -93,6 +93,12 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::J) {
                 show_adjoint_overlay_ = !show_adjoint_overlay_;
             }
+            if (key->code == sf::Keyboard::Key::L) {
+                load_ny_sites();
+            }
+            if (key->code == sf::Keyboard::Key::N) {
+                apply_ny_sensor_preset();
+            }
         }
 
         if (const auto* text = event->getIf<sf::Event::TextEntered>()) {
@@ -147,6 +153,12 @@ void Application::process_events() {
                             + std::to_string(data_recorder_.total_readings()) + " readings captured.";
                     } else {
                         data_recorder_.start_recording();
+                        for (const auto& src : sim().source().active_sources()) {
+                            data_recorder_.record_source_event(
+                                src.position,
+                                sim().time_s() - src.age_s,
+                                sim().config().source.lifespan);
+                        }
                         recording_status_ = "Recording...";
                     }
                 }
@@ -179,6 +191,12 @@ void Application::process_events() {
                     last_source_click_ = source_pos;
                     has_last_source_click_ = true;
                     ++source_click_count_since_reset_;
+                    if (data_recorder_.is_recording()) {
+                        data_recorder_.record_source_event(
+                            source_pos,
+                            sim().time_s(),
+                            sim().config().source.lifespan);
+                    }
                 }
             } else if (click->button == sf::Mouse::Button::Left && right_panel_contains(click->position)) {
                 sensor_manager_.add_sensor(right_panel_pixel_to_domain(click->position), sim().time_s());
@@ -332,6 +350,40 @@ void Application::run_source_estimation() {
 void Application::clear_source_estimation() {
     source_estimation_ = SourceEstimationView{};
     feynman_kac_anim_ = FeynmanKacAnimation{};
+}
+
+void Application::load_ny_sites() {
+    std::string err;
+    const auto sites = load_unique_sites(ny_sites_csv_path_, err);
+    if (sites.empty()) {
+        sites_status_ = "L: " + err;
+        return;
+    }
+    ProjectionParams pp;
+    const auto positions = project_sites_to_domain(sites, sim().config().domain, 0.08f, &pp);
+    DataRecorder::GeoProjection gp;
+    gp.lat0_deg  = pp.lat0_deg;
+    gp.lon0_deg  = pp.lon0_deg;
+    gp.cos_lat0  = pp.cos_lat0;
+    gp.scale     = pp.scale;
+    gp.cx_domain = pp.cx_domain;
+    gp.cy_domain = pp.cy_domain;
+    gp.cx_data   = pp.cx_data;
+    gp.cy_data   = pp.cy_data;
+    data_recorder_.set_geo_projection(gp);
+    sensor_manager_.clear();
+    for (const auto& pos : positions) {
+        sensor_manager_.add_sensor(pos, sim().time_s());
+    }
+    sites_status_ = "L: loaded " + std::to_string(positions.size()) + " NY sites";
+}
+
+void Application::apply_ny_sensor_preset() {
+    // Mimic hourly-averaged, 5-min physical readings — no domain/physics changes.
+    sensor_manager_.set_physical_sample_period(300.0f);
+    sensor_manager_.set_sample_period(3600.0f);
+    menu_model_.sync_from_current(controller_.current_settings());
+    sites_status_ = "N: sensor preset — phys 300 s, avg 3600 s";
 }
 
 } // namespace atm

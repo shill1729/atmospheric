@@ -14,6 +14,7 @@ add_executable(atmospheric
     src/app/Application.cpp
     src/app/ApplicationEvents.cpp
     src/export/DataRecorder.cpp
+    src/io/SiteLoader.cpp
     src/app/ApplicationRender.cpp
     src/core/RuntimeSettings.cpp
     src/core/Validation.cpp

@@ -21,6 +21,26 @@ public:
         std::vector<Reading> readings;
     };
 
+    struct SourceEvent {
+        Vec2 position;
+        float birth_time_s;
+        float lifespan_s;
+        float death_time_s;
+    };
+
+    // Parameters of the equirectangular projection used when NY sites were loaded.
+    // Stored so export_csv() can back-project domain (x,y) to (lat, lon).
+    struct GeoProjection {
+        float lat0_deg  = 0.0f;
+        float lon0_deg  = 0.0f;
+        float cos_lat0  = 1.0f;
+        float scale     = 1.0f;
+        float cx_domain = 0.0f;
+        float cy_domain = 0.0f;
+        float cx_data   = 0.0f;
+        float cy_data   = 0.0f;
+    };
+
     bool is_recording() const;
     bool has_data() const;
     int total_readings() const;
@@ -28,6 +48,8 @@ public:
     void start_recording();
     void stop_recording();
     void clear();
+
+    void record_source_event(const Vec2& position, float birth_time_s, float lifespan_s);
 
     void add_reading(
         std::size_t sensor_index,
@@ -47,11 +69,19 @@ public:
         float time_scale,
         float sensor_sample_period_s) const;
 
+    void set_geo_projection(const GeoProjection& p);
+    void clear_geo_projection();
+    bool has_geo_projection() const;
+
     const std::vector<SensorRecord>& records() const;
+    const std::vector<SourceEvent>& source_events() const;
 
 private:
     bool recording_ = false;
     std::vector<SensorRecord> records_;
+    std::vector<SourceEvent> source_events_;
+    bool has_geo_projection_ = false;
+    GeoProjection geo_projection_ {};
 };
 
 } // namespace atm

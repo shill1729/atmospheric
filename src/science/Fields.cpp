@@ -81,6 +81,10 @@ Vec2 Fields::wind(float time_s, const Vec2& x) const {
         return wind_cellular(time_s, x);
     case WindPreset::Zero:
         return Vec2::Zero();
+    case WindPreset::Uniform:
+        return wind_uniform();
+    case WindPreset::SolidBodyRotation:
+        return wind_solid_body_rotation(x);
     }
     return wind_jet_shear(time_s, x);
 }
@@ -163,7 +167,7 @@ Vec2 Fields::grad_scalar_diffusivity(float time_s, const Vec2& x) const {
 
 void Fields::cycle_wind_preset(int direction) {
     int id = static_cast<int>(wind_preset_);
-    const int n = 5;
+    const int n = 7;
     id = (id + direction) % n;
     if (id < 0) {
         id += n;
@@ -191,6 +195,10 @@ std::string_view Fields::wind_preset_name() const {
         return "Cellular Vortices";
     case WindPreset::Zero:
         return "Zero Wind";
+    case WindPreset::Uniform:
+        return "Uniform";
+    case WindPreset::SolidBodyRotation:
+        return "Solid Body Rotation";
     }
     return "Jet Shear";
 }
@@ -230,6 +238,8 @@ std::string_view Fields::diffusivity_preset_name() const {
     }
     return "Constant Scalar";
 }
+
+
 
 Vec2 Fields::wind_jet_shear(float time_s, const Vec2& x) const {
     const float lx = domain_.x_max - domain_.x_min;
@@ -278,6 +288,23 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
     const float u = dpsi_dy + 2.0f;
     const float v = -dpsi_dx;
     return Vec2(u, v);
+}
+
+Vec2 Fields::wind_uniform() const {
+    // Steady westerly with a slight northward component (~40 m/s base).
+    return Vec2(40.0f, 8.0f);
+}
+
+Vec2 Fields::wind_solid_body_rotation(const Vec2& x) const {
+    // Rigid-body rotation about the domain centre.
+    // Every fluid element completes one revolution in T = 2*pi/Omega seconds.
+    // Omega = 0.022 rad/s → T ≈ 286 sim-s, giving ~50 m/s at the mid-edge (r=2500 m).
+    constexpr float OMEGA = 0.022f;
+    const float cx = 0.5f * (domain_.x_min + domain_.x_max);
+    const float cy = 0.5f * (domain_.y_min + domain_.y_max);
+    const float dx = x.x() - cx;
+    const float dy = x.y() - cy;
+    return Vec2(-OMEGA * dy, OMEGA * dx);
 }
 
 Vec2 Fields::wind_shear_vortex_blend(float time_s, const Vec2& x) const {
