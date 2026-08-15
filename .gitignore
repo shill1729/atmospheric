@@ -52,3 +52,5 @@
 *.pyc
 
 /papers
+csv_demo.txt
+hello.py
