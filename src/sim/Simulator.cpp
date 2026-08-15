@@ -123,12 +123,20 @@ void Simulator::cycle_wind_model(int direction) {
     fields_.cycle_wind_preset(direction);
 }
 
+Fields::WindPreset Simulator::wind_preset() const {
+    return fields_.wind_preset();
+}
+
 std::string_view Simulator::wind_model_name() const {
     return fields_.wind_preset_name();
 }
 
 void Simulator::cycle_diffusion_model(int direction) {
     fields_.cycle_diffusivity_preset(direction);
+}
+
+Fields::DiffusivityPreset Simulator::diffusivity_preset() const {
+    return fields_.diffusivity_preset();
 }
 
 std::string_view Simulator::diffusion_model_name() const {

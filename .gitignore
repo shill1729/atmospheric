@@ -44,4 +44,11 @@
 *.cache
 
 # CSV
-/wildfire_pm25_dataset.csv
+*.csv
+
+# Python
+/.venv
+*__pycache__*
+*.pyc
+
+/papers

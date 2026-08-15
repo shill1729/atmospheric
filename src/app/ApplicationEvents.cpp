@@ -263,6 +263,8 @@ void Application::run_source_estimation() {
         return;
     }
 
+    
+
     const float t_now = sim().time_s();
     const auto& domain = sim().config().domain;
     const auto& ecfg = source_estimator_.config();

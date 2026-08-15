@@ -53,14 +53,14 @@ public:
     void add_sensor(const Vec2& position, float current_time_s);
     void clear();
     void step(float current_time_s, const AdvectionDiffusionSolver& pde, const DomainConfig& domain);
+    float sample_concentration(
+        const AdvectionDiffusionSolver& pde, const DomainConfig& domain, const Vec2& position) const;
 
     const std::vector<Sensor>& sensors() const;
     const std::vector<PendingReport>& pending_reports() const;
     void clear_pending_reports();
 
 private:
-    float sample_concentration_bilinear(const AdvectionDiffusionSolver& pde, const DomainConfig& domain, const Vec2& p) const;
-
     std::vector<Sensor> sensors_;
     std::vector<PendingReport> pending_reports_;
     float sample_period_s_ = 5.0f;

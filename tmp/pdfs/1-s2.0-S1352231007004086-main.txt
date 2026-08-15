@@ -1,0 +1,548 @@
+                                                 ARTICLE IN PRESS
+                                     Atmospheric Environment 41 (2007) 6964–6973
+                                                                                       www.elsevier.com/locate/atmosenv
+                 Source estimation methods for atmospheric dispersion
+                                                  K. Shankar Rao
+                 Atmospheric Turbulence and Diffusion Division, Air Resources Laboratory, NOAA, Oak Ridge, TN 37831-2456, USA
+                          Received 22 December 2006; received in revised form 14 April 2007; accepted 25 April 2007
+          Abstract
+            Both forward and backward transport modeling methods are being developed for characterization of sources in
+          atmospheric releases of toxic agents. Forward modeling methods, which describe the atmospheric transport from sources
+          to receptors, use forward-running transport and dispersion models or computational ﬂuid dynamics models which are run
+          many times, and the resulting dispersion ﬁeld is compared to observations from multiple sensors. Forward modeling
+          methods include Bayesian updating and inference schemes using stochastic Monte Carlo or Markov Chain Monte Carlo
+          sampling techniques. Backward or inverse modeling methods use only one model run in the reverse direction from the
+          receptors to estimate the upwind sources. Inverse modeling methods include adjoint and tangent linear models, Kalman
+          ﬁlters, and variational data assimilation, among others.
+            This survey paper discusses these source estimation methods and lists the key references. The need for assessing
+          uncertainties in the characterization of sources using atmospheric transport and dispersion models is emphasized.
+          Published by Elsevier Ltd.
+          Keywords: Atmospheric transport and dispersion models; Bayesian updating and inference methods; Inverse modeling; Adjoint and
+          tangent linear models; Kalman ﬁltering; Variational data assimilation
+          1. Introduction                                       source to receptors, backward trajectories from
+                                                                receptors attempt to approximate the particles
+            Atmospheric transport and dispersion (ATD)          paths to the source. Trajectories are less accurate
+          models are routinely used to assess the impact of     when particles travel in the atmospheric boundary
+          emission sources on air quality for varying meteor-   layer because of the effects of turbulence, or when
+          ological conditions. These models are also used at    they encounter convective up- and down-drafts
+          nuclear and chemical plants for emergency response    (e.g., Stohl et al., 2002).
+          and impact assessments for hazardous substances         Both forward and backward modeling methods
+          accidentally released into the atmosphere.            are being developed to estimate the release rate and
+            Trajectory models are widely used to establish      duration of chemical, biological, and radiological
+          source–receptor relationships for estimation of       (CBR) agents in terrorism-related events. Given the
+          atmospheric concentrations or for interpretation      meteorology and concentrations observed at several
+          of measurements. While forward trajectories de-       detectors, these methods characterize the source
+          scribe the paths of the released particles from the   type, and estimate the source strength and location.
+                                                                This survey paper discusses the leading source
+           Tel.: +18655761238; fax: +18655761327.              estimation methods, and lists the relevant key
+            E-mail address: Shankar.Rao@noaa.gov                references. These methods are broadly classiﬁed as
+          1352-2310/$-see front matter Published by Elsevier Ltd.
+          doi:10.1016/j.atmosenv.2007.04.064
+                                                                               ARTICLE IN PRESS
+                                                          K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973                                                               6965
+              forward modeling methods, which model the atmo-                                            estimates to be computed before a release event, and
+              spheric transport from sources to receptors, and                                           the sensor data to be interpreted in real time during
+              backward modeling methods which use one model                                              the event.
+              run in the reverse direction from the receptors to                                            Sohnetal. (2002) described the application of the
+              estimate the upwind sources. The importance of                                             BMC method to rapidly locate and characterize
+              assessing various uncertainties in the estimation of                                       pollutant releases in buildings. Before the release
+              sources using ATD models is emphasized.                                                    occurs, a suitable ATD model, incorporating prob-
+                                                                                                         ability distributions characterizing the uncertainties
+              2. Forward modeling methods                                                                in model input parameters, is utilized to build a
+                                                                                                         library of simulations of many hypothetical (but
+                  Forward modeling source estimation methods                                             likely) air ﬂow and pollutant dispersion scenarios by
+              utilize forward-running dispersion models or com-                                          applying MC sampling to the uncertain input
+              putational ﬂuid dynamics algorithms. These models                                          parameter distributions. During a release event,
+              are typically run many times over the domain of                                            the algorithm uses a structured probabilistic meth-
+              interest. The predicted concentrations in each run                                         od, referred to as BMC updating or Bayesian
+              are compared to the observed concentrations and                                            updating. In this method, application of Bayes rule
+              the source conditions are adjusted, using a suitable                                       (e.g., Gelman et al., 2004, p. 7) allows one to
+              methodology, until an acceptable level of agreement                                        quickly estimate the level of agreement between the
+              is    obtained. Bayesian updating and inference                                            data streaming in from the sensors and each
+              methods, using stochastic Monte Carlo (MC) or                                              realization in the library of simulations, in order
+              Markov Chain Monte Carlo (MCMC) sampling,                                                  to assess the likelihood this realization describes the
+              are widely used for this adjustment.                                                       event in progress. By comparing the relative
+                                                                                                         agreement (indicated by the likelihood estimate),
+              2.1. Bayesian updating and inference methods                                               one can determine the best-ﬁtting suite of model
+                                                                                                         inputs and the associated uncertainty. The prob-
+                  Thebasicassumptionsandageneralderivationof                                             ability of each model simulation before and after
+              the Bayesian Monte Carlo (BMC) method are given                                            assessing the agreement is referred to as the prior
+              by Patwardhan and Small (1992). BMC approach                                               and posterior probability, respectively.
+              assumes that the sampled results in a traditional                                             The posterior probability of the kth MC simula-
+              MC analysis correspond to the prior distributions                                          tion     yielding        prediction         Yk given the sensor
+              for the model parameters and output. Only those                                            measurement O, denoted by pðYkjOÞ, is calculated
+              MCreplications with outputs consistent with the                                        from Bayes rule as
+              observations, deﬁned as falling within an acceptable                                                                                 ,N
+              range of differences, are kept for subsequent                                              pðYkjOÞ¼½pðYkÞLðOjYkÞ                          XpðYiÞLðOjYiÞ,
+              analysis. The BMC method reﬁnes uncertainty                                                                                                i¼1
+              estimates by using a continuous likelihood function                                                                                                                     (1)
+              to weight the results of individual MC simulations.
+              This likelihood function quantiﬁes the probability                                         where pðYkÞ is the prior probability of the kth MC
+              of obtaining a speciﬁed consistency after accounting                                       simulation, LðOjYkÞ is the likelihood of measure-
+              for errors in the measurements.                                                            ment O given model prediction Yk,andN is the
+                  BMC methods have been applied for estimating                                           total number of MC simulations. The prior uncer-
+              uncertainties in modeling potential sea-level rise due                                     tainty of each model input parameter (e.g., source
+              to climate change (Patwardhan and Small, 1992),                                            location) and model prediction (e.g., agent concentra-
+              modelingwaterquality (Dilks et al., 1992), assessing                                       tion in air) is updated according to how well
+              environmental health risk (Brand and Small, 1995),                                         predictions using the prior uncertainty distribution
+              and air quality modeling (Bergin and Milford,                                              agree with the sensor data. The likelihood function
+              2000). Bayesian methodology provides a framework                                           LðOjYkÞquantiﬁestheerrorstructure of the data. For
+              for decoupling the time-consuming ATD model                                                measurements with uncorrelated normally distributed
+              simulations from the interpretation of measure-                                            errors, L is Gaussian:
+              ments, while incorporating uncertainty analysis in                                                            pﬃﬃﬃﬃﬃﬃﬃﬃﬃ     1                                      2
+                                                                                                         LðOjY Þ¼ð ð2pÞs Þ                     expf0:5½ðOY Þ=s  g,
+              all steps. For emergency response applications, this                                                 k                    e                                 k     e
+              permits the ATD model predictions and uncertainty                                                                                                                       (2)
+                                                       ARTICLE IN PRESS
+           6966                          K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973
+           where s is the standard deviation of the error in            random walk that uses an acceptance/rejection rule
+                    e
+           measurements.                                                to converge to the speciﬁed target distribution, and
+             This BMC updating approach can be quickly                  its generalization, the Metropolis–Hastings algo-
+           executed and is well-suited for rapidly evaluating           rithm, are other Markov chain simulation methods
+           the performance of sensors as well as alternative            that are widely used for drawing samples from
+           sampling plans. If the likelihood function can be            Bayesian posterior distributions.
+           properly speciﬁed, the BMC approach provides a                  Details on these methods and their applications
+           useful technique for incorporating prior informa-            can be found in Gilks et al. (1996), Carlin and Louis
+           tion about input and parameter uncertainties as well         (2000), and Gelman et al. (2004). The distribution of
+           as model performance into the conﬁdence intervals            all the simulated draws is used to characterize the
+           placed on the model predictions. Keats et al. (2007)         posterior distribution and to draw inferences from
+           used an adjoint approach (see Section 3.1) for               its  mean, standard deviation, and percentiles.
+           characterization of the source–receptor relationship         However, drawing inferences from iterative simula-
+           required in the determination of the likelihood              tions, using Gibbs sampler or other algorithms,
+           function, together with a MCMC Bayesian infer-               requires that the iteration has converged to a
+           ence method (see below) for source reconstruction            stationary distribution which is representative of
+           in complex ﬂows in built-up environments.                    the target distribution. To diminish the effect of the
+                                                                        starting distribution, the early burn-in iterations
+           2.2. Markov Chain Monte Carlo simulation                     are discarded. Iterative simulation draws also
+                                                                        exhibit within-sequence correlations, which can
+             The posterior probability distribution pðYjOÞ can          cause inefﬁciencies in the simulation. Inference from
+           be used to simulate and reﬁne estimates of model             correlated draws is generally less precise than that
+           input parameters and predictions. In simple Bayesian         from the same number of independent draws. These
+           models, it is easy to draw a sufﬁciently large sample        issues are discussed by Gelman (see Gilks et al.,
+           of size N directly from the posterior distribution. For      1996, p. 131).
+           high-dimensional problems, it is difﬁcult to ﬁnd a
+           sufﬁciently accurate approximation to the posterior          3. Backward modeling methods
+           distribution that is still easy to sample from. MCMC
+           (Gilks et al., 1996; Gamerman and Lopes, 2006)                  Forward modeling techniques, discussed above,
+           stochastic simulation for Bayesian inference is a            use manyATDmodelrunstoestimatetheunknown
+           general method for drawing samples of Y from                 source(s) that could best explain the concentrations
+           approximate distributions and then correcting those          observed at the receptors downwind. In contrast,
+           draws to better approximate the target posterior         backward modeling techniques typically use only
+           distribution. The samples are drawn sequentially,            one run in the reverse direction from the receptors,
+           withthedistribution of the sampled draws depending           in  order to determine the unknown upwind
+           onlyonthelastvaluedrawn;hence,thedrawsforma                  source(s). Backward models are thus computation-
+           Markov chain. The success of the method depends              ally more efﬁcient and are often preferred when
+           on sampling iteratively such that the approxi-               there are more sources than receptors, or when the
+           mate distribution is improved at each step in the            number of receptors is limited and the sources are
+           simulation, until it converges close to the target           unknown. The backward methods are also referred
+           distribution.                                                to as inverse models.
+             The Gibbs sampler, also called alternating condi-
+           tional sampling, is the simplest Markov chain                3.1. Inverse modeling
+           simulation algorithm that has been widely used for
+           multi-dimensional problems. Spiegelhalter et al.                Inverse modeling denotes any technique used for
+           (1995) described BUGS, a software package to                 identifying the source(s) from species concentration
+           facilitate Bayesian inference using a Markov chain           measurements. A classical application of inverse
+           simulation where the Gibbs sampler is automati-              modelingtoglobalbiogeochemicalcyclesconsistsof
+           cally implemented for the posterior distribution.            the quantiﬁcation of large-scale spatial and tempor-
+           The version of this package for MS-Windows is                al variations of sources and sinks of long-lived
+           called WinBUGS (Spiegelhalter et al., 2003). The             atmospheric trace gases such as carbon dioxide,
+           Metropolis algorithm, which is an adaptation of a            methane, and nitrous oxide (e.g., Kaminski et al.,
+                                                         ARTICLE IN PRESS
+                                          K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973                            6967
+                                                    ´   ´                   sampled for concentration measurement at a
+          1999; Houweling et al., 1999; Vukicevic and Hess,
+          2000). Most of these gases as well as tracers linked              detector has originated from somewhere leads to
+          to them are now routinely monitored by global                     an inverse transport equation with the same
+          networks of atmospheric observation stations.                     diffusion, deposition and decay terms as in the
+          These atmospheric observations are used by inverse                forward transport equation. Intuitively, the adjoint
+          models to constrain the surface ﬂuxes needed to                   and inverse transport concepts are equivalent. This
+          explain their large-scale sources and sinks. This                 leads to the conclusion that, for appropriate
+          involves inverting the atmospheric transport that                 conventions, the diffusion in the passive tracer
+          links surface source ﬂuxes to the atmospheric                     equation must be a self-adjoint operator (Issartel
+          concentration patterns.                                           and Baverel, 2003). The inverse transport plume is
+             Inverse modeling requires measurements of atmo-                often referred to as a retroplume, which is a generic
+          spheric concentration ﬁelds with sufﬁcient accuracy.              term used to designate the past history of the tracer
+          However, such concentration measurements are                      sample.
+          expensive and are typically available only on a                     Backtracking or retro-transport can be described
+          sparse spatial and temporal network, whereas the                  either in a Lagrangian or an Eulerian framework
+          surface ﬂuxes exhibit a large heterogeneity depend-               (Wotawa et al., 2003; Hourdin and Talagrand,
+          ing on the types and areas of the underlying                      2006). For example, Hourdin and Issartel (2000)
+          ecosystems. Thus, an adequate representation of                   and Issartel and Baverel (2002) used Eulerian
+          the surface source ﬂuxes requires many degrees of                 backtracking, while Issartel and Baverel (2003) used
+          freedom, which are partially constrained by only a                Lagrangian backtracking for evaluating the mon-
+          limited number of atmospheric observations. Be-                   itoring network deployed for the veriﬁcation of the
+          cause of this high degree of underdeterminacy of the              Comprehensive Test Ban Treaty (CTBT). This
+          problem, additional information has to be imposed                 receptor-oriented approach is especially efﬁcient in
+          a priori on the solution to obtain physically mean-               terms of computational effort and analysis when the
+          ingful results. In general, inverse modeling requires             number of possible sources is larger than the
+          the minimization of a cost function J which                   number of concentration measurements.
+          depends on a source vector x using a model FðxÞ.                    Fundamentally, there is an intrinsic time-symme-
+          Inclusion of additional prior information in the cost             try in atmospheric transport, which is the basis of
+          function is called regularization. The art of inverse             backtracking for inverting concentration measure-
+          modeling consists of selecting the right amount of                ments of atmospheric tracer (Issartel and Baverel,
+          prior information, which is derived from models,                  2002, 2003; Hourdin and Talagrand, 2006; Hourdin
+          auxiliary data, or other requirements (Kasibhatla                 et al., 2006). The transformation from forward to
+          et al., 2000). Such inverse modeling techniques                   backward transport equations consists of simply
+          include adjoint and tangent linear models, Kalman                 changing the signs of the time derivative and
+          ﬁlters, variational data assimilation, among others.              advection terms. As noted above, turbulent diffu-
+             Aﬁrst approach to inverse transport, referred to               sion term remains unchanged in both equations.
+          as Lagrangian backtracking, consists of inverting the             This can be expressed as
+          trajectories of individual air parcels. Backtracking is           qw=qtþVrwþzðwÞ¼s                                      (3)
+          generally addressed as a sensitivity analysis. An
+          adjoint transport equation follows from the concept               for forward transport. Here wðx;tÞ¼Cðx;tÞ=rðx;tÞ
+          that a concentration measurement is inﬂuenced by                  is the tracer mixing ratio, Cðx;tÞ is the tracer
+          the sources. Adjoint modeling refers to the use of an             concentration with units (kg m3) for mass, and
+          adjoint transport equation to establish the source–               rðx;tÞ is the density of air (kg m3), leading to units
+          receptor relationship needed for the inverse ap-                  of (kgkg1) for w. In Eq. (3), V is the wind vector,
+          proach. The adjoint computation determines the                    and z is the turbulent diffusion and sðx;tÞ is the
+          sensitivity or inﬂuence function which, combined                  source   distribution    function,    both with units
+          with the tracer source, will produce the observed                 (kgkg1s1). The inverse or retro-transport equa-
+          concentration (Hourdin and Talagrand, 2006). The                  tion can be written as
+          connection of backtracking to the adjoint transport               qw=qtVrwþzðwÞ¼m,                                 (4)
+          equation has been utilized by Uliasz and Pielke
+          (1991) and Pudykiewicz (1998), among others, for                  where wðx;tÞ is the retro-tracer mixing ratio
+          evaluating source parameters. The concept that air                (kgkg1), and mðx;tÞ is the detector function with
+                                                          ARTICLE IN PRESS
+           6968                            K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973
+                          1 1
+           units (kgkg      s   ) which describes the measured               to estimate the position and strength of the source.
+           concentrations.                                                   Eq. (9) is related to this situation.
+              The solutions of Eqs. (3) and (4) are given by the               In principle, the source may be at any position x
+           uniquely deﬁned linear functions, w ¼ LðsÞ and w ¼               in the retroplume cloud. It is not possible to
+                                     
+           L ðmÞ where L and L are linear operators. The                     determine the exact position. Intuitively, a source
+           reciprocity of atmospheric transport is then ex-                  far away from the detector should be larger in
+           pressed as                                                        magnitude than a closer one. The ambiguity about
+                                                                            the sources can be reduced signiﬁcantly when
+           hLðsÞ;mi¼hs;L ðmÞi.                                     (5)       several concentration measurements are available
+           Here L is the adjoint of L, and h;i denotes the air-             (Issartel and Baverel, 2002, 2003). Issartel (2005)
+           mass-weighted scalar product deﬁned (Issartel and                 proposed a simple inference strategy that the
+           Baverel, 2002, 2003; Hourdin and Talagrand, 2006;                 observed concentration values are linearly related
+           Hourdin et al., 2006)as                                           to the source strength estimate. Doubled concentra-
+                      Z                                                      tion values lead to a doubled source strength. The
+           hf;ci¼ OTrfcdxdt,                                      (6)       method, based on adjoint techniques, is intended to
+                                                                             optimize the source resolution by using the concept
+           where the integration is over the atmosphere of                   of illumination to assign relative weights to different
+           volume O and time domain T.                                       source regions in space–time domain. A minimum
+              Eq. (5) indicates that, from the time-symmetry of              entropy criterion is used to prevent overestimation
+           atmospheric transport, the direct and inverse trans-              of the available information that would lead to
+           port are adjoint to each other with respect to the                artifacts, especially close to the detectors.
+           scalar product deﬁned in Eq. (6). Calculation of
+           many back-trajectories amounts to calculating the                 3.2. Kalman ﬁltering
+           mixing ratio wðx;tÞ of a retroplume emitted back in
+           time by the detector. The mean mass concentration                   The linear Kalman ﬁlter (Kalman, 1960; Gelb
+           M(kg) behaves as a scalar product of the tracer                   et al., 1974), also referred to as the Kalman–Bucy
+           mixing ratio w and the detector function m:                       ﬁlter (Kalman and Bucy, 1961; Daley, 1991) for
+           Mðw;mÞ¼Z           rðx;tÞwðx;tÞmðx;tÞdxdt.              (7)       time-continuous problems, estimates a state vector
+                         OT                                                 (e.g., tracer  emissions)    by utilizing     a suitable
+           Asource of strength Q in x at time t will generate a              (e.g., 3D ATD) model and updating the state vector
+           measurement M ¼ wðx;tÞQ; i.e., a measurement                    by comparing the model output (e.g., tracer mixing
+           M can be explained by an instantaneous point                      ratios) to observations. Hartley and Prinn (1993)
+           source of strength Q (kg) given by                                used an inverse method based on a linear Kalman
+                                                                            ﬁlter to determine the regional surface ﬂuxes of
+           Q¼M=wðx;tÞ.                                             (8)       trace gases from their atmospheric mixing-ratio
+           For continuous sources with a total release                       measurements. Haas-Laursen et al. (1996) applied
+                 R _                  _                                      an optimization technique, based on an adaptive-
+           Q¼ qðtÞdt, where qðtÞX0 is the release rate
+                 1                                  R        _             iterative approach of this Kalman ﬁlter, to deduce
+           (kgs ), the measurement is M ¼              w ðx;tÞqðtÞdt.        time-varying emissions of trace gases. The Kalman
+           This leads to the source estimate:
+           QXQ ðxÞ¼M=½max wðx;tÞ.                                (9)       ﬁlter was derived from a linear relationship between
+                  min                 t                                      the change in mixing ratio with time and the
+           Eqs. (8) and (9) indicate that source strength should             emissions of trace gas over that time period,
+           be inversely proportional to the retroplume mixing                assuming Gaussian errors in estimated emissions
+           ratio, and it should at least be equal to a minimum               and observations. The linear Kalman ﬁlter update
+           related to the maximum retro-tracer mixing ratio.                 equation to estimate E        , the emissions vector at
+           Eq. (8) as well as other techniques described in this                                        tþ1
+           paper deal with the estimation of complex sources                 time tþ1, can be expressed (Hartley and Prinn,
+                                                                             1993; Cohn, 1997)as
+           which vary in space and time. However, when the                   E                  o     p
+                                                                               tþ1 ¼ Et þ Gtðv v Þ,                               (10)
+           tracer is a contaminant accidentally released from                                   t     t
+           an industrial plant, the source can be considered a               where E is the vector of estimated source strengths
+                                                                                      t
+           point. The aim then is no longer to characterize the              E in region k at time t; vo is the vector of mixing
+                                                                               kt                           t
+           variations of the release in space and time, but only             ratios wo observed at stations i at time t, and vp is
+                                                                                      it                                            t
+                                                         ARTICLE IN PRESS
+                                          K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973                            6969
+          the vector of mixing ratios wp predicted by the                   can compute the sensitivity (or inﬂuence function)
+                                               it
+          model at the same locations i at time t.                          of a few model output variables (y, say) with respect
+             Eq. (10) shows that the inverse method continu-                to many input variables, x. Unlike a forecast model
+          ously updates the estimated emissions vector E                    which describes the evolution of meteorological
+                                                                     t
+          based on the residuals between observations and the               ﬁelds forward in time, the adjoint equations
+          model predictions, multiplied by Gt, the gain matrix              describe the evolution of sensitivity of output
+          at time t. The gain Gt characterizes the sensitivity of           variables to initial, boundary, or parametric condi-
+          the emission adjustment to differences between                    tions backward in time. By utilizing this sensitivity
+          observed and modeled concentrations at each                       information, many types of problems such as source
+          station. G is calculated from                                     or model parameter estimation, and variational
+                      t
+          G          T        T        1                                   data assimilation can be solved efﬁciently. Because
+              ¼DP ½PDP þN .                                     (11)
+            t      t t   t  t t      t                                      of this, adjoints of many models and their applica-
+          Here, Dt ¼½dklt¼½sEkt sElt is the covariance                    tions have appeared in the meteorological research
+          matrix of the errors sE in the emissions estimated                literature. Courtier et al. (1993) listed the literature
+          from regions k and l at time t, P ¼½P ¼                          (up to 1993) on the use of adjoint methods, Kalman
+                                                         t     ikt
+          ½qwp=qE  is the partial derivative matrix of the                 ﬁltering, and variational methods in meteorology.
+              it    k
+          change in concentrations with respect to emissions,               The theory of adjoint equations is given by
+            T                                                  o   o
+          P is the transpose of P , and N ¼½N ¼½s s                       Marchuk (1995), who did much of the early work
+            t                         t         t      ijt     it  jt
+          is the covariance matrix of errors so in mixing ratios            in this area.
+            o
+          v observed at detectors i and j at time t, also                     Tangent linear models (TLMs) efﬁciently com-
+          referred to as the noise matrix. The D matrix is also             pute the model output perturbation dy resulting
+          updated at each time step as                                      from an initial input perturbation dx. In theory, a
+          D ¼DGPD.                                              (12)       model is a mapping of input (independent or
+            tþ1      t     t  t  t                                          control) variables onto the output (dependent or
+          The calculation of the gain matrix Gt thus requires               state) variables. If this mapping (model) is differ-
+          the existence and availability of the covariance                  entiable, its ﬁrst derivative is the Jacobian matrix
+          matrix D . The calculation of this matrix is the
+                     t                                                      (JM). A TLM computes the action of the JM on a
+          difﬁcult part of Kalman ﬁlter method.                             vector, which is often a perturbation of the initial
+             Kalman ﬁltering methods are most suited for                    condition or the boundary forcing. The TLM is
+          linear systems with well-conditioned input-to-out-                linear, depending on the model trajectory at which
+          put parameter covariance matrices and strong                      the linearization takes place, and it simulates the
+          observable relations between the internal state                   development of small perturbations with time.
+          variables and the model outputs. The turbulent                      An ADMcomputes the action of the transposed
+          ﬂow and transport mechanisms are not linear,                      JM on a vector, which is an arbitrary sensitivity.
+          however, leading to ill-conditioned covariance                    The ADM integrates sensitivities of a speciﬁc
+          matrices and poorly observable systems. Cohn                      feature from the effect to the cause. For time-
+          (1997) gave a detailed derivation of the linear                   evolving models, this means simulation backward in
+          Kalman ﬁlter and its extensions to cases where                    time. The ADM is also linear and depends on the
+          observations are nonlinearly related to state vari-               model trajectory at which the linearization takes
+          ables and to non-Gaussian errors. Kalman ﬁltering                 place. The ADM is adjoint to the TLM (Giering,
+          is  not well-suited for the uncertainty analyses                  2000).
+          required for decision-making (see Section 4), be-                   The construction of adjoint and tangent linear
+          cause it is computationally intensive and time-                   models manually is tedious and prone to errors.
+          consuming.                                                        Computational differentiation, which substantially
+                                                                            reduces this work, represents a distinct advantage.
+          3.3. Adjoint and tangent linear models                            The Tangent linear and Adjoint Model Compiler
+                                                                            (TAMC; Giering, unpublished manual, 1997) is a
+             Adjoint models (ADMs) are powerful tools for                   computer tool for the forward and inverse modes of
+          inverse modeling and are widely used in atmo-                     automatic differentiation (AD). AD is a technique
+          spheric and oceanographic research for data assim-                for computing derivatives of arbitrary order auto-
+          ilation,   parameter      estimation,    and sensitivity          matically, with accuracy to working precision, by
+          studies. For a wide range of models, their adjoints               applying the chain rule of derivative calculus
+                                                  ARTICLE IN PRESS
+          6970                       K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973
+          repeatedly to elementary arithmetic operations          theory of data assimilation were given by Lorenc
+          required to run the computer algorithm. The             (1986). Robertson and Persson (1992) applied the
+          forward mode of AD propagates derivatives of            variational continuous assimilation technique of
+          intermediate variables with respect to independent      Derber (1989) to air pollution data, and Robertson
+          variables. This type of differentiation is used to      and Langner (1998) applied it to reconstruct the
+          obtain a TLM. In contrast, the inverse mode of AD       source term in the European Tracer Experiment
+          propagates derivatives of the ﬁnal result with          (ETEX). Elbern et al. (1997) applied the variational
+          respect to an intermediate (adjoint) quantity, and      adjoint data assimilation method to a tropospheric
+          provides a method for obtaining the ADM. Hybrid         chemistry model.
+          modes of AD try to combine the best features of           Thevariational method basically deﬁnes a cost or
+          both forward and inverse modes. Descriptions            penalty function J, usually as the sum of squared
+          of the various AD techniques can be found in Berz       differences (residuals) between model predictions
+          et al. (1996) and Griewank (2000).                      and the corresponding observations. The optimiza-
+            Giering and Kaminski (1998) found the perfor-         tion problem is deﬁned here as ﬁnding the minimum
+          mance of their computer-generated model is com-         of J in terms of the source distribution Q. This is
+          parable  to   that  of  the  hand-written   model.      equivalent to determining the source emissions that
+          Kaminski et al. (1999) generated an adjoint model       best explain the observations over a given time
+          by applying TAMC in the inverse mode of AD to a         period. From the deﬁnition of a differential, a
+          coarse grid 3D global model for atmospheric             perturbation dJ due to a small change dQ can be
+          transport of CO2. Recent research and develop-          expressed as
+          ments in AD tools make it possible to generate the      dJ ¼hrJ; dQi,                                 (13)
+          adjoint computer models for complex dynamical
+          systems without signiﬁcant simpliﬁcation of the         where the brackets denote the inner scalar product
+          underlying physical and chemical processes. Brown       of the quantities within them. rJ is the gradient or
+          et al. (2005) used the AD tool Transformation of        sensitivity of J with respect to Q and indicates in
+          Algorithms in Fortran (TAF) of Giering and              what direction Q should be changed in order to
+          Kaminski (2003) to derive the adjoint and tangent       obtain a model output that ﬁts the observations
+          linear computer algorithms for the 3D ATD model         better.
+          SCIPUFF (Sykes et al., 2006). These algorithms            The gradient rJ is most efﬁciently computed by
+          have been evaluated using the Dipole Pride 26           the adjoint modeling technique. This approach is
+          (Biltoft, 1998) ﬁeld data of SF tracer releases at      known as adjoint data assimilation. This is a
+                                         6
+          Yucca Flats, Nevada.                                    variational method where the model state is
+                                                                  adjusted to observations by an iterative process,
+          3.4. Variational data assimilation                      starting with an initial guess of the source distribu-
+                                                                  tion Q. rJ can be determined by running the
+            Data assimilation includes a number of ap-            forward dispersion model ﬁrst, and then running the
+          proaches such as objective analysis, nudging tech-      linearized ADM backward in time with forcing by
+          niques,   Kalman     ﬁltering,   and    variational     the model misﬁt. All the intermediate values in the
+          approaches that are used to adjust numerical model      forward run have to be stored for their use in the
+          predictions to the observations (Kalnay, 2003). The     adjoint run. A better guess of Q is then found by
+          application of variational methods for meteoro-         some descent method, such as the conjugate
+          logical problems was pioneered by Sasaki (1958,         gradient method, stepping towards a minimum of J:
+          1970).                                                  Qnþ1 ¼ Qn grJðQnÞ,                           (14)
+            PenenkoandObraztsov(1976)ﬁrst demonstrated
+          the application of the variational method with          where n is the iteration number and g is step length.
+          adjoint equations to meteorological data assimila-      The procedure is repeated with a forward integra-
+          tion. The theoretical basis for the so-called four-     tion of the dispersion model followed by the ADM
+          dimensional variational (4D-Var) data assimilation      backward integration for each iteration. Details of
+          of time-dependent problems, accounting for dis-         the adjoint data assimilation method can be found
+          tributed observations, was provided by Lewis and        in the references given above. Robertson and
+          Derber (1985), Le Dimet and Talagrand (1986), and       Persson (1992) described the application of this
+          Talagrand and Courtier (1987). Details of the           method for source strength estimation.
+                                                         ARTICLE IN PRESS
+                                          K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973                            6971
+          4. Discussion                                                     analysis; these time periods may not be compatible
+                                                                            with the response times needed for dealing with the
+             Both forward and backward modeling methods                     emergencies. In addition, many of the CB agents are
+          are currently being developed and adapted for                     generally released as solid/liquid aerosols into the
+          application to CBR agent releases in terrorism-                   atmosphere at higher elevations (e.g., from an
+          related events. These methods are intended to                     airplane, or the top of a building or a tower), which
+          characterize the source type and location, and                    may require accounting for droplet evaporation,
+          estimate the release rate and duration, given the                 chemical transformation, deposition and settling
+          meteorology and the concentrations monitored at                   losses from the plume to correctly estimate the
+          several points downwind. This paper described                     source term. Mobile sampling may be necessary for
+          several leading source estimation methods, includ-                elevated releases and large domains with highly
+          ing those under development for this application,                 variable meteorological conditions, such as those
+          and listed key references available in the literature             encountered in coastal regions and in complex
+          for obtaining additional information. Several other               terrain, where ﬁxed in situ sampling would be
+          promising methods, which are not included here due                impractical    and prohibitively       expensive.     Rao
+          to space constraints, will be covered in a detailed               (2003) described the methodology and analysis of
+          report (under preparation). Many of the previous                  mobile-sampled surface concentration data, includ-
+          applications of the modeling techniques discussed in              ing the computer programs to derive time-averaged
+          this paper are to large-scale problems such as                    concentrations at stationary points for comparison
+          climate change and CTBT. It is hoped this survey                  to model predictions.
+          paper would encourage further studies and devel-                    Data Fusion refers to the combination of data
+          opment of these methods for application to atmo-                  frommultiple sensors, and related information from
+          spheric dispersion problems of current interest.                  models and associated data bases, to achieve
+             The problem of estimating the CBR releases in                  improved accuracy and more speciﬁc inferences
+          terrorism events is challenging, because of the                   than could be achieved by the use of a single sensor
+          inherent unpredictability of location, time, and                  alone (DTRA, 2005). Several areas of data fusion,
+          other conditions before the event. Several uncer-                 and some of the uncertainty issues mentioned
+          tainties exist, even if the meteorological data and               above, are areas of current research. In addition, a
+          concentrations are successfully monitored at multi-               ﬁeld experiment is being planned to collect suitable
+          ple locations. These include the well-known un-                   high-quality dispersion data to evaluate the source
+          certainties associated with atmospheric dispersion                estimation models that are currently under devel-
+          modeling (e.g., Rao and Hosker, 1993) related to:                 opment. These data will facilitate a comparison of
+          data and parameters used to execute and evaluate                  the relative performance of the various models, as
+          the model; approximations used for dynamical/                     well as an assessment of their strengths and
+          chemical processes and numerical solutions; and                   weaknesses for source estimation applications under
+          stochastic nature of the turbulent atmosphere. Rao                different release conditions.
+          (2005) discussed the methods to analyze and
+          quantify these uncertainties to aid in effective                  Acknowledgements
+          decision-making for emergency response applica-
+          tions.                                                              This work was performed under an agreement
+             Assuming suitable sensors are available, the                   between NOAAAirResources Laboratorys Atmo-
+          sampling and modeling of CBR agent releases                       spheric Turbulence and Diffusion Division (ATDD)
+          introduces uncertainties related to: obtaining an                 and the U.S. Defense Threat Reduction Agency
+          adequate number of representative samples (Rao                    (DTRA), as part of DTRAs Sensor Data Fusion
+          et al., 1991a); limit of detection of the concentra-              (SDF) project for CBR defense.
+          tions and treatment of censored data sets (Rao
+          et al., 1991b) and the null data; characterization of
+          the background concentrations; and data analysis                  References
+          techniques to properly distinguish the signal from
+          the background to prevent false alarms, etc. Some                 Bergin, M.S., Milford, J.B., 2000. Application of Bayesian Monte
+          bio-agent sensors typically use integrated sampling                  Carlo analysis to a Lagrangian photochemical air quality
+          over several hours, and require additional time for                  model. Atmospheric Environment 34, 781–792.
+                                                             ARTICLE IN PRESS
+            6972                              K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973
+            Berz, M., Bischof, C., Corliss, G., Griewank, G. (Eds.), 1996.       Haas-Laursen, D.E., Hartley, D.E., Prinn, R.G., 1996. Optimiz-
+               Computational Differentiation: Techniques, Applications,             ing an inverse method to deduce time-varying emissions of
+               and Tools. SIAM, Philadelphia, PA.                                   trace gases. Journal of Geophysical Research 101 (D17),
+            Biltoft, C., 1998. Dipole Pride 26: Phase II of Defense Special         22823–22831.
+               Weapons Agency transport and dispersion model validation.         Hartley, D., Prinn, R., 1993. Feasibility of determining surface
+               DPG-FR-98-001, Dugway Proving Ground, UT.                            emissions of trace gases using an inverse method in a three-
+            Brand, K.P., Small, M.J., 1995. Updating uncertainty in an              dimensional chemical transport model. Journal of Geophysi-
+               integrated risk assessment: conceptual framework and meth-           cal Research 98 (D3), 5183–5197.
+               ods. Risk Analysis 15, 719–731.                                   Hourdin, F., Issartel, J.-P., 2000. Sub-surface nuclear tests
+            Brown, R.C., Dussault, D.M., Miake-Lye, R.C., Heimbach, P.,             monitoring through the CTBT xenon network. Geophysical
+               2005. SCIPUFF adjoint model for atmospheric transport                Research Letters 27, 2245–2248.
+               and dispersion optimization. Report RR-1392, Aerodyne             Hourdin, F., Talagrand, O., 2006. Eulerian backtracking of
+               Research, Billerica, MA, 24pp.                                       atmospheric tracers. I: adjoint derivation and parameteriza-
+            Carlin, B.P., Louis, T.A., 2000. Bayes and Empirical Bayes              tion of subgrid-scale transport. Quarterly Journal of the
+               Methods for Data Analysis. Chapman & Hall/CRC, Boca                  Royal Meteorological Society 132, 567–583.
+               Raton, FL, 419pp.                                                 Hourdin, F., Talagrand, O., Idelkadi, A., 2006. Eulerian back-
+            Cohn, S.E., 1997. An introduction to estimation theory. Journal         tracking of atmospheric tracers. II: numerical aspects.
+               of the Meteorological Society of Japan 75, 257–288.                  Quarterly Journal of the Royal Meteorological Society 132,
+                                                                  ´   ´             585–603.
+            Courtier, P., Derber, J., Errico, R., Louis, J.-F., Vukicevic, T.,
+               1993. Important literature on the use of adjoint, variational     Houweling, S., Kaminski, T., Dentener, F., Lelieveld, J.,
+               methods and Kalman ﬁlter in meteorology. Tellus 45A,                 Heimann, M., 1999. Inverse modeling of methane sources
+               342–357.                                                             and sinks using the adjoint of a global transport model.
+            Daley, R., 1991. Atmospheric Data Analysis. Cambridge                   Journal of Geophysical Research 104 (D21), 26137–26160.
+               University Press, New York, 457pp.                                Issartel, J.-P., 2005. Emergence of a tracer source from air
+            Derber, J.C., 1989. A variational continuous assimilation               concentration measurements, a new strategy for linear
+               technique. Monthly Weather Review 117, 2437–2446.                    assimilation. Atmospheric Chemistry and Physics 5, 249–273.
+            Dilks, D.W., Canale, R.P., Meier, P.G., 1992. Development of         Issartel, J.-P., Baverel, J., 2002. Adjoint backtracking for the
+               Bayesian Monte Carlo techniques for water quality model              veriﬁcation of the Comprehensive Nuclear Test Ban Treaty.
+               uncertainty. Ecological Modeling 62, 149–162.                        Atmospheric    Chemistry    and   Physics   Discussions  2,
+            DTRA, 2005. TTCP CBD Group Technical Panel 9 Work Plan                  2133–2150.
+               Proposal. CBR Data Fusion, Version 1.3, 34pp.                     Issartel, J.-P., Baverel, J., 2003. Inverse transport for the
+            Elbern, H., Schmidt, H., Ebel, A., 1997. Variational data               veriﬁcation of the Comprehensive Nuclear Test Ban Treaty.
+               assimilation for tropospheric chemistry modeling. Journal of         Atmospheric Chemistry and Physics 3, 475–486.
+               Geophysical Research 102, 15967–15985.                            Kalman, R., 1960. A new approach to linear ﬁltering and linear
+            Gamerman, D., Lopes, H.F., 2006. Markov Chain Monte Carlo               prediction problems. Transactions of ASME, Series D,
+               Stochastic Simulation for Bayesian Inference. Chapman &              Journal of Basic Engineering 82, 35–45.
+               Hall/CRC, Boca Raton, FL, 323pp.                                  Kalman, R., Bucy, R., 1961. New results in linear ﬁltering and
+            Gelb, A., Kasper, J.F., Nash, R.A., Price, C.F., Sutherland,            prediction theory. Transactions of ASME, Series D, Journal
+               A.A., 1974. Applied Optimal Estimation. MIT Press, Cam-              of Basic Engineering 83, 95–108.
+               bridge, MA, 374pp.                                                Kalnay, E., 2003. Atmospheric Modeling, Data Assimilation and
+            Gelman, A., Carlin, J.B., Stern, H.S., Rubin, D.B., 2004.               Predictability. Cambridge University Press, Cambridge, MA,
+               BayesianDataAnalysis.Chapman&Hall/CRC,BocaRaton,                     341pp.
+               FL, 668pp.                                                        Kaminski, T., Heimann, M., Giering, R., 1999. A coarse grid
+            Giering, R., 2000. Tangent linear and adjoint biogeochemical            three-dimensional global inverse model of the atmospheric
+               models. In: Kasibhatla, P., et al. (Eds.), Inverse Methods in        transport. 1. Adjoint model and Jacobian matrix. Journal of
+               Global Biogeochemical Cycles. American Geophysical Un-               Geophysical Research 104 (D15), 18535–18553.
+               ion, Washington, DC, pp. 33–48.                                   Kasibhatla, P., Heiman, R., Rayner, P., Mahowald, N., Prinn,
+            Giering, R., Kaminski, T., 1998. Using TAMC to generate                 R.G., Hartley, D.E., 2000. Inverse Methods in Global
+               efﬁcient adjoint code: comparison of hand written and                Biogeochemical    Cycles.  American Geophysical Union,
+               automatically generated code for evaluation of ﬁrst and              Washington, DC, 324pp.
+               second derivatives. In: Faure C. (Ed.), Automatic Differentia-    Keats, A., Yee, E., Lien, F.-S., 2007. Bayesian inference for
+               tion for Adjoint Code Generation, INRIA, Rapport de                  source determination with applications to a complex urban
+               recherche 3555, pp. 31–37.                                           environment. Atmospheric Environment 41, 465–479.
+            Giering, R., Kaminski, T., 2003. Transformation of algorithms in     Le Dimet, F.X., Talagrand, O., 1986. Variational algorithm for
+               Fortran, TAF, Version 1.5, FastOpt. Available at hhttp://            analysis and assimilation of meteorological observations:
+               www.FastOpt.comi.                                                    theoretical aspects. Tellus 38A, 97–110.
+            Gilks, W.R., Richardson, S., Spiegelhalter, D.J., 1996. Markov       Lewis, J.M., Derber, J.C., 1985. The use of adjoint equations to
+               Chain MonteCarlo in Practice. Chapman & Hall/CRC, Boca               solve a variational adjustment problem with advective
+               Raton, FL, 486pp.                                                    constraints. Tellus 37A, 309–322.
+            Griewank, A., 2000. Evaluating Derivatives. Principles and           Lorenc, A.C., 1986. Analysis methods for numerical weather
+               Techniques of Algorithmic Differentiation. SIAM, Philadel-           prediction. Quarterly Journal of the Royal Meteorological
+               phia, PA.                                                            Society 112, 1177–1194.
+                                                               ARTICLE IN PRESS
+                                               K. Shankar Rao / Atmospheric Environment 41 (2007) 6964–6973                                     6973
+           Marchuk, G.I., 1995. Adjoint Equations and Analysis of                  Sasaki, Y., 1970. Some basic formalisms in numerical variational
+               Complex Systems. Kluwer Academic Publishers, Boston.                    analysis. Monthly Weather Review 98, 875–883.
+           Patwardhan, A., Small, M.J., 1992. Bayesian methods for model           Sohn, M.D., Reynolds, P., Singh, N., Gadgil, A.J., 2002. Rapidly
+               uncertainty analysis with application to future sea level rise.         locating and characterizing pollutant releases in buildings.
+               Risk Analysis 12, 515–523.                                              Journal of Air & Waste Management Association 52,
+           Penenko, V.V., Obraztsov, N.N., 1976. A variational initializa-             1422–1432.
+               tion methods for the ﬁelds of the meteorological elements           Spiegelhalter, D., Thomas, A., Best, N., Gilks, W., Lunn, D.,
+               (English translation). Soviet Meteorological Hydrology 11,              1995. BUGS: Bayesian inference using Gibbs sampling.
+               1–11.                                                                   Version 0.5, Technical Report, Biostatistics Unit, MRC,
+           Pudykiewicz, J., 1998. Application of adjoint tracer transport              Cambridge, UK.
+               equations for evaluating source parameters. Atmospheric             Spiegelhalter, D., Thomas, A., Best, N., Lunn, D., 2003. Win-
+               Environment 32, 3039–3050.                                              BUGS user manual, Version 1.4.1. Available at hhttp://
+           Rao, K.S., 2003. Processing of surface concentration data from              www.mrc-bsu.cam.ac.uk/bugs/i.
+               tracer releases in MVP sessions 1, 2, 3, at Cape Canaveral,         Stohl, A., Eckhardt, S., Forster, C., James, P., Spichtinger, N.,
+               Florida. NOAA Technical Memorandum OAR ARL-250,                         Seibert, P., 2002. A replacement for simple back trajectory
+               ATDD,OakRidge, TN, 85pp.                                                calculations in the interpretation of atmospheric trace
+           Rao, K.S., 2005. Uncertainty analysis in atmospheric dispersion             substance measurements. Atmospheric Environment 36,
+               modeling. Pure and Applied Geophysics 162, 1893–1917.                   4635–4648.
+           Rao, K.S., Hosker, R.P., 1993. Uncertainty in the assessment of         Sykes, R.I., Parker, S.F., Henn, D.S., Chowdhury, B., 2006.
+               atmospheric concentrations of toxic contaminants from an                SCIPUFF Version 2.2 Technical Documentation. A.R.A.P.
+               accidental  release. Radiation Protection Dosimetry 50,                 Report no. 729, Draft, L-3 Titan Corporation, Princeton, NJ,
+               281–288.                                                                318pp.
+           Rao, S.T., Ku, J.-Y., Rao, K.S., 1991a. Sampling strategies for         Talagrand, O., Courtier, P., 1987. Variational assimilation of
+               toxic air contaminants. Risk Analysis 11, 441–451.                      meteorological observations with the adjoint vorticity equa-
+           Rao, S.T., Ku, J.-Y., Rao, K.S., 1991b. Analysis of toxic air               tion. I: theory. Quarterly Journal of the Royal Meteorological
+               contaminant data containing concentrations below the limit              Society 113, 1311–1328.
+               of detection. Journal of Air & Waste Management Associa-            Uliasz, M., Pielke, R., 1991. Application of the receptor oriented
+               tion 41, 442–448.                                                       approach in mesoscale dispersion modeling. In: van Dop, H.,
+           Robertson, L., Langner, J., 1998. Source function estimate by               Steyn, D.G. (Eds.), Air Pollution Modeling and its Applica-
+               means of variational data assimilation applied to the ETEX-I            tion VIII. Plenum Press, New York, pp. 399–407.
+                                                                                         ´   ´
+               tracer experiment. Atmospheric Environment 32, 4219–4225.           Vukicevic, T., Hess, P., 2000. Analysis of tropospheric transport
+           Robertson, L., Persson, C., 1992. On the application of four                in the Paciﬁc Basin using the adjoint technique. Journal of
+               dimensional data assimilation of air pollution data using the           Geophysical Research 105 (D6), 7213–7230.
+               adjoint technique. In: van Dop, H., Kallos, G. (Eds.), Air          Wotawa, G., De Geer, L.-E., Denier, P., Kalinowski, M.,
+               Pollution Modeling and its Application IX. Plenum Press,                Toivonen, H., DAmours, R., Desiato, F., Issartel, J.-P.,
+               NewYork, pp. 365–373.                                                   Langer, M., Seibert, P., Frank, A., Sloan, C., Yamazawa, H.,
+           Sasaki, Y., 1958. An objective analysis based on the variational            2003. Atmospheric transport modelling in support of CTBT
+               method. Journal of Meteorological Society of Japan 36,                  veriﬁcation—overview and basic concepts. Atmospheric
+               738–746.                                                                Environment 37, 2529–2537.

@@ -1,0 +1,291 @@
+                                                                                  Atmospheric  Environment  Vol. 32, No. 17, pp. 3039-3050,  1998 
+                                                                                             'D 1998 Elsevier Science Ltd. All rights reserved 
+                                                                                                              Printed in Great Britain 
+                                                     PH: S1352-2310(97)00480-9                              13s2-2310;9s $19.oo + o.oo 
+                          APPLICATION OF ADJOINT TRACER TRANSPORT 
+                     EQUATIONS FOR EVALUATING SOURCE PARAMETERS 
+                                                  JANUSZ A. PUDYKIEWICZ 
+                  Atmospheric  Environment  Service, Modelling and  Integration  Research  Division, 2121 Trans-Canada 
+                                               Highway, Dorval, Quebec, Canada  H9P  IJ3 
+                             (First  received 2 June  1997 and in final form  15 October  1997. Published June  1998) 
+                  Abstract-The solution of the adjoint tracer transport  equation with a properly defined forcing term could 
+                  be effectively used to evaluate the emission field of atmospheric contaminants. This technique is applicable 
+                  for a large class of toxic materials either for the verification of the existing emission inventories or, as a 
+                  sole method, for the assessment of the source term. In this paper, we present one specific application  of 
+                  the  adjoint  tracer  transport  equation.  In  particular,  we estimate  the  location  of the  source  using the 
+                  influence function obtained as a solution of the adjoint equation. The strength of the source is estimated 
+                  from the Lagrange duality relation. The information obtained this way is important  to enhance our ability 
+                  to  monitor  nuclear testing. We  discuss the  mathematical  algorithm  with which to  solve this problem 
+                  along with some pertinent information  concerning the network  used for sampling of radioactivity on a 
+                  global scale. The theoretical discussion is then  illustrated  with examples of applications  of the method 
+                  for the evaluation of the location of a nuclear test. Finally, we present a general evaluation of the accuracy 
+                  of the method and compare it with the traditional approach of back trajectories. In conclusions, we evaluate 
+                  the  general  applicability  of  the  method  for  monitoring  of nuclear  testing  and  suggest the  extension 
+                  of the algorithm  for other  atmospheric  tracers including toxics. © 1998 Elsevier Science Ltd. All rights 
+                  reserved 
+                  Key  word index: Adjoint equations, geolocation, nuclear test monitoring, long-range transport,  dispersion 
+                  modelling. 
+                             1. INTRODUCTION                           extended international  discussions during the United 
+                                                                       Nations  Conference  on  Disarmament.  It  has  been 
+          The long-range  transport  of atmospheric  pollutants        concluded that  a global network  of monitors  for at-
+          has been studied extensively in the context of chemical      mospheric  radionuclides  along  with an  appropriate 
+          and nuclear tracers. Models employed in these studies        global tracer model should supplement the traditional 
+          predict  atmospheric  concentrations  of contaminants        seismic monitoring  techniques  (Van  der  Vink  and 
+          for a given emission-source distribution. We can pose,       Park,  1994). 
+          however, the inverse problem which consists of evalu-          In this paper, we present an algorithm with which 
+          ating unknown sources of atmospheric tracers on the          to evaluate  the position  and strength  of a source of 
+          basis of a given set of measured concentrations.  The        radionuclides using the atmospheric measurements of 
+          solution of the inverse problem can be used to estimate      activities of selected radionuclides. This algorithm  in 
+          and  verify emission  inventories  of  many  toxic  and      synergy  with  other  monitoring  techniques  such  as 
+          radioactive species as well as to detect unknown sour-       seismic, infrasound  and  hydroacustic  can  help  to 
+          ces of atmospheric tracers. For example, the detection       identify clandestine nuclear testing. Our  method  can 
+          and  localization  of nuclear  testing  can  be  achieved    be also extended  to  identify sources of other  atmo-
+          using observations of radionuclides in the atmosphere.       spheric contaminants. 
+          The identification of a nuclear event using this method        The paper is organized as follows. In the next sec-
+          is possible because, as a result of the nuclear explosion    tion  we discuss  those  aspects  of the  kinematics  of 
+          conducted  in the atmosphere,  radioactive  gases and        tracer mixing in the atmosphere  which are important 
+          aerosols  are  produced  in  large  amounts.  Even  in       for the evaluation of unknown sources. Following this 
+          underground nuclear tests, some measurable amounts           theoretical  introduction,  we  formulate  an  inverse 
+          of noble gases are vented to the surface through por-        transport  problem, and present the method of source 
+          ous geological structures,  thus  permitting  the detec-     evaluation  using the solution of the adjoint equation 
+          tion of the test by radionuclide monitoring  stations.       and  the  Lagrange  duality  relation.  In  the  last  two 
+             The development of advanced methods of detection          sections, we address the issue of the monitoring  net-
+          of nuclear testing using atmospheric measurements of         work and  present  the application  of the method  to 
+          activities of selected radionuclides was the subject of      evaluation  of a hypothetical  source. 
+                                                                   3039 
+                      3040                                                    J. A. PUDYKIEWICZ 
+                          2.  LARGE-SCALE TROPOSPHERIC DISPERSION  OF 
+                                            NUCLEAR TRACERS 
+                         The solution  of the inverse tracer  transport  prob-
+                      lem has been most frequently obtained by calculating 
+                      back trajectories from the receptor reporting the pres-
+                      ence of a radionuclide. The well-known application of 
+                      this approach was the initial estimate of the amount of 
+                      release from  the  Chernobyl  reactor  (Persson  et  al., 
+                      1987). How useful is this method in the context of the 
+                      verification  of compliance  with  the  Comprehensive 
+                      Test Ban Treaty (CTBT)? 
+                         In  order  to  answer  this  question,  we  have  per-
+                      formed a numerical experiment which consisted of the 
+                      solution of a set of equations describing trajectories of 
+                      M particles released from the area source 
+                      with the initial condition 
+                                                                                      (2) 
+                      where xrm> is the position  vector of the mth particle; 
+                      X!ml = {Ximl, X\t>, x~ml}, v(x, t)  is  the  three-dimen-
+                      sional velocity field obtained from the meteorological 
+                                                     5
+                      model, and M = 2.5 x 10 . The numerical solution of 
+                      equation  (1)  was  performed  using  fourth-order 
+                      Runge-Kutta  method for the wind field obtained  by 
+                      dynamic interpolation  of the observed data.  The re-
+                      sults of our  calculation, shown in Fig. 1, reveal that 
+                      when the  size attained  by  the  spreading  cluster  of 
+                      particles becomes larger than the characteristic length 
+                      scale  of  the  transition  of  the  atmospheric  energy 
+                      wavenumber spectrum from the regime governed by 
+                      the  relation  &'(k) oc k-(   5l3l  to  the  large-scale  regime 
+                      governed by the relation ,g'(k) oc k- 3, the predominant 
+                      mode of growth is associated with 2-D stretching and 
+                      folding embedded in the flow field generated by the                         lb 
+                      synoptic scale circulation  systems. At this stage, the 
+                      tracer  distribution  forms elongated  filaments which                 Fig.  1. The large-scale distribution  of an  inert  tracer  cal-
+                      are  progressively  stretched  and  folded.  Simulta-                                          5 
+                      neously, the shape of the contaminant  plume becomes                   culated using 2.5 x 10 particles: (a) 3 days after the release, 
+                      very complex: the most characteristic  forms of mass                                   (b) one month after the release. 
+                      distribution  to be seen are tendrils, whorls, and horse-
+                      shoe patterns (Maryon and Buckland, 1995); the well-
+                      stirred  areas  are  often  isolated  by  impenetrable                    The  observed  pattern  of trajectories  of particles 
+                      barriers of mixing.                                                    released originally from  a small-scale area  source is 
+                         The general pattern  of the tracer transport  shown                 a  direct  manifestation  of extreme  sensitivity to  the 
+                      in  Fig.  1, can  be described  by the model  of chaotic               initial conditions in system ( 1) with v(x, t) specified by 
+                      advection which was studied extensively in the con-                    a  realistic atmospheric  flow. The  analogical  pattern 
+                      text of mixing processes in fluids (Ottino,  1989). The                can be obtained  when the back  trajectories  are cal-
+                      most interesting property  of the chaotic advection is                 culated. The chaotic behaviour of the cluster of trajec-
+                      that  the trajectories of particles advected by a deter-               tories necessitates the use of probabilistic methods to 
+                      ministic, spatially smooth velocity field can neverthe-                assign  the  relative  probability  of  returning  to  the 
+                      less be chaotic. As a result of chaotic  advection, the                source for each back trajectory. This is, however, quite 
+                      smooth  tracer  distribution  evolves into  a very com-                difficult because the data  from the network monitor-
+                      plex one characterized by a rich microstructure.  The                  ing radioactivity  on a global scale are characterized 
+                      flow quickly generates scales much smaller than those                  by a relatively poor  temporal  and spatial resolution. 
+                      present in the advecting flow.                                         Considering  limitations  of the  available  data,  it  is 
+                                                     Tracer transport  equations for source parameters                                            3041 
+            more convenient to formulate the problem of source                     (in practice, we will use a narrow  Gaussian function 
+            estimation using the Eulerian frame of reference.                      instead of a c5 distribution). 
+                                                                                      The evaluation  of the parameters  in equation  (6), 
+                                                                                   assuming that function</> is known, defines the inverse 
+                3.  FORMULATION  OF THE PROBLEM OF SOURCE                          transport  problem (Marchuk, 1994). In practice, func-
+                                      EVALUATION                                    tion  ¢  is  not  known  explicitly. The  evaluation  of 
+                                                                                    unknown source properties has to be performed on 
+               Let us assume that  the dispersion of atmospheric                    the basis of the observations taken at selected points 
+            tracer  in the domain n c  R3  over the time interval,                  of  the  domain,  Q x [0, T].  There  are  two  general 
+            [0, T],  is governed by the advection-diffusion equa-                   approaches to the solution of this problem. The first 
+            tion                                                                    one is to find a set of source parameters which minim-
+                            0                                                       ize the functional defined as an integral of squares of 
+                              ~ + V·u¢-        D¢  + 1¢ =/                  (3)     the differences between the model predicted and the 
+                             0                                                      observed activities 
+            where ¢ is the activity of a given radionuclide per unit 
+            volume of atmospheric air, u = (u , u , u )  is the 3-D                                                                                 (7) 
+                                                       1   2    3
+            flow either  derived  from  objective analysis  of me-
+            teorological data or calculated by a numerical model,                   where 
+            V = (o/ox, o/ox, o/ox)  is  the  gradient  operator, 
+                         1       2        3                                                                        1 ,+, 
+            D = V • KV is the  diffusion operator,  K = K;i is the                                     ¢(r,t)=-       J ¢(r,i-)di-                  (8) 
+            diffusion        coefficients        tensor       ({i = 1, ... , 3,                                    t  t 
+            j  =  1, ... , 3}, Ku  = K22 = KH,  K33 = K.,  K;i = 0 
+            for i =I j),  }. = l(x   , x2, x3) is the parameter  repres-            ¢ is the solution  of equation  (3), $ is the time aver-
+                                    1
+            enting tracer  scaveniing  and  radioactive decay, and                  aging operator, i- is the time averaging interval (equal 
+            /  is the forcing term representing emissions.                          to the sampling interval of the order of 24 h for most 
+               Equation (3) is solved with the initial conditions                   networks collecting atmospheric  radioactivity  data), 
+                               ¢(r, 0) = <Po,  Vr En                         (4)    i;(t)  is the time-averaged activity per unit volume of 
+                                                                                    air sampled by the ith station of the monitoring net-
+            and the boundary  conditions                                            work with coordinates  {x;, i = 1, ... , N,},  N,  is the 
+                        ¢(r, t) = 0  V(r, t) E an- x [0, T]                         number  of sampling points,  and  F; is the  operator 
+                                                                                    interpolating  the model results to the location  of ith 
+                       8¢                                                           station. 
+                       on (r, t) = 0  V(r, t) E an- x [0, T]                           The set of parameters which minimize functional (7) 
+                                                                                    can be found using iterative methods developed in the 
+                     o<f>                                                           area  of optimum  control  theory,  and  subsequently, 
+                     oz (r, t) = (¢     v'(r, t) E oQ\z = z, x [0, T]        (5)    used for data  assimilation (Derber, 1989; Robertson 
+                                                                                    and Persson, 1992). The major limitation of the min-
+                      8¢                                                            imization approach is the slow rate of convergence of 
+                      a/r,t)=0          V(r,t)Eon\z=Hx[0,          T]               the algorithm in the case of a coarse network ( 50--100 
+                                                                                    stations monitoring radioactivity on a global scale). It 
+             where ¢0  is the known function, r E  n is the position                is, therefore, necessary to use another approach which 
+             vector, an is the boundary of the integration domain,                  eliminates this  deficiency. The  alternate  method  of 
+             and " x " denotes the Cartesian product. an is repre-                  solution  of the  problem  of source estimation  is to 
+             sented  as  a  topological  sum,  an = an - u an - u                   introduce  the adjoint tracer transport  equation  with 
+             8O\z =Zs  uoil\,=H· Symbols an-and ao-are, respec-                     a properly defined forcing term representing measure-
+             tively,  the  outflow  and  inflow  lateral  boundaries;               ments. 
+             an-={rEon:             u-n~O}  and             an-={rEoO:                 In the following section, we show how the solution 
+             u • n <  O}, 80 \, = ••  is the bottom  boundary,  fi is the           of this equation is used to evaluate the source position 
+                                                                                    described by the vector parameter, r , in formula (6). 
+             unit vector normal to an, oOl,=H is the top boundary,                                                                 0
+             ze = z (x1, X2), H =  H(x1,  X2), C =  vd/K33, and vd is               In equation (6), the amount  of release, Q is evaluated 
+                     8                                                              from the Lagrange duality relation. 
+             the deposition velocity. 
+                In the case of the instantaneous tracer release from 
+             a point source, the forcing term in transport  equation 
+             (3) is                                                                        4.  ADJOINT  TRACER TRANSPORT EQUATION 
+                            /(r,  t) = c5(r - r0)c5(t - t0)Q                 (6)        We can  write  the  transport  equation  (3) in  the 
+             where r is the source position; (r E 0), t is the time                  following compact form 
+                       0                               0         0 
+             of the instantaneous  tracer release (t, t0 E [0, T]), c5 is                                                                            (9) 
+             the Dirac delta function, Q is the amount of the release                                             L¢=f 
+                   3042                                                  J. A. PUDYKIEWICZ 
+                   Function      ¢     belongs     to    the    Hilbert     space,     conditions  (5) to  equation  (18) and  the  assumption 
+                   H = L (n x (0, T)), of real functions  on the domain                that  u(x, y, z )  = u(x, y, H) = 0 lead to the boundary 
+                           2                                                                           8
+                   n x (0, T)     which  are  integrable          with     square.     integral, .'F co, in the form 
+                   L = a;at + V • u - V·KV +).  is the linear operator de-                             T 
+                   fined on the subset !ii:l(L) EH  of functions which are                   :Fen=  J dt  J ( - </>*K'i/¢)dw 
+                   periodic in time with period  T, and satisfy the speci-                            o    cn-
+                   fied initial  and  boundary  conditions.  The  operator                                T 
+                   adjoint  to L is defined by the Lagrange duality rela-                              + J dt  J ¢(¢*u  + KV</>*)dw 
+                   tion                                                                                   o    aQ-
+                                       (Lh, y)  = (h, L*y)                     (10)                       T            ¢(  -  (K¢*  + KV¢*)dw 
+                                                                                                       + J dt     J 
+                   where L* is the adjoint operator, h E f2/(L), y E !ii:l(L*),                           0 
+                   and (  ) is the inner product defined on Hilbert space                                 T 
+                   H. The inner product  is given by the following rela-                               + J dt     J  </>K'il</>*dw.                 (19) 
+                   tion:                                                                                  0    onl,-H 
+                                           T                                           :F ,m is  equal  to  zero  provided  that  the  following 
+                                (g, ,> = J dt J gydn,       g, y E £.          (11)    conditions  are satisfied: 
+                                           0    Q                                      ¢*(r,  t) = 0                V(r, t) E an- X  [O, T] 
+                   Assuming that  h =</>and y = </>*, (10) becomes 
+                                    (L¢,  ¢*)  = (¢,  L*¢*).                   (12)       a¢* 
+                                                                                       Ka;:;-(r, t) + u¢*  = 0  V(r, t)E  an-x [O, T] 
+                   By analogy to equation  (9), the adjoint  tracer trans-                      a¢* 
+                   port  equation  could be formally written as                                 a_;(r,  t) = (¢     V(r, t) E an1,=,.  x (0, T]  (20) 
+                                             L*</>* = p                        (13)              a¢* 
+                   where pis the function representing the measurements                          az (r, t)  = O  V(r, t)E  an1z=H x [O, T]. 
+                   (Marchuk,  1994). After substituting equations (9) and 
+                   (13) into equation (12), the Lagrange duality relation              After comparing equation  (16) to the right-hand  side 
+                   becomes               (f,  ¢*)  = (¢,  p).                  (14)    of equation  (12), and assuming that  set of conditions 
+                                                                                       (20) is satisfied, we obtain  the explicit expression for 
+                   The explicit form of the adjoint tracer transport  equa-            L* 
+                   tion could be derived from the Lagrange duality  re-                      L*</>* =_a¢       - u·V¢*  + J¢* -V·KV¢*.              (21) 
+                   lation  (12).  After  substituting  equation  (9)  in  the                              at 
+                   left-hand side of equation  (12), we obtain                         Therefore, equation (13) can be written in the follow-
+                    (L</>, ¢*> = J dt J ¢* aa<t> ctn                                   ing form: 
+                                   0    0       t                                                  a¢* 
+                                                                                                -at  - u·V¢*  + ).</>* - V·KV</>* = p  (22) 
+                                       T                           T 
+                                    + J dt J ¢* V • u¢dn  + ), J dt J ¢¢* ctn          where p is the forcing term of the adjoint equation. 
+                                       o    o                     o    n 
+                                       T 
+                                    -  J dt J ¢*V • KV¢dn.                     (15) 
+                                       0    Q                                                  5.  EVALUATION OF SOURCE PARAMETERS 
+                   Further,  after integration  by parts  and application of              In  order  to  evaluate  the  source  location  from 
+                   the Green's theorem, equation  (15) transforms to                   measurements taken by the monitoring  network, we 
+                                       T        (     a¢*                              define forcing p in the adjoint transport  equation  (22) 
+                        (L¢,¢*)=JdtJ¢              ---u·'i/¢*+).¢*                      as 
+                                       0    Q          at 
+                                                                                                          N, 
+                                        -V·KV</>*)ctn+:F,+.'Fm                 (16)           p(x,t)=     L rx;0($(x;,t)-</Jy).Yf(xi-x)             (23) 
+                                                                                                         i=l 
+                   where                                                               where (x, t) En  x [O, T],  N,  is the number  of samp-
+                                       ffe, = J q,*q,dnlt=T                    (17)     ling points in the monitoring  network, xi is the posi-
+                                               Q           t=O                          tion  of  ith  monitoring  point,  xi=          (xn, x;   ,  x; ), 
+                                                                                                                                                2    3
+                                T                                                       $(xi, t)  is  the  activity  measured  by  ith  monitoring 
+                       :Fm=  J dt J (</>*</>u - ¢*KV¢+           ¢KV¢*)dw.              station  at time t,  <PT is the threshold  of detection  for 
+                                0    jlQ                                       (18)     a  given radionuclide,  rx; is the weight parameter  re-
+                                                                                        flecting the accuracy of the measurements performed 
+                   Because of the assumed periodicity of functions ¢ and                at  ith  site relatively to  other  sites, .Yf (x; -  x) is the 
+                   ¢*, :F, is equal to zero. The substitution  of boundary              function  describing  the  horizontal  structure  of the 
+                                                                                                                                     Tracer  transport  equations  for source parameters                                                                                                                                                    3043 
+                                           forcing in the adjoint  equation,  and                                                                                                                     from t =  T  to t =  0, with the initial conditions 
+                                                                                      0(x)  = {ol  If x > 0,                                                                                                                               </>*(r,t=  T)=0,                                     \irE!'l                                      (25) 
+                                                                                                                          If X ,s;; 0. 
+                                           We select :ff  in the form                                                                                                                                 and the boundary  conditions defined by equation  (20). 
+                                                                                                                                                                                                      The solution of this initial-boundary  value problem is 
+                                                                                                                                                                                                      represented  by  a  superposition  of  Gaussian  pulses 
+                                                                                                                                                                                                      moving from the receptors  to the source. The ampli-
+                                                                                                                                                                                                      tude of these pulses diminishes with the distance  be-
+                                                                                                                                                                                   (24)               tween receptor  and  the source, consistently  with the 
+                                                                                                                                                                                                     diffusion term in equation  (22). We can  use function 
+                                           where /Ji is the normalization  constant; (Ji= (Jbdt Jn,n"                                                                                                 </>* obtained  as a solution  of equation  (22) in order  to 
+                                           (xi -          x) dn)- 1,  o-H  is the  horizontal  dispersion  para-                                                                                     define the set 
+                                           meter, and Zm is the mixing height.                                                                                                                                       r, = supp,</>*n{(r, t)E!'lx  [0, T]:  t = r}  (26) 
+                                                 The  forcing  term  in  the  adjoint  equation  is  thus 
+                                           given  as  a  superposition  of  pulses  centered  at  the 
+                                           sampling  stations.  The  pulses  are  Gaussian  in  the                                                                                                  where supp,</>*= {(r, r): </>*(r, r);::, e}. r, is obtained 
+                                           horizontal  direction  and  have constant  values in the                                                                                                  by projecting  supp,</>* on  the  plane  t = r,  and  con-
+                                           vertical direction. The pulse has a non-zero  amplitude                                                                                                   tains the departure  points of all backward  trajectories 
+                                           only  if  the  concentration  of  activity  of  a  sampled                                                                                                which  have  arrived  within  the  surroundings  of 
+                                           radionuclide  is larger  than  the  detection  threshold.                                                                                                 monitoring  stations  during  time interval  [r,  T]. 
+                                           The  structure  function,  :ff,                                                 depends  exclusively  on                                                        Assigning r = t0, where t denotes the release time, 
+                                                                                                                                                                                                                                                                                0 
+                                           horizontal  variables  which  reflects  the  fact  that                                                                                                   we define  set  r 1,,  with  all  possible  locations  of  the 
+                                           measurements  provided  by the  monitoring  network                                                                                                       source. That  C., is usually composed  of many points 
+                                           describe  the  distribution  of  the  tracer  only  in  the                                                                                               is the direct manifestation  of the use of Gaussian  hills 
+                                           lower part  of the planetary  boundary  layer. In order                                                                                                   in  equation  (23)  and  the  approximation                                                                                    of  the 
+                                           to  estimate  the  error  associated  with  this  approx-                                                                                                 atmospheric  transport  with  the  advection-diffusion 
+                                           imation,  we calculate  the  large-scale  distribution  of                                                                                                equation. 
+                                           radioactive  tracer  released  from a point  source. The                                                                                                        The  probability  of finding  the  source  at  a  given 
+                                           location  of the source and  the amount  of the release                                                                                                   position r E C,, <;: n is proportional  to the value of the 
+                                           are assumed to be the same as those during the Cher-                                                                                                      solution  of  the  adjoint  equation,  </>* (r, t ). We  can 
+                                                                                                                                                                                                                                                                                                                       0 
+                                           nobyl nuclear accident (Table 1). The model used for                                                                                                      define, therefore,  the probability  density function,  .o/J, 
+                                           that  calculation  is described  in  Pudykiewicz  (1989).                                                                                                 mapping  set r,,, onto  [0, 1] 
+                                           The examination  of Fig. 2 reveals that  at large distan-                                                                                                                                                                    ,, 
+                                           ces from  the  source,  the  surface  measurements  de-                                                                                                                                                           r,,,-+  [0, 1],                                                                (27) 
+                                           scribe relatively well the total  horizontal  and vertical 
+                                          extent  of the diffusing radioactive  cloud.                                                                                                               where r!JJ is given by the following relation: 
+                                           5.1. Evaluation  of the source location 
+                                                                                                                                                                                                                                                                                                           0
+                                                 The adjoint  tracer equation  (22) with a forcing term                                                                                                                         ',..J             Jl>()=                       </>*(r,t=t )                                                 (28) 
+                                                                                                                                                                                                                                 v,er             ,7     r            I                                                   . 
+                                          defined by equation  (23) is solved backward  in time                                                                                                                                              '"                          r,  </J*(r,t=t 0 )dr 
+                                                                                                                                                                                                                                                                             " 
+                                                                                                                                         131 
+                                                                                 Table  1. Emission of 1                                          from the Chernobyl  reactor  as a function  of day after explosion 
+                                                                                                                                                                          (Klug et al., 1992) 
+                                                                                                                                                                                 131                       16 
+                                                                                 Day                                                           Emission of 1                             Bq  x 10                               Fraction  of the total  emission 
+                                                                                                                                                                             E;                                                                                   W; 
+                                                                                     1                                                                                     19.0                                                                              0.4091 
+                                                                                    2  

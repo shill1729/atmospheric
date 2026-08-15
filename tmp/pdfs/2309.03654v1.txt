@@ -1,0 +1,1410 @@
+                                        ˆ               ¨
+                                    ITO VERSUS HANGGI–KLIMONTOVICH
+                                          CARLOSESCUDEROANDHELDERROJAS
+                     Abstract. Interpreting the noise in a stochastic diﬀerential equation, in particular the Itˆo versus
+                     Stratonovich dilemma, is a problem that has generated a lot of debate in the physical literature.
+                     In the last decades, a third interpretation of noise, given by the so called H¨anggi–Klimontovich
+                     integral, has been proposed as better adapted to describe certain physical systems, particularly
+                     in statistical mechanics. Herein, we introduce this integral in a precise mathematical manner and
+                     analyze its properties, signaling those that has made it appealing within the realm of physics.
+                     Subsequently, we employ this integral to model some statistical mechanical systems, as the random
+                     dispersal of Langevin particles and the relativistic Brownian motion. We show that, for these
+                     classical examples, the H¨anggi-Klimontovich integral is worse adapted than the Itˆo integral and
+                     even the Stratonovich one.
+                                                     1. Introduction
+                A very large number of physical systems is mathematically modelled by means of diﬀerential
+              equations. Among the simplest models of a time evolution, one ﬁnds the initial value problem for
+              an ordinary diﬀerential equation of the type
+              (1)                           dxt = f(x ;t);   t ≥ 0;  x |   =x ;
+                                             dt       t               t t=0    0
+              where f : R ×R+ −→ R is a given function and x0 is a given real number. Since long ago, it has
+              been recognized that many physical systems are aﬀected by random perturbations, which may be
+              of diﬀerent origins, and that aﬀect the system dynamics in a non-negligible manner [12, 17, 47].
+              In order to incorporate such random perturbations in model (1), it is customary to modify this
+              equation with the introduction of a “white noise”, so the resulting model reads
+                                     dX
+              (2)                       t = f(X ;t)+g(X ;t)ξ ;     t ≥ 0;  X|     =X;
+                                      dt        t         t    t             t t=0    0
+              where g : R×R+ −→ R is a given function and X a given random variable; of course, the solution
+                                                              0
+              X has become a stochastic process rather than a deterministic function. The random function ξ ,
+                t                                                                                            t
+              which is the “white noise”, presents serious mathematical diﬃculties. While it is a well-deﬁned
+              stochastic process in discrete time, it is not so in continuous time [11], unless one considers it as
+              a distribution-valued stochastic process [16]. There is, however, a well-known way to circumvent
+              stochastic distributions, which is the classical theory of stochastic diﬀerential equations (SDEs).
+              To cast equation (2) in the form of a well-deﬁned SDE one should, ﬁrst of all, consider its integral
+       arXiv:2309.03654v1  [math-ph]  7 Sep 2023version
+                                              Zt                Zt
+              (3)                  X =X + f(X ;s)ds+“ g(X ;s)ξ ds ”; t≥0:
+                                     t    0          s                s    s
+                                              0                 0
+              The second, and fundamental, step is to give a precise meaning to the integral between quotes,
+              which cannot be considered neither as a Riemann nor as a Lebesgue integral. This program was
+                Date: September 8, 2023.
+                Key words and phrases. Stochastic integration, stochastic diﬀerential equations, non-existence of solution, multi-
+              plicity of solutions, interpretations of noise, statistical physics.
+                2010 MSC: 60H05, 60H10, 60H30, 60J60, 82C05, 82C31.
+                                                              1
+               2                                     C. ESCUDERO AND H. ROJAS
+               ﬁrst successfully carry out by Itˆo, who, by introducing his stochastic integral, was able to translate
+               this formal model into a well-deﬁned mathematical object [19, 20]:
+                                                   Zt                Zt
+               (4)                     X =X + f(X;s)ds+ g(X ;s)dW ; t≥0:
+                                         t     0           s                s       s
+                                                   0                 0
+               Note that a key point in this derivation is noting that the formal white noise process is morally the
+               derivative of Brownian motion: “ξt = dWt=dt”; herein we keep this quoted expression as an informal
+               philosophical idea, but for a precise statement see [16]. The peculiarity of Itˆo integration is its set
+               of associated calculus rules, which diﬀer from the classical ones that emanate from the Leibniz-
+               Newton diﬀerential calculus. Later on, a new stochastic integral able to mimic these classical rules
+               appeared in the literature: the Stratonovich integral [43]. If we employ this theory of stochastic
+               integration, equation (3) becomes
+                                                   Zt               Zt
+               (5)                     X =X + f(X ;s)ds+ g(X ;s)◦dW ; t≥0;
+                                         t     0          s                s         s
+                                                   0                0
+               where the last integral denotes the Stratonovich one. In fact, one can replace the formal expression
+                                                           Zt
+                                                         “    g(X ;s)ξ ds ”
+                                                                  s    s
+                                                           0
+               by one out of inﬁnitely many well-deﬁned mathematical objects to obtain a well-posed equation.
+               Despite this inﬁnite degeneracy, most works in the literature has opted to choose either the Itˆo
+               or the Stratonovich integral. To select a concrete meaning for this quoted integral in a given
+               applied model has been termed as to choose an interpretation of noise for that model. While the
+               interpretation of noise can be Itˆo, Stratonovich, or something else, as already mentioned, there has
+               been a strong preference towards the ﬁrst two in the literature, at least traditionally [46].
+                  Thetheoryofstochastic diﬀerential equations of either Itoˆ or Stratonovich type is well established
+               [11, 26, 34]. It relies on the properties of these integrals. The Itˆo integral can be deﬁned as
+                             Zt                           n
+               (6)              g(X ;s)dW :=       lim   Xg(X ;t )(W −W                )  in probability;
+                                    s       s                    t     j    t      t
+                                                 k∆ k→0           j−1        j      j−1
+                                                   n     j=1
+                             0
+               where ∆n = {t0;t1;:::;tn−1;tn} is a partition of [0;t], for which k∆nk := max16j6n(tj −tj−1) is its
+               diameter. Although this is sometimes referred to as a weak sense of the Itˆo integration, while the
+               strong or classical sense results from substituting the limit in probability by a limit in mean square.
+               In words, the Itˆo integral is deﬁned as a suitable limit of Riemann sums in which the integrand
+               is evaluated at the left endpoint of each subinterval. The Stratonovich integral, at least as it is
+               mainly conceived in the physics literature, would be the corresponding limit of Riemann sums but
+               with the integrand evaluated at the midpoint of each subinterval; to be precise:
+                         Zt                             n
+               (7)          g(X ;s)◦dW := lim Xg(X                       ; t )(W  −W ) inprobability:
+                                s         s                    (t +t  )=2  j    t      t
+                                               k∆ k→0           j  j−1           j      j−1
+                                                 n     j=1
+                         0
+               This deﬁnition might be slightly modiﬁed in mathematical texts. The mathematical properties of
+               both integrals has been studied [11, 26, 34] and their applications in physics has been discussed
+               [33, 46]. Actually, the preference in the use of either of these two integrals in physical models
+               has generated much debate along the decades, and this two-folded choice has been known as the
+               Itˆo versus Stratonovich dilemma. As a result of this debate, a folkloric thought emerged: the Itˆo
+               interpretation of noise should be preferred in mathematics while the Stratonovich interpretation
+               should be preferred in physics. Of course, this simplistic rule of thumb constitutes an erroneous
+               approach to such a complex question. More detailed discussions on this dilemma can be found in
+                                                     ˆ      ¨
+                                                   ITO VS HANGGI–KLIMONTOVICH                                         3
+               [2, 7, 8, 10], where it is shown how the Itˆo integral might overtake the Stratonovich one in many
+               physical instances.
+                  Nevertheless, this preeminence of the Itˆo versus Stratonovich dilemma in the literature has not
+               hidden the fact that there is an inﬁnite number of potential meanings of the quoted integral in
+               equation (3). Simply by comparison with the other two integrals and symmetry, one is tempted to
+               propose a third variant:
+                             Zt                             n
+               (8)              g(X ;s)•dW := lim Xg(X ;t )(W −W                       )  in probability;
+                                    s         s                    t   j    t      t
+                                                   k∆ k→0           j        j      j−1
+                                                      n    j=1
+                             0
+               that is, to use the same scheme, but evaluating the integrand at the right endpoint of each subin-
+               terval. Perhaps surprisingly, perhaps not at all, this integral has also been used in the physical
+               literature, at least at the formal level. It is known as the H¨anggi–Klimontovich integral, after
+               its introduction in the seminal works by H¨anggi [14], H¨anggi and Thomas [15], and Klimontovich
+               [23, 24, 25]. This introduction, as already mentioned, was formal, since these works focused on
+               its good properties as a modelling tool in the ﬁeld of statistical physics. This integral has not
+               passed unnoticed; on the contrary, it has been referenced quite often in the physical literature due
+               to its good properties as a mathematical descriptor of diﬀerent magnitudes and systems. Some
+               examples are relativistic Brownian motion [3, 4, 5] and other instances of nonlinear Brownian
+               motion [32], or, in general, randomly dispersing particles with position-dependent diﬀusivities
+               [1, 18, 28, 30, 31, 37, 42, 44, 49], where this list is not meant to be exhaustive. Some remarks
+               are now in order: ﬁrst, this integral is not uniquely known as the H¨anggi–Klimontovich one; some-
+               times authors refer to it as the backward-Itˆo, anti-Itˆo, isothermal, or kinetic integral. We also note
+               that these terms sometimes diverge in meaning when applied to higher dimensions, but generally
+               agree when restricted to one-dimensional diﬀusions. Second, the majority of papers in the physical
+               literature that refer to this integral do it to acclaim its good properties (like its simple interplay
+               with the ﬂuctuation-dissipation relation), while criticisms are scarce. Finally, all the works we are
+               aware of treat this integral formally, most of them restricting their interaction with it to deal with
+               its associated Fokker-Planck equation (assuming its existence without proof), and with limited
+               assessment of its sample paths.
+                  In this work, we try to bridge the gap that the development of theory of the H¨anggi–Klimontovich
+               integral in the physical literature has left. To this end, we construct the full mathematical theory
+               of this type of stochastic integration. We use as starting point reference [13], where this program is
+               outlined, but the precise mathematical details are left open. In section 2 we introduce this integral
+               precisely, in section 3 we continue introducing its multidimensional generalization, and in section
+               4 its associated stochastic diﬀerential equations. In section 5 we show their corresponding Fokker-
+               Planck equation along with the properties of the solution to this partial diﬀerential equation that
+               has made this integral particularly appealing for its application in several ﬁelds within physics. In
+               section 6 we illustrate its use in several physical examples, but with one particularity: we prove
+               its properties yield unphysical results in all of these cases, while the Itˆo and even the Stratonovich
+               integrals are able to model these systems correctly. This section therefore complements the large
+               number of studies that have found the good adaptability of the H¨anggi–Klimontovich integral
+               to model physical systems. In section 7 we further extend the deﬁnition and compare it with
+               the backward integral introduced by Russo and Vallois. Finally, in section 8, we draw our main
+               conclusions.
+                                                   ¨
+                                              2. Hanggi–Klimontovich Integral
+               2.1. Deﬁnition. WestartintegratingfunctionsoftheWienerprocess,orBrownianmotionprocess,
+               for simplicity. First, we establish some notation. Let (Ω;F;(F )           ; P) be a completed ﬁltered
+                                                                                     t t≥0
+               probability space in which a Brownian motion (W )          is deﬁned. We denote by E the expectation
+                                                                    t t≥0
+               4                                     C. ESCUDERO AND H. ROJAS
+               with respect to P. Consider any pair of non-negative numbers a;b satisfying a < b, and denote by
+                          C1(R;R) := {ϕ : R −→ R | ϕ is diﬀerentiable and its derivate is continuous}:
+               Deﬁnition 2.1 (Integration of smooth functions with respect to Brownian motion). For any Φ ∈
+               C1(R;R) the H¨anggi–Klimontovich integral of (Φ(W ))          in the interval [a;b] with respect to the
+                                                                       t t≥0
+               Brownian motion (W )        is deﬁned as
+                                     t t≥0
+                               Zb                           n
+               (9)                Φ(Wt)•dWt := lim XΦ(Wt )(Wt −Wt ) in probability;
+                                                   k∆ k→0            j     j      j−1
+                                                      n    j=1
+                               a
+               where ∆n = {t0;t1;:::;tn−1;tn} is a partition of [a;b] and k∆nk := max16j6n(tj − tj−1) is its
+               diameter.
+                  In the sequel, we show that under the assumptions established in Deﬁnition 2.1 the limit on the
+               right-hand side of Equation (9) exists. Furthermore, we show that this integral is connected to Itˆo
+               integral through a simple formula.
+               Proposition 2.2. For any Φ ∈ C1(R;R) the limit (9) exists and moreover we have that the identity
+                              Zb                  Zb                Zb
+               (10)              Φ(W)• dW =          Φ(W)dW + Φ′(W)dt holds almost surely:
+                                      t       t           t     t           t
+                               a                   a                a
+               Proof. The proof follows the ideas employed in [43]. First note that both summands on the right-
+               handsideofEquation(10)arealmostsurelywell-deﬁnedunderthestatedassumptions,seeTheorem
+               5.3.3 in [26]. In the sequel, we prove that the integral on the left-hand side is well-deﬁned and the
+               equality (10) holds. Since Φ ∈ C1(R;R), the Itˆo integral is deﬁned as the limit in probability
+                                         b
+                                        Z                          n
+               (11)                        Φ(Wt)dWt = lim XΦ(Wt )(Wt −Wt )
+                                                          k∆ k→0           j−1     j      j−1
+                                                            n     j=1
+                                        a
+               for any partition ∆n satisfying k∆nk → 0 as n → ∞. Now, for such partitions ∆n we consider the
+               diﬀerence between the limit expressions on the right-hand sides of (9) and (11) and ﬁnd
+                                                n h                      i
+                                       D =X Φ(W )−Φ(W ) (W −W )
+                                         ∆n              t          t        t      t
+                                                          j         j−1       j      j−1
+               (12)                            j=1
+                                                n
+                                               X ′                                            2
+                                             =     Φ((1−θj)Wt        +θjWt )(Wt −Wt          ) ;
+                                                                  j−1        j     j      j−1
+                                               j=1
+               where we have used that Φ ∈ C1(R;R) along with the Mean Value Theorem, and 0 < θj < 1,
+               j = 1;:::;n are ﬁxed parameters. Then, using Lemma 7.2.1 and Lemma 7.2.3 from [26], it follows
+               that
+                                        n                                                 Zb
+                                       X ′                                           2        ′
+               (13)              lim       Φ (1−θj)Wt        +θjWt (Wt −Wt ) =               Φ(Wt)dt
+                               k∆ k→0                     j−1        j     j      j−1
+                                  n    j=1
+                                                                                          a
+               in probability. By (11), (12), and (13) we deduce the existence of the expression on the left-hand
+               side of Equation (9). Finally, by taking a subsequence if necessary, we conclude
+                                   b                   b                b
+                                 Z Φ(Wt)• dWt =Z Φ(Wt)dWt+Z Φ′(Wt)dt almost surely:
+                                  a                   a                a
+                                                                                                                      
+                                                     ˆ      ¨
+                                                   ITO VS HANGGI–KLIMONTOVICH                                         5
+               Remark 2.3. Using the language of stochastic diﬀerentials, what we will do in the remainder of
+               this work, the equality in the statement of this proposition can be written in the form:
+                                              Φ(W)• dW =Φ(W)dW +Φ′(W)dt:
+                                                   t       t        t     t        t
+               2.2. Extending the deﬁnition. In the previous section, we deﬁned the integral with respect
+               to Brownian motion. However, in many applications (notably, stochastic diﬀerential equations)
+               it is necessary to consider a wider family of processes, instead of just Brownian motion, which
+               it is possible to extend our deﬁnition for. To this end we deﬁne a subclass of Markov processes
+               with continuous sample paths almost surely, the so-called diﬀusion processes, which the Brownian
+               motion is a particular case of [26, 34].
+               Deﬁnition 2.4 (R-valued diﬀusion processes). A Markov process (X )                  is called a diﬀusion
+                                                                                          t a6t6b
+               process if it satisﬁes the following three conditions for any t ∈ [a;b], x ∈ R, and δ > 0:
+                   (1) Continuity of sample paths,
+                                                                                  
+                                                   1                    
+                                                                        
+                                              lim    P    X −X >δX =x =0:
+                                                 + h        t+h     t        t
+                                             h→0
+                   (2) Existence of a drift coeﬃcient, i.e. there exists a function f : R × [a;b] −→ R such that
+                                                   1                       
+                                                                     
+                                              lim    E X −X X =x =f(x;t):
+                                                 + h       t+h      t  t
+                                             h→0
+                   (3) Existence of a diﬀusion coeﬃcient, i.e. there exists a function g : R×[a;b] −→ R such that
+                                                  1                         
+                                            lim     E (X      −X 2|X =x =g2(x;t):
+                                               + h        t+h      t    t
+                                            h→0
+                  Thefunctions f(x;t) and g(x;t) are called, respectively, the drift and diﬀusion coeﬃcients of the
+               diﬀusion process (X )       .
+                                    t a6t6b
+               Deﬁnition 2.5. Let h(x;t) : R×[a;b] −→ R be a measurable function.
+                     • (Lipschitz condition) It is said that h(x;t) satisﬁes the Lipschitz condition, in the ﬁrst
+                       argument, if there exists a constant C > 0 such that |h(x;t)−h(y;t)| 6 C|x−y| for all x;y ∈
+                       Rand a6t6b:
+                     • (Linear growth condition). It is said that h(x;t) satisﬁes the linear growth condition, in the
+                       ﬁrst argument, if there exists a constant K > 0 such that |h(x;t)| 6 K(1 + |x|) for all x ∈
+                       Rand a6t6b:
+               Deﬁnition 2.6 (Integration of smooth functions with respect to diﬀusion process). Assume that
+               f(x;t) and g(x;t) are continuous on R×[a;b] and satisfy the Lipschitz and linear growth conditions
+               in x. Consider a diﬀusion process (X )      with drift f(x;t) and diﬀusion coeﬃcient g(x;t). For any
+                                                      t t≥0
+               Φ∈C1(R;R), the H¨anggi-Klimontovich integral of (Φ(X ))            in the interval [a;b] with respect to
+                                                                           t  t≥0
+               the diﬀusion process (X )      is deﬁned as
+                                        t t≥0
+                                 b
+                                Z                            n
+               (14)                Φ(X )•dX := lim XΦ(X )(X −X                      )   in probability;
+                                       t       t                    t     t     t
+                                                   ||∆ ||→0          j    j      j−1
+                                                      n     j=1
+                                a
+               where ∆n = {t0;t1;:::;tn−1;tn} is a partition of [a;b], and ||∆n|| = max16j6n(tj − tj−1).
+                  Analogously to the previous case, in the following we will show that this integral is well-deﬁned
+               and veriﬁes an identity that connects it to the Itˆo integral.
+               Theorem 2.7. For any Φ ∈ C1(R;R), the limit in (14) exists and moreover we have that the
+               identity
+                           Zb                 Zb               Zb
+               (15)           Φ(X )•dX =         Φ(X )dX +       Φ′(X )g2(X ;t)dt      holds almost surely.
+                                  t       t          t     t           t      t
+                           a                  a                a
+               6                                     C. ESCUDERO AND H. ROJAS
+               Proof. The right hand side of (15) consists in the sum of an Itˆo and a Lebesgue integral. The Itˆo
+               integral is the limit
+                                Zb                        n
+               (16)                Φ(X )dX = lim XΦ(X                 )(X −X        )  in probability.
+                                        t    t                    t       t     t
+                                                 ||∆ ||→0          j−1    j      j−1
+                                                    n    j=1
+                                a
+                  Under the assumptions stated in this theorem, the Itˆo integral is well-deﬁned, see Chapter 5 in
+               [29]. On the other hand, the existence of the Lebesgue integral is also clear by the almost sure
+               continuity of its integrand. As in the previous case, the existence of the limit in (14) and the
+               equality in (15) can be proven altogether. In order to do so, we select the same ∆n-partitioning
+               and consider the diﬀerence between the limit expressions on the right-hand sides of Equation (14)
+               and Equation (16), denoted by D       . Making use of the continuous diﬀerentiability of the function
+                                                  ∆n
+               Φ(x) along with the Mean Value Theorem, we get
+                                                      n h                    i
+                                         D      = X Φ(X )−Φ(X                ) (X −X        )
+                                           ∆n                 t          t        t     t
+                                                               j         j−1      j      j−1
+                                                     j=1
+                                                      n
+                                                     X ′                     2
+                                                =        Φ(ζ )(X −X         ) ;
+                                                             j    t     t
+                                                                  j      j−1
+                                                     j=1
+               where ζ = (1−θ )X          +θ X for ﬁxed parameters 0 < θ < 1, j = 1;··· ;n. To complete the
+                       j          j   t       j  t                              j
+                                       j−1        j
+               proof we have to check that
+                                               n                           Zb
+                                              X ′                      2       ′      2
+               (17)                     lim       Φ(ζ )(X −X          ) =     Φ(X)g (X ;t)dt
+                                                      j    t      t                t      t
+                                      ||∆ ||→0              j      j−1
+                                         n    j=1
+                                                                           a
+               in probability. For this purpose, we bound
+                                                                                                          
+                                 ′        ′                                            ′       ′        
+                                                                                                        
+               (18)       sup Φ(ζ )−Φ(X           ) 6 sup                sup            Φ(x)−Φ(X          )  :
+                                    j         t                                                       t
+                                               j−1                                                    j−1
+                         16j6n                         16j6n x∈[Xtj−1∧Xtj;Xtj−1∨Xtj]
+               As (X )       has continuous sample paths almost surely, C := {X : t ∈ [a;b]} is compact and Φ′|
+                     t a6t6b                                                         t                                C
+               is uniformly continuous. Thus, the right hand side of Equation (18) tends to 0 as n → ∞ almost
+                                                               ′        ′       
+                                                                                
+               surely, and consequently ε(n) := sup           Φ(ζ ) −Φ(X        ) also tends to 0 as n → ∞ almost
+                                                       16j6n      j          t
+                                      P                                      j−1
+                                         n                 2
+               surely. Furthermore,         (X −X ) converges in probability to hXi |              , where hXi is the
+                                               t      t                                       t t=b             t
+                                         j=1    j     j−1
+               quadratic variation of (X )        (Proposition 4.21 in [29]); this implies:
+                                         t a6t6b                                
+                       n                            n                                     n
+                      X ′                      2   X ′                         2        X                 2
+               (19)       Φ(ζ )(X −X          ) −      Φ(X      )(X −X        )  6 ε(n)     (X −X ) −→ 0
+                               j    t      t                 t       t     t                     t      t
+                                    j      j−1               j−1    j      j−1                  j     j−1   n→∞
+                       j=1                          j=1                                    j=1
+               in probability. As an intermediate step to prove the convergence (17), it is necessary to verify that
+                                       n                              Zb
+                                      X ′                         2        ′
+               (20)             lim       Φ(X      )(X −X        ) =     Φ(X)dhXi inprobability:
+                                               t       t     t                 t      t
+                              ||∆ ||→0          j−1    j      j−1
+                                n     j=1
+                                                                       a
+               In order to prove (20), we deﬁne a random measure µn on [a;b] as follows:
+                                                           n
+                                               µ (ds) := X X −X            2δ     (ds);
+                                                n                t     t       t
+                                                                 j      j−1     j−1
+                                                          j=1
+               where δ is the Dirac measure centered at t. Therefore, the sum on the left hand side of Equation
+                       t
+               (20) can be expressed as
+                                         n                                Z
+                                        X                          
+                                           Φ′ X         X −X         2 =       Φ′(X )µ (ds):
+                                                 t        t     t                    s   n
+                                                  j−1     j      j−1
+                                        j=1                                [a;b]
+                                                   ˆ      ¨
+                                                 ITO VS HANGGI–KLIMONTOVICH                                      7
+              As a consequence of Proposition 4.21 in [29], we get for every s ∈ ∆n and any n ≥ 1
+                                              µ ([a;s]) −→ hXi      in probability;
+                                               n        n→∞      s
+              what implies that the sequence of measures µn converges vaguely (see Chapter 4 in [22]) to the
+              measure 1     (s)dhXi in probability. Thus, since Φ ∈ C1(R;R), we use Lemmata 4.1 and 4.8, and
+                         [a;b]       s
+              Corollary 4.9 from [22] to ﬁnd that
+              (21)                Z    Φ′(X )µ (ds) −→ Z bΦ′(X )dhXi            in probability:
+                                             s  n     n→∞            s      s
+                                    [a;b]                    a
+                 Since the convergence in (21) implies (20), to complete the proof we just need to compute hXi .
+                                                                                                                 t
+              Tothisend,accordingtoTheorem10.8.9 in[26], thediﬀusionprocess(X )               solves the stochastic
+                                                                                       t a6t6b
+              integral equation
+                                   X =X +Z tf(X ;s)ds+Z tg(X ;s)dW ; a6t6b:
+                                    t     a           s                 s       s
+                                               a                 a
+              So, the quadratic variation of (X )      is
+                                                t a6t6b
+                                         hXi =Z tg2(X ;s)dhWi =Z tg2(X ;s)ds;
+                                             t           s         s            s
+                                                  a                      a
+              or, employing the stochastic diﬀerential notation, dhXi = g2(X ;t)dt. Substituting this result in
+                                                                       t        t
+              (20) yields (17), and therefore the existence of the H¨anggi-Klimontovich integral. Finally, by taking
+              an appropriate subsequence if necessary, the identity in Equation (15) is veriﬁed.                
+              Remark 2.8. As noted in the previous section, we may summarize the equality in the statement
+              by employing the stochastic diﬀerential notation Φ(X )•dX = Φ(X )dX +Φ′(X )g2(X ;t)dt.
+                                                                     t      t       t     t       t      t
+                                           3. Multidimensional Generalization
+                 To develop a theory of stochastic diﬀerential equations based on the H¨anggi-Klimontovich inter-
+              pretation, we still need to further extend our results from Section 2. To this end, we now consider
+              generalizations of this integral for multidimensional diﬀusion processes.
+              Deﬁnition 3.1. Let m andd bepositive integers and M          (R) is the set of all d×m matrices with
+                                                                       d×m
+              real coeﬃcients. Let ρ : Rm ×[a;b] −→ Rm and B : Rm ×[a;b] −→ M              (R) be two measurable
+                                                                                       d×m
+              functions.
+                    • (Lipschitz condition) It is said that ρ(x;t) and B(x;t) satisfy the Lipschitz condition, in the
+                      ﬁrst argument, if there exists a constant C > 0 such that for all x;y ∈ Rm and a 6 t 6 b;
+                              |ρ(x;t) − ρ(y;t)| 6 C|x−y|;       ||B(x;t) −B(y;t)||     6C|x−y|:
+                                                                                   HS
+                    • (Linear growth condition). It is said that ρ(x;t) and B(x;t) satisfy the linear growth
+                      condition, in the ﬁrst argument, if there exists a constant K > 0 such that for all x ∈ Rm
+                      and a 6 t 6 b;
+                                     |ρ(x;t)| 6 K(1+|x|);       ||B(x;t)||   6K(1+|x|):
+                                                                          HS
+              Here |x| denotes the Euclidean norm of x ∈ Rm. Furthermore, the Hilbert-Schmidt norm of a d×m
+              matrix B = [b ] is deﬁned as
+                            ij
+                                                              d m       
+                                                               XX 1=2
+                                                                        2
+                                                  ||B||   :=           b      :
+                                                      HS                ij
+                                                               i=1 j=1
+                 AMarkovprocessX =(X(1);X(2);:::;X(m))iscalledanRm-valueddiﬀusionprocess, described
+                                     t      t     t        t
+              by the drift vector ρ(x;t) and the diﬀusion coeﬃcient matrix B(x;t), if it componentwise satisﬁes
+              three conditions analogous to those established in Deﬁnition 2.4. For an explicit formulation see
+              Deﬁnition 10.8.3 in [26] or Deﬁnition 5.2.1 in [35].
+                      8                                                       C. ESCUDERO AND H. ROJAS
+                      Deﬁnition 3.2. Assume that ρ(x;t) and B(x;t) = [b (x;t)] are continuous on Rm×[a;b] and both
+                                                                                                        ij
+                      satisfy the Lipschitz and linear growth conditions in x. Also, consider a m-dimensional diﬀusion
+                      process (X )            , with drift vector ρ(x;t) and diﬀusion coeﬃcient matrix B(x;t). For any continuous
+                                      t t≥0
+                      Ψ:Rm×[a;b]−→M                          (R), for which all its partial derivatives ∂ Ψ(x;t) exist and are continuous,
+                                                       d×m                                                                xi
+                      the H¨anggi-Klimontovich integral of Ψ(Xt;t) t≥0 in the interval [a;b] with respect to the diﬀusion
+                      process (X )            is deﬁned as
+                                       t ≥0
+                                          Zb                                            n
+                      (22)                    Ψ(Xt;t)•dXt :=                 lim      XΨ(Xt ;tj)(Xt −Xt                        )    in probability;
+                                                                          ||∆ ||→0                  j            j         j−1
+                                                                              n       j=1
+                                          a
+                      where ∆n = {t0;t1;:::;tn−1;tn} is a partition of [a;b], and ||∆n|| = max16j6n(tj − tj−1).
+                      Remark 3.3. The products in this deﬁnition are clearly scalar, so that the integral yields an
+                      Rd-valued random variable.
+                          This integral is well-deﬁned and its relationship with the Itˆo integral is expressed in the following
+                      theorem.
+                      Theorem 3.4. Under the assumptions established in Deﬁnition 3.2, the limit in Equation (22)
+                      exists. Furthermore, it is connected to the Itˆo integral through the following identity
+                                          b                              b                                      b
+                                        Z                              Z                            m m Z
+                                                                                                   XX                                 
+                      (23)                  Ψ(X;t)•dX =                    Ψ(X;t)dX +                               ∂ Ψ(X;t) b (X ;t)dt;
+                                                   t             t                t          t                        xk         t      ∗l lk      t
+                                        a                              a                           l=1 k=1 a
+                      which holds almost surely. Here, the d-dimensional vector  ∂                                      Ψ denotes the l’th column of the
+                                                                                                                   xk      ∗l
+                      d×mmatrix ∂ Ψ= ∂Ψij .
+                                              xk            ∂
+                                                             xk
+                      Proof. The proof is analogous to that of the one-dimensional case. The ﬁrst summand on the right
+                      hand side of Equation (23) corresponds to the Itˆo integral that in this case is deﬁned as the limit
+                                            b
+                                          Z                                         n
+                      (24)                     Ψ(Xt;t)dXt =               lim      XΨ(Xt ;tj)(Xt −Xt ) in probability:
+                                                                       ||∆ ||→0                  j−1            j         j−1
+                                                                           n       j=1
+                                           a
+                      Its existence is again guaranteed by classical stochastic analysis theory. On the other hand, the
+                      second summand corresponds to a sum of Lebesgue integrals that are all well-deﬁned by the conti-
+                      nuity of their integrands. Now select the same ∆n-partitioning and consider the diﬀerence between
+                      the summations in Equation (22) and Equation (24) to get
+                                                              n    m h                                              i
+                                                D =XXΨ (X ;t)−Ψ (X ;t)  X(l)−X(l) :
+                                                   ∆n                       ∗l     t    j         ∗l     t        j
+                                                                                    j                     j−1              t          t
+                                                                                                                            j          j−1
+                                                            j=1 l=1
+                      Making use of the continuous diﬀerentiability of the function Ψ(x;t) along with the Mean Value
+                      Theorem we have that
+                                                                n     m h                                                i
+                                                               XX                               ⊤                         (l)            (l)  
+                                              D          =                   ∇Ψ (ξ ;t )              X −X                    X −X
+                                                 ∆n                                ∗l    j   j          t         t
+                                                                                                         j         j−1          t          t
+                                                                                                                                 j         j−1
+                                                               j=1 l=1                            !
+                                                                n     m m
+                                                               XXX ∂Ψ(ξj;tj)                              (k)           (k)        (l)        (l)  
+                                                         =                                               X −X                    X −X                ;
+                                                                                                            t           t          t          t
+                                                                                        ∂xk                  j           j−1        j          j−1
+                                                               j=1 l=1 k=1                           ∗l
+                      where ∇Ψ represents the gradient of Ψ and ξj ∈ [Xt                                    ; Xt ] for all j = 1;2;··· ;n. Using a slight
+                                                                                                        j−1       j
+                      modiﬁcation of the arguments in the one-dimensional case, for l and k = 1;2;··· ;m, it is veriﬁed
+                                                                              ˆ         ¨
+                                                                           ITO VS HANGGI–KLIMONTOVICH                                                                         9
+                      that the following convergence in probability
+                                    n                      !                                                           Zb
+                                  X ∂Ψ(ξj;tj)                     (k)           (k)        (l)        (l)                                              (l)     (k)
+                      (25)                                        X −X                   X −X                   −→           ∂ Ψ(X;t)              dhX ;X i
+                                                                     t          t           t          t                       xk        t                             t
+                                                ∂xk                   j          j−1         j          j−1    n→∞                              ∗l
+                                   j=1                        ∗l                                                       a
+                      holds, where hX(l);X(k)i is the cross-variation process of X(l) and X(k). We calculate hX(l);X(k)i
+                                                            t                                                     t              t                                            t
+                      analogously to the one-dimensional case to ﬁnd
+                      (26)                                                  dhX(l);X(k)i = b (X ;t)dt:
+                                                                                                t      lk     t
+                      Thus, from (25) and (26), we conclude that
+                                                                      m m Zb
+                                                                    XX                                 
+                                                lim     D =                           ∂ Ψ(X;t)              b (X ;t)dt            in probability:
+                                                           ∆n                           xk        t      ∗l   lk     t
+                                             ||∆n||→0                l=1 k=1
+                                                                                a
+                      Therefore, from this result, the existence of the limit in Equation (22) is deduced and, by taking
+                      an appropriate subsequence, the identity in Equation (23) is veriﬁed.                                                                                 
+                                                   ¨
+                                           4. Hanggi-Klimontovich Stochastic Differential Equations
+                      Deﬁnition 4.1. We say that a diﬀusion process X that satisﬁes a stochastic integral equation of
+                                                                                                      t
+                      the form
+                                                                                Zt                        Zt
+                      (27)                                     X =x + f(X ;s)ds+                              g(X ;s)•dW ;
+                                                                  t       0                s                        s              s
+                                                                                0                         0
+                      for 0 ≤ t ≤ T, for some real numbers x0 and T, and for some functions f and g such that all
+                      the expressions are well-deﬁned, is a solution to the H¨anggi-Klimontovich stochastic diﬀerential
+                      equation (HK SDE)
+                      (28)                                   dX =f(X;t)dt+g(X ;t)•dW ;                                    X =x ;
+                                                                  t           t                   t             t            0       0
+                      in the interval t ∈ [0;T].
+                          The following statement identiﬁes conditions on the functions f and g that guarantee that all
+                      the expressions in Deﬁnition 4.1 are well-deﬁned, and moreover that a unique solution to the HK
+                      SDEexists.
+                      Proposition 4.2 (Conversion rule for HK SDEs). Let f : R×[0;T] −→ R and g : R×[0;T] −→
+                      R be functions that fulﬁll the properties speciﬁed in Deﬁnition 2.6. Moreover assume that g is
+                      continuously diﬀerentiable and that ∂gg satisﬁes the Lipschitz and linear growth conditions in x.
+                                                                               ∂x
+                      Then the unique solution to the Itˆo SDE
+                                                        h                 ∂g                        i
+                      (29)                   dX = f(X;t)+                      (X ;t)g(X ;t) dt+g(X ;t)dW ;                               X =x ;
+                                                  t             t         ∂x       t           t                    t           t            0       0
+                      solves Equation (28) almost surely. Correspondingly, there almost surely exists a unique solution
+                      to (28) that is given by the solution to (29).
+                      Proof. Under the stated assumptions, the SDE (29) has a unique solution [26, 34]; our ﬁrst step is
+                      to prove that it solves Equation (28). To this end rewrite the stochastic integral in (28) as
+                                                              Zt                              Zt                            
+                                                                                                                             X
+                                                                  g(X ;s)•dW =                     0;g(X ;s) •d                 s    :
+                                                                         s             s                     s               W
+                                                                                                                                 s
+                                                              0                               0
+                      If we take X to be the solution to SDE (29), we recognize in the right hand side of this equation
+                                         t
+                      a particular case of the stochastic integral introduced in Deﬁnition 3.2; to be concrete we have
+                      selected d = 1, m = 2, X(1) = X , X(2) = W , and Ψ =  0;g. Classical stochastic analytical
+                                                                t           t      t            t
+               10                                    C. ESCUDERO AND H. ROJAS
+               results [26, 34] guarantee that (X ;W ) is a diﬀusion process with the desired properties, so we fall
+                                                  t    t
+               under the hypotheses of Theorem 3.4, and therefore may use transformation formula (23) to ﬁnd
+                              Zt                   Zt                       Zt
+                                                    X                             ∂g
+                                  0;g(X ;s) •d        s  = g(X ;s)dW +               (X ;s)g(X ;s)ds:
+                                        s           W              s       s      ∂x    s        s
+                                                      s
+                              0                             0                  0
+               This automatically implies that the unique solution of (29) solves (28) almost surely. To check
+               uniqueness assume there exist two solutions; by the same formula this enters in contradiction with
+               the uniqueness of solution to Equation (29).                                                           
+                  Adirect consequence of this proposition is the following
+               Corollary 4.3. Let f : R × [0;T] −→ R and g : R × [0;T] −→ R be functions that fulﬁll the
+               properties speciﬁed in Deﬁnition 2.6. Moreover assume that g is continuously diﬀerentiable and
+               that ∂gg satisﬁes the Lipschitz and linear growth conditions in x. Then the unique solution to the
+                    ∂x
+               Itˆo SDE
+               (30)                       dX =f(X;t)dt+g(X ;t)dW ;                X =x ;
+                                              t       t             t       t       0     0
+               solves the equation
+                                     h            ∂g                i
+                              dX = f(X;t)−           (X ;t)g(X ;t) dt+g(X ;t)•dW ;             X =x ;
+                                 t         t      ∂x    t       t             t         t        0     0
+               almost surely. Correspondingly, there almost surely exists a unique solution to this equation that is
+               given by the solution to (30).
+               Remark 4.4. From Proposition 4.2 and its corollary it follows that, if g is independent of X , i.e.
+                                                                                                                  t
+               g(x;t) = g(t), Equation (29) and Equation (30) reduce to the same SDE. Moreover, since under
+               the present assumptions the existence and uniqueness of solution is granted, this means that the
+               two interpretations of the stochastic diﬀerential equation, Itˆo and H¨anggi-Klimontovich, lead to
+               the same solution. This is not surprising since, under this hypothesis, both deﬁnitions of stochastic
+               integral coincide.
+                                 5. Fokker-Planck Equation and Asymptotic Behavior
+                  It is central to the theory of diﬀusion processes that their distribution function obeys a second
+               order linear parabolic partial diﬀerential equation: the Fokker-Planck equation. This equation has
+               been the main object of study in an important part of the physical literature, rather than SDEs
+               or the paths of the diﬀusion process. Indeed, part of the importance of the H¨anggi-Klimontovich
+               interpretation relies on the properties of the Fokker-Planck equation it generates. The following
+               proposition assures the existence of a suitable Fokker-Planck equation associated to HK SDEs.
+               Proposition 5.1. Let X be a diﬀusion process that satisﬁes the HK SDE (28). Assume that
+                                           t
+               f(x;t) and g(x;t) obey the same assumptions as in Proposition 4.2 and moreover that the partial
+               derivatives ∂f, ∂g, and ∂2g satisfy the Lipschitz and linear growth conditions in x. Assume in
+                            ∂x  ∂x        ∂x2
+               addition that there exists a constant c > 0 such that g(x;t) ≥ c for all x ∈ R and 0 6 t 6 T:
+               Then, the transition probability density p(x;t|x ;t ), with 0 6 t < t and x ∈ R, of the process X
+                                                                 0  0             0           0                        t
+               is given by the unique solution of the Fokker-Planck Equation (FPE)
+                                                                                       1∂ g2(x;t)p(x;t|x ;t );
+               (31)     ∂ p(x;t|x ;t ) = −∂ f(x;t)+∂ g(x;t)g(x;t) p(x;t|x ;t )+
+                         t       0  0        x            x                      0  0    2 xx                0  0
+               with initial condition
+                                                    lim p(x;t|x0;t0) = δ(x0 −x);
+                                                   t→t +
+                                                      0
+               where δ(·) denotes the Dirac measure.
+                                                 ˆ     ¨
+                                               ITO VS HANGGI–KLIMONTOVICH                                   11
+              Proof. The statement is a consequence of Proposition 4.2 and Theorem 10.9.10 in [26]. First,
+              Proposition 4.2 guarantees the existence of a unique diﬀusion process that solves the HK SDE (28).
+              Furthermore, this proposition establishes this process as the unique solution to a particular Itˆo
+              SDE; the application of Theorem 10.9.10 from [26] to this SDE completes the proof.            
+                FromnowonweassumethatX isahomogeneousdiﬀusionprocess,thatis, itsdriftanddiﬀusion
+                                              t
+              coeﬃcients are independent of time; in symbols: f(x;t) = f(x) and g(x;t) = g(x). Under these
+              assumptions, the FPE (31) reduces to
+              (32)              ∂ p (x ;x) +∂ J(x) = 0    with    lim p (x ;x) = δ(x −x);
+                                  t t 0       x                  t→0+ t 0           0
+              where
+                                                                      1    2
+                                  J(x) := f(x)+∂ g(x)g(x) p (x ;x)− ∂ g (x)p (x ;x):
+                                                   x          t  0      2 x       t  0
+              Equation (32) has the form of a local conservation law in which J(x) can be interpreted as a
+              probability ﬂow; therefore it has to be supplemented with suitable boundary conditions [12, 17,
+              35]. Next, we calculate the stationary solution of the homogeneous Fokker-Planck equation with
+              reﬂecting boundary conditions on a ﬁnite domain, since these conditions combine their intuitive
+              meaning, physical applicability, and mathematical tractability. Other types of boundary conditions
+              can be seen in [12, 17, 35].
+              Proposition 5.2. The homogeneous diﬀusion process X admits a stationary distribution p (x)
+                                                                      t                                   s
+              when constrained to the ﬁnite interval [a;b] with reﬂecting borders. Moreover, ps(x) is the unique
+              time-independent probability distribution that solves the Fokker-Planck equation (32) on [a;b] and
+              satisﬁes the boundary conditions J(a) = J(b) = 0; furthermore, it is given by the explicit formula
+                                                                  V(x)
+              (33)                                   ps(x) = N0e     ;
+                              x                           b              !−1
+              where V(x) := 2R f(u)=g2(u)du and N0 :=      R exp[V(u)]du      is the normalization constant.
+                              a                            a
+              Proof. First, we compute the explicit solution formula. Since for any time-independent solution
+              ∂ p (x) = 0, then Equation (32) can be written in terms of the probability ﬂow as ∂ J(x) = 0.
+               t s                                                                                 x
+              Therefore J(x) is constant and, moreover, the reﬂecting boundary conditions imply J(x) = 0 for
+              x∈[a;b]. So the problem reduces to the ordinary diﬀerential equation
+                                                ′               1 d  2         
+                                         f(x)+g(x)g(x) ps(x) = 2 dx g (x)ps(x) ;
+              which is readily solvable to yield
+                                                             ( x           )
+                                              ps(x) = N0exp 2Z f(u) du :
+                                                                   g2(u)
+                                                                a
+              The classical theory of ordinary diﬀerential equations guarantees that this one-parameter family
+              of solutions, indexed by N0, is the unique solution set to this equation. If this solution has to
+              be a probability distribution, then it has to be normalizable. Under the present assumptions, the
+              parameter can be assimilated to a normalization constant, which is clearly ﬁnite and given by
+                    b             −1
+              N0 = R exp[V(u)]du       <∞;this ﬁxes the uniqueness of solution.                             
+                     a
+              Remark 5.3. The real importance of the existence and uniqueness of ps(x) is the fact that it
+              is a global attractor of the time-dependent solutions pt(x0;x) of (32). Such a global stability is
+              guaranteed by the existence of a Lyapunov functional. To be precise, every solution pt(x0;x) to
+                 12                                        C. ESCUDERO AND H. ROJAS
+                 the Fokker-Planck equation (32), with arbitrary initial condition, converges in relative entropy (or
+                 Kullback–Leibler divergence) H(t) to ps(x) in the long time limit, i.e.
+                                                            b                         
+                                                H(t) := Z pt(x0;x)ln         pt(x0;x)    dx −→ 0:
+                                                                               ps(x)         t→∞
+                                                          a
+                 This result is also a consequence of Proposition 4.2 and Theorem 10.9.10 in [26] in very much the
+                 same way as the proof of Proposition 5.1, along with the developments in Chapter 6 of [17].
+                                                               x
+                 Remark 5.4. The function V(x) = 2R f(u)=g2(u)du is sometimes referred to as nonequilibrium
+                                                              a
+                 potential. Using this terminology we ﬁnd the appealing form for the stationary probability distri-
+                 bution ps(x) ∝ exp[V(x)]. This structure has been viewed as one of the strong points of the HK
+                 interpretation of noise in a fraction of the physical literature. However, the same structure results
+                 in the Itˆo and Stratonovich cases upon a redeﬁnition of the nonequilibrium potential, see [17]. So
+                 the only real advantage is the comparatively simpler appearance of the nonequilibrium potential in
+                 the HK case; notwithstanding, this simplicity is sometimes regarded as feature of its superiority.
+                    The following result is considered as another advantage of the HK interpretation in part of the
+                 physical literature.
+                 Theorem 5.5 (Robustness of deterministic behavior). The set of critical points of the stationary
+                 distribution (33), i.e. {x ∈ [a;b] : p′(x) = 0}, coincides with the set of ﬁxed points of the dynamical
+                                                          s
+                 system generated by the ordinary diﬀerential equation
+                 (34)                                              dxt = f(x ):
+                                                                    dt          t
+                 Furthermore, the local maxima of (33) coincide with the stable ﬁxed points of (34). Correspond-
+                 ingly, the local minima of (33) coincide with the unstable ﬁxed points of (34).
+                 Remark 5.6. Note that Equation (34) is nothing but the deterministic counterpart of HK SDE
+                 (28) under the time homogeneity assumption and with g ≡ 0.
+                 Proof. First of all note that under the current assumptions, equation (34) presents unique and
+                 global-in-time solutions to its associated initial value problems; therefore it generates a well-deﬁned
+                 dynamical system. Again these assumptions guarantee that both ps(x) and V(x) are diﬀerentiable;
+                 thus by direct diﬀerentiation of (33) we establish
+                                                       {x : p′ (x) = 0} = {x : V′(x) = 0};
+                                                             s
+                 and also by direct diﬀerentiation, this time of the deﬁnition of V(x), it follows that
+                                                       {x : V′(x) = 0} = {x : f(x) = 0}:
+                 Both equalities united yield the ﬁrst claim in the statement.
+                    Now deﬁne Γ := {x : f(x) = 0} and diﬀerentiate (33) once more to ﬁnd
+                                                              f′(x)
+                                                     ′′                   V(x)
+                 (35)                              ps(x) = g2(x) N0e             for all   x ∈ Γ:
+                 From (35) we conclude that {x ∈ Γ : p′′(x) < 0} = {x ∈ Γ : f′(x) < 0}, i.e. the set of local
+                                                                 s
+                 maxima of ps(x) coincides with the set of stable ﬁxed points of (34). Similarly, we have that
+                 {x ∈ Γ : p′′(x) > 0} = {x ∈ Γ : f′(x) > 0}, so the last claim in the statement follows.                           
+                            s
+                 Remark 5.7. Theorem 5.5 establishes a connection between the steady-state behavior of a de-
+                 terministic dynamical system governed by equation (34) and the stationary distribution of its
+                 stochastic counterpart, provided it is HK-interpreted. Precisely, the local maxima of the station-
+                 ary distribution, which denote the states of the physical system that are more frequently observed
+                 locally (at least in the long time), coincide identically with the stable ﬁxed points of the dynam-
+                 ical system; respectively, the local minima of this distribution, which correspond to the physical
+                                       ˆ     ¨
+                                      ITO VS HANGGI–KLIMONTOVICH                       13
+           states that are more rarely observed locally in an experiment, equal the unstable ﬁxed points of
+           the dynamical system. This sort of robustness of the deterministic behavior is the consequence
+           of the H¨anggi-Klimontovich interpretation. Other interpretations, such as Itˆo or Stratonovich, do
+           not possess this property, see Chapter 6 in [17]. On the other hand, it is easy to see that additive
+           noise does share this property with multiplicative HK noise. Note that this does not mean in either
+           case that the solution to the stochastic equation is simply the noisy counterpart of the solution
+           to the deterministic equation. For instance, transitions between diﬀerent stable states, which are
+           forbidden in the absence of noise, may happen in the presence of stochastic forcing.
+                                   6. Applications and Difficulties
+             While one can frequently ﬁnd in the physical literature references to the appealing properties
+           of the H¨anggi-Klimontovich interpretation that make it apparently better suited to applications in
+           the ﬁeld than other stochastic integrals, it is not free from problems either. In the following, we
+           discuss several physical systems for which the HK integral presents diﬃculties that are not present
+           for the Itˆo or even the Stratonovich interpretations.
+           6.1. Kinetic energy of one Langevin particle. The velocity V of a point Brownian particle
+                                                                t
+           with mass m > 0, surrounded by a homogeneous heat bath of constant temperature, obeys the
+           Langevin equation [27]
+           (36)                   mdV =−γV dt+σdW;         V =v ;
+                                      t      t        t     0   0
+           where γ > 0 denotes the friction constant of the surrounding medium and σ > 0 is the amplitude
+           of the thermal ﬂuctuations; moreover, we assume for simplicity that initial velocity v0 is a real
+           number. We note that this model is also meaningful in ﬁnance [48]. Obviously, the unique solution
+           to this equation is an Ornstein–Uhlenbeck process [45]. The kinetic energy of this particle is
+                                             K = 1mV2:
+                                              t  2   t
+           It turns out that this quantity has been used as a benchmark for the diﬀerent stochastic calculi
+           both classically [46] and in more recent times [7]. To obtain the stochastic diﬀerential equation that
+           governs the evolution of K we shall consider three approaches. Using Itˆo lemma (see for instance
+                                t
+           [46]) we get that
+           (37)           dK = σ2 dt−2γ K dt+r2σ2 K dW ;       K =1mv2;
+                             t  2m      m t        m t    t      0  2   0
+           while using Stratonovich calculus, as done for instance in [46], we ﬁnd that
+           (38)             dK =−2γ K dt+r2σ2K ◦dW;          K =1mv2:
+                               t    m t         m t     t      0  2   0
+           Alternatively, using the H¨anggi-Klimontovich calculus, speciﬁcally the conversion rule in Theorem
+           3.4, we have that                            σ
+                                       V •dW =V dW +      dt;
+                                        t    t   t   t  m
+           which in conjunction with the deﬁnition of K and (37) leads to the equation
+                                               t r
+                                σ2      γ          σ2                 1
+           (39)         dK =−      dt−2 K dt+ 2 K •dW;           K = mv2:
+                           t    2m      m t        m t      t      0  2   0
+           Amongthese three interpretations, the Itˆo equation (37) possesses a unique solution which is both
+           strong and global, as follows from the Watanabe-Yamada theorem [50], see [7, 8]. On the other
+           hand, the Stratonovich equation (38) has inﬁnitely many spurious solutions [7, 8]. This follows
+           from the fact that the state K = 0 might be absorbing for this equation. This becomes clearer if
+                                   t
+           we consider the particle to be initially at rest, that is
+           (40)               dK =−2γ K dt+r2σ2K ◦dW;          K =0:
+                                 t    m t        m t      t      0
+               14                                      C. ESCUDERO AND H. ROJAS
+               This equation admits the solution K = 0 for all times, i.e. the particle remains at rest forever.
+                                                        t
+               Of course, that does not make any physical sense since it would de facto imply that ﬂuctuations
+               due to the thermal bath would have permanently disappeared. If we established the same initial
+               condition for the H¨anggi-Klimontovich case
+                                               σ2         γ          r σ2
+               (41)                 dK =−          dt−2 K dt+ 2 K •dW;                       K =0;
+                                        t     2m         m t             m t          t        0
+               then the strictly negative drift coeﬃcient of this equation would push the kinetic energy towards
+               negative values, without real physical meaning (even worse with complex values). Finally, if one
+               chooses the initially resting particle for the Itˆo case, since K = 0 is not an absorbing barrier for
+                                                                                  t
+               equation (37) and the resulting drift is positive, the particle is pushed towards a positive kinetic
+               energy, which is the real physical eﬀect of thermal ﬂuctuations.
+                  Toanalyzethegeneral case of a not necessarily vanishing initial condition, we connect the process
+               K with a suitable squared Bessel process (BESQ).
+                 t
+               Proposition 6.1. The unique process K that solves the Itˆo equation (37) subject to the ﬁxed initial
+                                                           t
+               condition K = k := 1mv2 ∈ R is given by the explicit formula
+                            0     0    2    0     +
+                                                           −2γt    σ2  2γt       
+                                                    K =e m Θ             em −1 ;
+                                                      t              4γ
+                                              δ
+               where Θ(s)         is a BESQ       process with dimension δ = 1 and initialized at k . Consequently,
+                              s≥0              k0                                                       0
+               if the initial kinetic energy of the Langevin particle is positive, that is k > 0, then it becomes zero
+                                                                                             0
+               in ﬁnite time almost surely.
+               Proof. The process K determined by the Itˆo equation (37) can also be rewritten in terms of
+                                        t
+               a process widely used in ﬁnance and known as the Cox-Ingersoll-Ross (CIR) process by simply
+               renaming its parameters [21]. The unique solution to the CIR stochastic diﬀerential equation in
+               terms of a squared Bessel process with dimension δ and initial condition k (BESQδ ) is present
+                                                                                                  0         k0
+               in Chapter 6 of [21]. Therefore the solution in the statement is found by the direct substitution of
+               the current model parameters in that solution. Finally, since all the parameters in equation (37)
+               are positive and δ = 1, the solution hits the origin in ﬁnite time almost surely, again as it is shown
+               in Chapter 6 of [21].                                                                                    
+               Remark 6.2. For the unique solution of equation (37), the state {K = 0} is an instantaneously
+                                                                                           t
+               reﬂecting boundary [21]. In particular, this implies that the solution never takes negative values,
+               which would be unphysical for the current model. Moreover, the time set of the solution becoming
+               zero has null Lebesgue measure, as expected from the physical viewpoint too.
+               Remark 6.3. If the initial kinetic energy of the Langevin particle is positive, then it not only
+               becomes zero in ﬁnite time almost surely: it also becomes zero in mean ﬁnite time, which is a
+               stronger condition that implies the former. The proof of this fact, along with an explicit represen-
+               tation formula for the mean hitting time, can be found in [7].
+                  Denote by Tk0 the ﬁrst hitting time of the origin by a Langevin particle initially possessing a
+                                0
+               positive kinetic energy k . Since the trajectories of the process K are continuous almost surely,
+                                         0                                            t                               
+               then K >0 for all t ∈ 0;Tk0 . Furthermore, as follows from Proposition 6.1, the interval 0;Tk0
+                       t                     0                                                                         0
+               is ﬁnite almost surely; note also that this interval, although of random duration, can be tuned to
+               arbitrarily small lengths by varying the initial condition, since Tk0 collapses to zero in the limit of
+                                                                                     0
+               vanishing k .
+                            0
+                  Note that, for a given realization of the noise, equation (37) can be solved explicitly (see either
+                                                  k0                                  k0
+               Proposition 6.1 or [7]), so that T   becomesknown. Whilet ∈ 0;T             equations (37), (38), and (39)
+                                                 0                                     0
+               are equivalent; this follows from the smoothness of the square root in this interval and Proposition
+               4.2. Nevertheless, these equivalences fail at the moment the kinetic energy vanishes (what happens
+               in ﬁnite time almost surely) due to the lack of diﬀerentiability of the square root at the origin.
+                                                  ˆ     ¨
+                                                ITO VS HANGGI–KLIMONTOVICH                                    15
+              Therefore, once the time Tk0 has elapsed, the Stratonovich and H¨anggi-Klimontovich equations
+                                         0
+              are aﬀected by inﬁnite multiplicity and non-existence of solutions respectively, as the situation is
+              reminiscent to that of the null initial kinetic energy. Moreover, this phenomenon happens in a well-
+              deﬁned time scale, since E(Tk0) < ∞ by Remark 6.3. On the contrary, none of these diﬃculties
+                                           0
+              aﬀect the Itˆo equation, which possesses a unique solution that is both global in time and physically
+              meaningful.
+                For the sake of completeness, let us mention that a change of interpretation (from Stratonovich
+              to Itˆo) that shifted the ﬁnite-time blow-up of the solution to its global-in-time existence was proven
+              in [10] for a diﬀerent physical model. In the present case, the change of interpretation from Itˆo
+              to H¨anggi-Klimontovich makes a global solution to cease to exist in ﬁnite time, but not to blow
+              up. Proposition 6.1 connected the solution to the Itˆo equation with a BESQ process of positive
+              dimension, characterized by an inﬁnite lifetime [36]. The shift of interpretation terminated the
+              lifetime upon the collision of the process with the origin, an event that happens in ﬁnite time almost
+              surely. Interestingly, this behavior is characteristic of BESQ processes of negative dimension [36].
+              Overall, this illustrates the varied consequences that a swap of interpretation might bring about.
+              6.2. Kinetic energy of a two Langevin particle system. Consider a system of two indepen-
+              dent Langevin particles. The velocities of the particles, denoted by U and V , obey the stochastic
+                                                                                   t      t
+              diﬀerential equation system
+                                           mdUt=−γUtdt+σdBt;              U0 = u0;
+              (42)                         mdV =−γV dt+σdW;               V =v ;
+                                                t        t          t      0     0
+              where B and W are independent Brownian motions both deﬁned in (Ω;F;(F )           ; P). Such as in
+                      t       t                                                             t t≥0
+              the case of a single particle, the parameters m;γ;σ > 0. From equation (42) it follows that both
+              particles are immersed in the same medium and possess the same mass. The kinetic energy of the
+                                                       e
+              system, which in this case we denote by K , is given by
+                                                        t
+                                                     e    1     2     2
+                                                    K = m U +V :
+                                                      t   2      t    t
+              As done previously, we will obtain the stochastic diﬀerential equations that govern the evolution of
+              e
+              K underthethreediﬀerentinterpretations of noise. To that end, consider the stochastic diﬀerential
+                t
+                e    1       2     2
+              dK = m(dU +dV )along with Itˆo lemma and system (42), to ﬁnd out that
+                 t   2      t      t
+                                  σ2        γ                                       1
+                             e                e                                e           2    2
+              (43)         dK =      dt−2 K dt+σ U dB +V dW ;                  K = m(u +v ):
+                              t    m        m t           t   t    t   t         0   2     0    0
+                                       e
+              To close an equation for K we need the following result.
+                                         t
+              Proposition 6.4. The stochastic process deﬁned by
+                                              Zt                   Zt
+                                                     U                     V
+                                       f         p s                  p s
+              (44)                     Wt :=         2     2 dBs +        2     2 dWs
+                                                   U +V                  U +V
+                                              0      s    s        0      s     s
+              is a Brownian motion.
+                                   f
+              Proof. To prove that Wt is a Brownian motion we will use the L´evy characterization theorem, see
+              Theorem 8.4.2 in [26]. The ﬁltration (F )    and the probability measure P, necessary for the ap-
+                                                      t t≥0
+              plication of the theorem, are the same that make up the ﬁltered probability space (Ω;F;(F )   ; P)
+                                                                                                       t t≥0
+              in which Bt and Wt are deﬁned. Using Theorems 4.6.1 and 4.6.2 of [26], since the integrands in
+              Equation (44) have absolute value less than or equal to 1 almost surely, we know that the stochastic
+                      f
+              process W is a continuous martingale with respect to (F )     under P.
+                        t                                              t t≥0
+                           f                                                    f
+                Clearly, P(W0 = 0) = 1. In addition, the quadratic variation of Wt is given by
+                                           Zt      2         Zt      2         Zt
+                                                  U                V
+                                     f             s                s
+                                    hWti =     U2+V2ds+         U2+V2ds= 1ds=t:
+                                                s     s           s    s
+                                            0                0                 0
+               16                                    C. ESCUDERO AND H. ROJAS
+                                                 f
+               Thus, by Theorem 8.4.2 of [26], Wt is a Brownian motion.                                               
+               Remark 6.5. Using the language of stochastic diﬀerentials, the statement of this Proposition can
+               be written in the form:           q
+                                                     2     2  f
+               (45)                                U +V dW =U dB +V dW:
+                                                     t    t     t     t   t    t    t
+                  Now, if we use H¨anggi-Klimontovich calculus via Theorem 3.4, we ﬁnd
+                                                   U •dB =U dB + σ dt;
+                                                    t      t     t   t   m
+                                                   V •dW =V dW + σ dt;
+                                                    t      t     t    t   m
+               alternatively, using Stratonovich calculus yields
+                                                  U ◦dB =U dB + σ dt;
+                                                    t     t     t    t   2m
+                                                  V ◦dW =V dW + σ dt:
+                                                   t       t    t    t   2m
+                                                                                                    e
+               Our next step is to substitute Equation (45) in (43) and use the deﬁnition of K to arrive at the
+                                                                                                     t
+               Itˆo stochastic diﬀerential equation:
+                                  e     σ2        γ e        r σ2 e f             e     1     2    2
+               (46)             dK =       dt−2 K dt+ 2 K dW;                    K = m(u +v ):
+                                    t   m         m t            m t      t        0    2     0    0
+               If Stratonovich calculus is used the resulting equation is
+                                 e     σ2         γ e       r σ2 e        f        e     1      2    2
+               (47)            dK =        dt−2 K dt+ 2 K ◦dW;                     K = m(u +v ):
+                                  t    2m        m t            m t         t        0   2      0    0
+               Finally, the H¨anggi-Klimontovich calculus yields
+                                     e        γ e       r σ2 e        f        e     1      2    2
+               (48)                dK =−2 K dt+ 2 K •dW;                       K = m(u +v ):
+                                      t      m t             m t        t        0   2      0    0
+                  Analogously to the case of a single Langevin particle, we begin considering the two particle
+                                                e              e
+               system initially at rest, that is K = 0. Since K = 0 is an absorbing state for H¨anggi-Klimontovich
+                                                 0               t
+               equation (48), this means that we are initializing the system at an absorbing boundary, which then
+               becomes a valid solution for all times. At the physical level, this translates into the two particle
+               systemremainingatrestforever or, in other words, the ﬂuctuations fromthe thermal bath disappear
+               permanently. Of course, that is an absurd, and the overall situation is even worse, because this
+               equation admits inﬁnitely many solutions, as will be shown at the end of this section. On the other
+               hand,if we established the same null initial condition for the Itˆo and Stratonovich cases, respectively
+                                                                                            e
+               equations (46) and (47), the null solution would not be allowed because K = 0 is not an absorbing
+                                                                                             t
+                                                                                       e
+               state for either of these equations.     On the contrary, the state K = 0 is an instantaneously
+                                                                                        t
+               reﬂecting boundary for both equations, due to the presence of a positive inhomogeneous term in
+               them. Physically, this means that the system will progressively gain kinetic energy from rest due
+               to the thermal ﬂuctuations, which is the actual physical picture.
+                  If the system is initialized at some ﬁxed positive kinetic energy κ := 1 m(u2 + v2) rather than
+                                                                                        0    2     0    0
+               at rest, then we can use the following proposition:
+                                                          e
+               Proposition 6.6. The unique process K that solves the Itˆo equation (46) subject to the initial
+                                                            t
+                          e
+               condition K = κ ∈ R is given by the explicit formula
+                            0    0     +                                        
+                                                            2γ     σ2  2γ       
+                                                          −mt            mt
+                                                   K =e         Ξ      e    −1 ;
+                                                     t             4γ
+                                             δ
+               where Ξ(s)        is a BESQ       process with dimension δ = 2 and initialized at κ . Consequently,
+                             s≥0              κ0                                                      0
+               if the initial kinetic energy of the two Langevin particle system is positive, that is κ > 0, then it
+                                                                                                         0
+               stays strictly positive for all times almost surely.
+                                                    ˆ      ¨
+                                                  ITO VS HANGGI–KLIMONTOVICH                                      17
+              Proof. Based on the same transformation used in the proof of Proposition 6.1, we can rewrite the
+                       e                        δ
+              process K in terms of a BESQ         process with dimension δ = 2 and initialized at κ as speciﬁed
+                         t                      κ0                                                    0
+              in the statement. Moreover, since all the parameters in equation (46) are positive and δ = 2, the
+              solution never hits the origin in ﬁnite time almost surely, that is P(Tκ0 = ∞) = 1, where Tκ0 is the
+                                                                                     0                     0
+              ﬁrst passage time to the origin subject to the initial condition κ , see again Chapter 6 of [21].   
+                                                                                 0
+                 From Proposition 6.6 it becomes clear that the situation is not as serious as in the previous
+              subsection. Since a two particle Langevin system with an initial positive kinetic energy never
+              possesses zero energy with probability one, the three stochastic calculi can be used interchangeably
+              in such a case. Still, if the initial condition is zero (or, for the same purpose, a random variable
+              whichdistribution is atomized at the origin), then the description in terms of the Itˆo or Stratonovich
+              equation remains perfectly valid. However, the H¨anggi-Klimontovich equation (48) presents an
+              uncountable number of solutions, such as the trivial one and the family:
+                                             −2γ(t−τ(ω))    σ2  2γ(t−τ(ω))     
+                                      K =e m             Ξ        em         −1 1          ;
+                                        t                  0  4γ                     t>τ(ω)
+              for any L0(Ω) and F −measurable random variable τ(ω) that is non-negative for almost all ω ∈ Ω,
+                                  0
+              and where Ξ0(s)         is a BESQδ process with dimension δ = 2 and initialized at 0 (that for the
+                                  s≥0            0
+              case of the null initial condition; if the initial condition were a random variable with a positive
+              probability of being zero, the expression would need the corresponding modiﬁcations). Of course,
+              amongall of these solutions (and the construction of more solutions is still possible, see for instance
+              [8]), only one corresponds to the physical reality: that with τ(ω) ≡ 0 almost surely. Since this is
+              the unique solution of both the Itˆo and Stratonovich equations, it becomes clear that both classical
+              stochastic calculi are valid to study the kinetic energy of the two Langevin particle system, while
+              the H¨anggi-Klimontovich equation is not.
+              6.3. Kinetic energy of the relativistic Brownian motion. In the context of the Einstein
+              theory of special relativity, a relativistic Brownian particle is a point particle embedded in a ho-
+              mogeneous thermal bath with constant temperature that, unlike its non-relativistic counterpart,
+              possesses a speed Vt that never exceeds the speed of light c in absolute value; for a more detailed
+              description see references [3, 4, 5]. In the two previous subsections we have studied the equations
+              that govern the kinetic energy of one or two non-relativistic Langevin particles. In this subsection,
+              we continue our study to the case of a single randomly dispersed relativistic particle. From now
+              on we denote the rest mass of the relativistic particle by M (and we assume it to be positive),
+              the relativistic momentum by P , and the relativistic energy indiﬀerently by E or P0. They are
+                                                t                                                t     t
+              related by the following deﬁning formulas:
+                                                                             2
+                                           P :=MV γ(V );              E :=c Mγ(V );
+                                            t        t    t             t            t
+              where γ(·) is the Lorentz factor deﬁned as
+                                                        γ(v) := q 1       :
+                                                                   1−v2
+                                                                       c2
+              For simplicity, from now on we will adopt a system of natural units with c = 1. By means of this
+              simpliﬁcation, we get
+                                                                       0       2     2 1=2
+              (49)           P =E V =MV γ(V);                   E ≡P =(M +P )             =Mγ(V):
+                              t     t t        t    t            t     t            t              t
+              Similarly to the Langevin approach to the non-relativistic case, the relativistic momentum process
+              P is assumed to obey an Itˆo stochastic diﬀerential equation of the form [5]
+                t
+                                                                      1=2
+              (50)                     dP =−α(P)P dt+[2D(P )]             dW;       P =p;
+                                          t         t  t            t        t       0
+              where α : R −→ R+ and D : R −→ R+ are the friction force and the amplitude of the thermal
+              ﬂuctuations respectively, while the initial condition p ∈ R. The speciﬁc form of the functions α(·)
+            18                            C. ESCUDERO AND H. ROJAS
+            and D(·) depends on the microscopic details of the interactions between the relativistic particle
+            and the heat bath; for speciﬁc examples see Section 4.2.3 in [5].
+                               0     2   2 1=2
+              From the relation P = (M +P )  , we deﬁne the new coeﬃcients
+                              t          t
+                                       0                 ˆ  0
+                                   αˆ(P ) := α(P );     D(P ):=D(P );
+                                      t       t             t       t
+            which we assume smooth enough so that any of the three types of stochastic calculi can be applied
+            to them. Equations for the relativistic energy process P0 can then be derived from Equation (50),
+                                                          t
+            as has been done in [3]. The resulting Itˆo stochastic diﬀerential equation reads
+                      (          "          #              )     (       "         #)
+                                      2       ˆ  0    2                   2 1=2
+                                       M       D(P ) M                         M
+                   0         0  0                  t                ˆ  0
+            (51) dP =   −αˆ(P )P  1−         +               dt+ 2D(P ) 1−               dWt;
+                  t          t  t      P0        P0   P0               t       P0
+                                        t         t     t                       t
+            while the Stratonovich one reads
+                       (                    "          #)     (       "         #)
+                         ˆ′ 0                  2                       2 1=2
+                          D(P )                   M                         M
+                    0          t      0   0                      ˆ  0
+            (52) dP =            −αˆ(P )P    1−           dt+ 2D(P ) 1−               ◦dWt:
+                    t        2        t  t        P0                t       P0
+                                                   t                         t
+            Finally, the H¨anggi–Klimontovich stochastic diﬀerential equation is
+                                (                   "    2#            2)
+                                                                 ˆ  0
+                                                          M       D(P ) M
+                          0        ˆ′  0      0   0                   t
+                        dP   =     D(P )−αˆ(P )P     1−         −               dt
+                          t            t      t  t        P0        P0   P0
+                                                           t         t     t
+                                 ( ˆ 0 "      M2#)1=2
+            (53)                + 2D(P ) 1−              •dWt:
+                                       t       P0
+                                                 t
+            Instead of analyzing these equations in general, and in partial analogy to what has been done in
+            the previous subsections, we consider all three models subjected to the same initial condition:
+            (54)                               P0 ≡E =M;
+                                                0    0
+            physically, this initial condition reﬂects the fact that the particle initially possesses a null relativistic
+            momentum, i.e. P = 0, or in other words, it is at rest. It is direct to check that P0 = M is an
+                           0                                                       t
+            absorbing state for Equation (52); therefore, under the considered initial condition, it is a solution
+            too, not necessarily unique. Such a solution describes a state in which the particle remains at rest
+            forever; something that of course is physically absurd in the presence of thermal ﬂuctuations. For
+            the H¨anggi-Klimontovich case, equation (53), the same initial condition (54) leads to a negative
+            drift simultaneously to a null diﬀusion, so the absorbing state transforms into an entrance boundary.
+            Fromthephysical viewpoint, this is a nonsense too, since values of the relativistic energy lower than
+            the rest mass are physically unacceptable (not to speak of complex values). Finally, the same initial
+            condition (54) presents no problems for the Itˆo stochastic diﬀerential equation. Indeed, P0 = M
+                                                                                        t
+            is not an absorbing state for equation (51), but rather an instantaneously reﬂecting state. At the
+            physical level, this means that a particle initially at rest will immediately gain relativistic energy
+            due to the thermal ﬂuctuations; that is nothing but the real physical picture. In summary, we have
+            shown that the pitfalls that were present in the case of the Langevin particle for the Stratonovich
+            and H¨anggi–Klimontovich interpretations, and absent for the Itˆo one, are replicated in the context
+            of the relativistic Brownian motion.
+             7. Further Extension of the Definition and Relation to the Backward Integral
+              Russo and Vallois introduced the backward integral (among others) in [38] and they further
+            analyzed it (them) in [39, 40, 41]; it is deﬁned as follows.
+            Deﬁnition 7.1. A stochastic process Υt; t ∈ [0;T], is said to be backward integrable (in the weak
+            sense) with respect to a standard Brownian motion Wt, if there exists another stochastic process
+                                                     ˆ      ¨
+                                                  ITO VS HANGGI–KLIMONTOVICH                                        19
+               It such that
+                                                Z t                        
+                                                       Ws−Ws−ε             
+               (55)                       sup      Υs               ds−It→0; εց0
+                                         0≤t≤T  0           ε              
+               in probability. If such a process exists, we denote
+                                                   It := Z0t Υs d+Ws; t ∈ [0;T];
+               the backward integral of Υt with respect to Wt over [0;T].
+                 Thefollowing proposition shows a relation between the Russo–Vallois backward and the H¨anggi–
+               Klimontovich integrals.
+               Proposition 7.2. Assume that Υt is a step process. Then it is backward integrable and the following
+               convergence in probability
+                                           Z t                      n
+                                              Υsd+Ws = lim XΥt (Wt −Wt );
+                                                           k∆ k→0        j    j      j−1
+                                            0                 n    j=1
+               holds true.
+               Proof. A step process is a stochastic process of the form:
+                                                            m
+                                                     Υt = Xζi−11            (t);
+                                                                     (t  ;t ]
+                                                                      i−1 i
+                                                           i=1
+                            m
+               where {ζi−1}     is a collection of random variables. Then we have the trivial convergence:
+                            i=1
+                                              n                           m
+                                       lim   XΥt(Wt −Wt ) = Xζi−1(Wt −Wt )
+                                     k∆ k→0        j    j      j−1                   i      i−1
+                                       n     j=1                         i=1
+                                                                          m
+                                                                     = XΥt(Wt −Wt ):
+                                                                               i    i      i−1
+                                                                         i=1
+               On the other hand
+                                Z t Υsd+Ws = limZ tΥs Ws−Ws−ε ds
+                                 0                 εց0 0            ε
+                                                        m       Z t
+                                                       X           i Ws−Ws−ε
+                                               = lim       ζi−1                   ds
+                                                   εց0           t         ε
+                                                       i=1        i−1
+                                                          m       Z t             Z t           !
+                                                        1 X           i              i
+                                               = lim         Υt         Ws ds−         Ws−ε ds
+                                                   εց0 ε        i
+                                                                    t              t
+                                                          i=1      i−1              i−1         !
+                                                          m        Z t            Z t −ε
+                                                        1 X           i              i
+                                               = lim         Υt         Ws ds−           Wu du
+                                                   εց0 ε        i
+                                                                    t              t  −ε
+                                                          i=1      i−1              i−1         !
+                                                          m        Z t            Z t
+                                                        1 X           i              i−1
+                                               = lim         Υt         Ws ds−           Ws ds
+                                                   εց0 ε        i
+                                                                    t −ε           t   −ε
+                                                          i=1        i              i−1           !
+                                                    m              Z t              Z t
+                                                   X             1    i           1    i−1
+                                               =       Υt lim           Ws ds−              Ws ds
+                                                          i εց0  ε                ε
+                                                                    t −ε             t   −ε
+                                                   i=1               i                i−1
+                                                    m
+                                               = XΥt(Wt −Wt );
+                                                          i   i      i−1
+                                                   i=1
+               where the last convergence happens almost surely, and hence in probability.                          
+             20                                 C. ESCUDERO AND H. ROJAS
+                This result does not mean that the H¨anggi–Klimontovich integral can just be considered as a
+             kind of particular result of the backward one. In the previous sections, we have introduced that
+             integral respecting the way it is used in the physical literature, i.e. an integral that gives rise to
+             diﬀusion processes as solutions to its associated stochastic diﬀerential equations. In a certain sense,
+             this means that we have considered this integral as a perturbation of the Itˆo integral, following the
+             philosophy of the construction of the Stratonovich integral in [43]. In particular, this implies that
+             the collection of potential integrands should be restricted to adapted stochastic processes, contrary
+             to what happens to the backward integral. The latter admits non-adapted integrands, what opens
+             the possibility to use it to build stochastic diﬀerential equations which solutions are not Markovian,
+             not even adapted, stochastic processes (which are, despite their reduced mathematical structure,
+             of use in mathematical ﬁnance, see for instance [6, 9]).
+                Nevertheless, it is useful to consider the backward integral in order to expand our deﬁnition of
+             H¨anggi–Klimontovich stochastic integration.
+             Deﬁnition 7.3. Let (Ω;F;(F )      ; P) be a completed ﬁltered probability space in which a Brow-
+                                           t t≥0
+             nian motion (W )     is deﬁned. A F -adapted, almost surely square-integrable, stochastic process
+                             t t≥0               t
+             Υt; t ∈ [0;T], is said to be H¨anggi–Klimontovich integrable in the weak sense with respect to the
+             standard Brownian motion Wt, if there exists another stochastic process It such that
+                                      Z t                        
+                                           (n) Ws −Ws−ε          
+             (56)                sup     Υs               ds−It→0; εց0; nր∞;
+                                0≤t≤T  0           ε             
+                                      (n) ∞
+             in probability, where {Υ   }    is a family of F -adapted, almost surely square-integrable, step
+                                      t  n=1                 t
+             processes that approximate Υt. If such a process exists, we denote
+                                               It := Z tΥs •dWs; t ∈ [0;T];
+                                                     0
+             the weak H¨anggi–Klimontovich integral of Υt with respect to Wt over [0;T].
+                                          (n) ∞
+             Remark 7.4. The family {Υt }         always exists and approximates Υt in the sense that
+                                              n=1
+                                             Z t  (n)      2
+                                                |Υs  −Υs| ds→0; nր∞;
+                                              0
+             in probability, see Lemma 5.3.1 in [26].
+             Remark7.5. ByProposition7.2 andRemark7.4weknowthatthesequenceofbackwardintegrals
+                                                         (n) ∞
+             generated by the approximating sequence {Υs }       (i.e. the vanishing ε limit) in Deﬁnition 7.3
+                                                             n=1
+             does always exist.
+                This type of deﬁnition allows for more mathematical ﬂexibility, as there are known advantages
+             of introducing a theory of stochastic integration by approximation [26] or regularization [41] rather
+             than the classical Riemann-type discretization.  We presume that this deﬁnition, or a related
+             one, could be of interest in the development of new mathematical physical results concerning the
+             integral of H¨anggi and Klimontovich. Or, perhaps, in its potential applications in other ﬁelds such
+             as mathematical ﬁnance or engineering.
+                                                    8. Conclusions
+                Thenoiseinterpretation problemhasreceived an enormousamountofattention alongthedecades
+             in the physical literature. While classically, the Stratonovich interpretation of noise seems to have
+             been preferred within the realm of physics, during the recent years it is not diﬃcult to ﬁnd works
+             that propose the H¨anggi-Klimontovich interpretation as their favorite option. Whilst the question
+             is undoubtedly interesting, there are at least two remarks that, at least for us, are relevant in
+             this topic. The ﬁrst is that simplistic answers are most probably incorrect. The second is that
+             this question gets more blurred the less precise is the language employed to approach it. This is
+             why we have conceived this work as a precise mathematical analysis of the H¨anggi-Klimontovich
+                                                     ˆ      ¨
+                                                  ITO VS HANGGI–KLIMONTOVICH                                        21
+               interpretation of noise, but nevertheless we have tried to keep attention to the physical conclusions
+               that can be extracted from it.
+                 Withthatinmind,inthispaperwehavegivenarigorousintroductionoftheH¨anggi-Klimontovich
+               stochastic integral. Despite the popularity of this noise interpretation in many recent physics arti-
+               cles, we are not aware of any prior precise mathematical introduction of it. Once the multidimen-
+               sional integral was introduced, a theory of H¨anggi-Klimontovich stochastic diﬀerential equations
+               has been pushed forward. Under suitable assumptions, the solutions to these equations are shown
+               to be diﬀusion processes which probability distribution functions are shown to be governed by cor-
+               responding Fokker-Planck equations. Perhaps not surprisingly given the importance of diﬀusion
+               theory in physics, several properties of the solutions to these Fokker-Planck equations had been
+               highlighted as some of the advantages of the H¨anggi-Klimontovich interpretation. In this work we
+               have provided a demonstration of them along with some critical comments.
+                 The previous-to-last chapter of this work has been devoted to the application of the H¨anggi-
+               Klimontovich interpretation of noise to three diﬀerent examples of physical relevance: systems
+               composed of one and two Langevin particles, and one relativistic Brownian particle. In the ﬁrst
+               and third cases, both the Stratonovich and H¨anggi-Klimontovich interpretations gave unphysical
+               results, which were even more pathological for the latter (non-existence versus multiplicity of solu-
+               tions), while the Itˆo interpretation was free from such problems. In the second case, both the Itˆo
+               and Stratonovich interpretations were not problematic, but the H¨anggi-Klimontovich one was still
+               aﬀected by an inﬁnite multiplicity of solutions.
+                 Despite the advantages of the H¨anggi-Klimontovich interpretation of noise advertised in recent
+               works, it also has clear mathematical disadvantages that manifest themselves in physically relevant
+               models. Herein, we have highlighted some of those, which seem not to have been detected elsewhere
+               in the literature.  Perhaps paradoxically, what we have found is the absence of mathematical
+               pathologies in the Itˆo interpretation, its presence in the Stratonovich one, and an even more severe
+               manifestation of them in the H¨anggi-Klimontovich interpretation of noise. Although these facts
+               contrast with some of the lessons learnt in the physical literature along the decades [33, 46], are in
+               agreement with other mathematical physical developments [2, 7, 8, 10]. All of them show a higher
+               mathematical ﬂexibility of Itˆo integration that opposes the more rigid Stratonovich and H¨anggi-
+               Klimontovich integrals. This is something that has to be taken into account in the construction
+               of models aﬀected by the interpretation of noise dilemma. After all, this dilemma was born as a
+               consequence of the substitution of the formal manipulation of white noise by precise theories of
+               stochastic integration.
+                                                      Acknowledgements
+                 This work has been partially supported by the Government of Spain (Ministerio de Cien-
+               cia e Innovaci´on) and the European Union through Projects PID2021-125871NB-I00, CPP2021-
+               008644/AEI/10.13039/501100011033/Uni´on Europea NextGenerationEU/PRTR, and TED2021-
+               131844B-I00/AEI/10.13039/501100011033/Uni´on Europea NextGenerationEU/PRTR.
+                                                           References
+                [1] T. Brettschneider, G. Volpe, L. Helden, J. Wehr, and C. Bechinger, Force measurement in the presence of
+                   Brownian noise: Equilibrium-distribution method versus drift method, Physical Review E 83, 041113 (2011).
+                   ´
+                [2] A. Correales and C. Escudero, Itˆo vs Stratonovich in the presence of absorbing states, J. Math. Phys. 60, 123301
+                   (2019).
+                [3] J. Dunkel, Relativistic Brownian motion and diﬀusion processes, PhD thesis, Universit¨at Augsburg, 2008.
+                [4] J. Dunkel and P. H¨anggi, Theory of relativistic Brownian motion: the (1+ 1)-dimensional case, Physical Review
+                   E71, 016124 (2005).
+                [5] J. Dunkel and P. H¨anggi, Relativistic Brownian motion, Physics Reports 471, 1–73 (2009).
+                [6] C. Escudero, A simple comparison between Skorokhod & Russo-Vallois integration for insider trading, Stochastic
+                   Analysis and Applications 36, 485–494 (2018).
+                [7] C. Escudero, Kinetic energy of the Langevin particle, Stud. Appl. Math. 145, 719–738 (2020).
+         22                   C. ESCUDERO AND H. ROJAS
+         [8] C. Escudero, Fluctuation-dissipation relation, Maxwell-Boltzmann statistics, equipartition theorem, and stochas-
+           tic calculus, Phys. Scr. 98, 055214 (2023).
+         [9] M. Elizalde and C. Escudero, Chances for the honest in honest versus insider trading, SIAM Journal on Financial
+           Mathematics 13, SC39–SC52 (2022).
+         [10] C. Escudero and C. Manada, Itˆo versus Stratonovich in a stochastic cosmological model, Lett. Math. Phys. 112,
+           12 (2022).
+         [11] L. C. Evans, An introduction to stochastic diﬀerential equations, American Mathematical Society, 2012.
+         [12] C. Gardiner, Stochastic methods: A handbook for the natural sciences, Springer, Berlin, 2009.
+         [13] P. H¨anggi, Stochastic processes I: Asymptotic behaviour and symmetries, Helv. Phys. Acta 51, 183–201 (1978).
+         [14] P. H¨anggi, Connection between deterministic and stochastic descriptions of nonlinear systems, Helv. Phys. Acta
+           53, 491–496 (1980).
+         [15] P. H¨anggi and H. Thomas, Stochastic processes: Time evolution, symmetries and linear response, Phys. Rep.
+           88, 207–319 (1982).
+         [16] H. Holden, B. Øksendal, J. Ubøe, and T. Zhang, Stochastic partial diﬀerential equations, Birkh¨auser, Boston,
+           1996.
+         [17] W. Horsthemke and R. Lefever, Noise-induced transitions: Theory and applications in physics, chemistry, and
+           biology, Springer, Berlin, 1984.
+                      ¨
+         [18] M. Hu¨tter and H. C. Ottinger, Fluctuation-dissipation theorem, kinetic stochastic integral and eﬃcient simula-
+           tions, Journal of the Chemical Society, Faraday Transactions 94, 1403–1405 (1998).
+         [19] K. Itˆo, Stochastic integral, Proc. Imp. Acad. Tokyo 20, 519–524 (1944).
+         [20] K. Itˆo, On a stochastic integral equation, Proc. Imp. Acad. Tokyo 22, 32–35 (1946).
+         [21] M. Jeanblanc, M. Yor, and M. Chesney, Mathematical methods for ﬁnancial markets, Springer, London, 2009.
+         [22] O. Kallenberg, Random measures, theory and applications, Springer, Cham, 2017.
+         [23] Yu. L. Klimontovich, Ito, Stratonovich and kinetic forms of stochastic equations, Physica A: Statistical Mechanics
+           and its Applications 163, 515–532 (1990).
+         [24] Yu. L. Klimontovich, Alternative description of stochastic processes in nonlinear systems. “Kinetic form” of
+           master and Fokker-Planck equations, Physica A: Statistical Mechanics and its Applications 182, 121–132 (1992).
+         [25] Yu. L. Klimontovich, Nonlinear Brownian motion, Physics-Uspekhi 37, 737–767 (1994).
+         [26] H. H. Kuo, Introduction to stochastic integration, Springer, New York, 2006.
+         [27] P. Langevin, Sur la th´eorie du mouvement brownien, C. R. Acad. Sci. Paris 146, 530–533 (1908).
+         [28] A. W. C. Lau and T. C. Lubensky, State-dependent diﬀusion: Thermodynamic consistency and its path integral
+           formulation, Phys. Rev. E 76, 011123 (2007).
+         [29] J.-F. Le Gall, Brownian motion, martingales, and stochastic calculus, Springer, Orsay, 2016.
+         [30] N. Leibovich and E. Barkai, Inﬁnite ergodic theory for heterogeneous diﬀusion processes, Phys. Rev. E 99, 042138
+           (2019).
+         [31] Y. Li, R. Mei, Y. Xu, J. Kurths, J. Duan, and R. Metzler, Particle dynamics and transport enhancement in a
+           conﬁned channel with position-dependent diﬀusivity, New Journal of Physics 22, 053016 (2020).
+         [32] B. Lindner, The diﬀusion coeﬃcient of nonlinear Brownian motion, New Journal of Physics 9, 136 (2007).
+         [33] R. Mannella and P. V. McClintock, Itˆo versus Stratonovich: 30 years later, Fluctuation and Noise Letters 11,
+           1240010 (2012).
+         [34] B. Øksendal, Stochastic diﬀerential equations: An introduction with applications, Springer, Berlin, 2003.
+         [35] G. A. Pavliotis, Stochastic processes and applications: Diﬀusion processes, the Fokker-Planck and Langevin
+           equations, Springer, New York, 2014.
+         [36] J. Pitman and M. Winkel, Squared Bessel processes of positive and negative dimension embedded in Brownian
+           local times, Electron. Commun. Probab. 23, 1–13 (2018).
+         [37] S. Regev, N. Grønbech-Jensen, and O.Farago, Isothermal Langevin dynamics in systems with power-law spatially-
+           dependent friction, Phys Rev. E 94, 012116 (2016).
+         [38] F. Russo and P. Vallois, Forward, backward and symmetric stochastic integration, Probability Theory and Related
+           Fields 97, 403–421 (1993).
+         [39] F. Russo and P. Vallois, The generalized covariation process and Itˆo formula, Stochastic Processes and their
+           Applications 59, 81–104 (1995).
+         [40] F. Russo and P. Vallois, Stochastic calculus with respect to continuous ﬁnite quadratic variation processes,
+           Stochastics: An International Journal of Probability and Stochastic Processes 70, 1–40 (2000).
+         [41] F. Russo and P. Vallois, Elements of stochastic calculus via regularization, in S´eminaire de Probabilit´es XL,
+           147–185, Springer, 2007.
+         [42] I. M. Sokolov, Ito, Stratonovich, H¨anggi and all the rest: The thermodynamics of interpretation, Chemical
+           Physics 375, 359–363 (2010).
+         [43] R. L. Stratonovich, A new representation for stochastic integrals and equations, SIAM J. Control 4, 362–371
+           (1966).
+         [44] R. Tsekov, Stochastic equations for thermodynamics, Journal of the Chemical Society, Faraday Transactions 93,
+           1751–1753 (1997).
+                              ˆ   ¨
+                             ITO VS HANGGI–KLIMONTOVICH            23
+         [45] G. E. Uhlenbeck and L. S. Ornstein, On the theory of the Brownian motion, Phys. Rev. 36, 823–841 (1930).
+         [46] N. G. van Kampen, Itˆo versus Stratonovich, Journal of Statistical Physics 24, 175–187 (1981).
+         [47] N. G. van Kampen, Stochastic processes in physics and chemistry, Elsevier, Amsterdam, 1992.
+         [48] O. Vasicek, An equilibrium characterization of the term structure, Journal of Financial Economics 5, 177–188
+           (1977).
+         [49] G. Volpe, L. Helden, T. Brettschneider, J. Wehr, and C. Bechinger, Inﬂuence of noise on force measurements,
+           Physical Review Letters 104, 170602 (2010).
+         [50] S. Watanabe and T. Yamada, On the uniqueness of solutions of stochastic diﬀerential equations, J. Math. Kyoto
+           Univ. 11, 155–167 (1971).
+         Carlos Escudero
+         Departamento de Matem´aticas Fundamentales
+         Universidad Nacional de Educaci´on a Distancia
+         cescudero@mat.uned.es
+         Helder Rojas
+         Departamento de Matem´aticas Fundamentales
+         Universidad Nacional de Educaci´on a Distancia
+         helder rojas@hotmail.com

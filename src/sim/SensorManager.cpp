@@ -87,7 +87,7 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
             }
 
             if (sensor.next_physical_sample_time_s <= sensor.next_report_time_s) {
-                const float c = sample_concentration_bilinear(pde, domain, sensor.position);
+                const float c = sample_concentration(pde, domain, sensor.position);
                 float noisy = c;
                 if (noise_std_ > 0.0f) {
                     noisy += noise_std_ * standard_normal_(rng_);
@@ -106,7 +106,7 @@ void SensorManager::step(float current_time_s, const AdvectionDiffusionSolver& p
                 concentration = sensor.window_sum / static_cast<float>(sensor.window_count);
                 noisy = sensor.window_noisy_sum / static_cast<float>(sensor.window_count);
             } else {
-                concentration = sample_concentration_bilinear(pde, domain, sensor.position);
+                concentration = sample_concentration(pde, domain, sensor.position);
                 noisy = concentration;
                 if (noise_std_ > 0.0f) {
                     noisy += noise_std_ * standard_normal_(rng_);
@@ -140,7 +140,7 @@ void SensorManager::clear_pending_reports() {
     pending_reports_.clear();
 }
 
-float SensorManager::sample_concentration_bilinear(
+float SensorManager::sample_concentration(
     const AdvectionDiffusionSolver& pde, const DomainConfig& domain, const Vec2& p) const {
     const int nx = pde.nx();
     const int ny = pde.ny();

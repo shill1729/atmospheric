@@ -1,0 +1,347 @@
+                                                  ARTICLE IN PRESS
+                                      Atmospheric Environment 41 (2007) 2283–2289
+                                                                                          www.elsevier.com/locate/atmosenv
+         Improving pollutant source characterization by better estimating
+                              wind direction with a genetic algorithm
+                         Christopher T. Allen, George S. Young, Sue Ellen Haupt
+                    Applied Research Laboratory, The Pennsylvania State University, P.O. Box 30, State College, PA 16802, USA
+                         Received 12 May 2006; received in revised form 7 November 2006; accepted 8 November 2006
+         Abstract
+           In homeland security applications, it is often necessary to characterize the source location and strength of a potentially
+         harmful contaminant. Correct source characterization requires accurate meteorological data such as wind direction.
+         Unfortunately, available meteorological data is often inaccurate or unrepresentative, having insufﬁcient spatial and
+         temporal resolution for precise modeling of pollutant dispersion. To address this issue, a method is presented that
+         simultaneously determines the surface wind direction and the pollutant source characteristics. This method compares
+         monitored receptor data to pollutant dispersion model output and uses a genetic algorithm (GA) to ﬁnd the combination
+         of source location, source strength, and surface wind direction that best matches the dispersion model output to the
+         receptor data. A GA optimizes variables using principles from genetics and evolution.
+           The approach is validated with an identical twin experiment using synthetic receptor data and a Gaussian plume
+         equation as the dispersion model. Given sufﬁcient receptor data, the GA is able to reproduce the wind direction, source
+         location, and source strength. Additional runs incorporating white noise into the receptor data to simulate real-world
+         variability demonstrate that the GA is still capable of computing the correct solution, as long as the magnitude of the noise
+         does not exceed that of the receptor data.
+         r2006Elsevier Ltd. All rights reserved.
+         Keywords: Source characterization; Dispersion model; Genetic algorithm; Wind data uncertainty; Data assimilation
+         1. Introduction                                          their characteristics a priori, but must estimate them
+                                                                  from the post release concentration observations.
+           In dispersion applications for homeland security,      This work employs the concepts of sensor data
+         it is often necessary to characterize the location and   fusion to assimilate monitored data for the purpose
+         strength of a potentially harmful release of airborne    of determining the relevant modeling parameters.
+         contaminants in order to model their dispersion and         Accurate forward modeling of pollutant releases
+         take the appropriate actions for mitigation. Because     is  not possible without accurate meteorologi-
+         we do not control such releases, we cannot know          cal data—in particular, an accurate wind ﬁeld,
+                                                                  especially wind direction. For most pollutant dis-
+           Corresponding author. Tel.: +18148637135;             persion modeling applications, the space and time
+         fax: +18148653287.                                       scales  of interest are much smaller than the
+            E-mail address: haupts2@asme.org (S.E. Haupt).        resolution of available meteorological data. Thus,
+         1352-2310/$-see front matter r 2006 Elsevier Ltd. All rights reserved.
+         doi:10.1016/j.atmosenv.2006.11.007
+                                                  ARTICLE IN PRESS
+          2284                       C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289
+          the meteorological ﬁelds cannot be resolved to the      technique to a problem of interest in homeland
+          scale required for such applications (Daley, 1991),     defense.
+          making precise dispersion computations quite difﬁ-
+          cult. Moreover, available wind data are not always      2.1. Solution algorithm
+          accurate or representative (Daley, 1991). These
+          issues make accurate source characterization difﬁ-        This paper reports an entirely new formulation of
+          cult. For instance, in the Dipole Pride 26 experi-      the source characterization problem. In our prior
+          ments, a large sensitivity to how the wind ﬁeld         work (Haupt, 2005; Haupt et al., 2006; Allen et al.,
+          was interpolated was identiﬁed as a major factor        2006) our model was inspired by the chemical mass
+          in dispersion model performance (Chang et al.,          balance (CMB) receptor model, coupled with a
+          2003).                                                  forward dispersion model, and set up to solve a
+            This paper presents a method that addresses the       matrix equation for source apportionment factors.
+          uncertainty associated with wind direction by           Thatoriginal GA-coupledmodelpresupposedback-
+          determining the surface wind direction along with       ground knowledge on potential source locations
+          pollutant source characteristics using a genetic        andassumedthatthewindspeedanddirectionwere
+          algorithm (GA). The methodology described here          known. The new formulation is conﬁgured to use
+          uses a continuous parameter GA to determine wind        the GA to directly search the entire solution space
+          direction  and pollutant    source   characteristics    for four unknown dispersion parameters: x- and y-
+          (Haupt, 2005). Cartwright and Harris (1993) ﬁrst        locations of the source, source strength, and wind
+          used a GA to estimate source location. Camelli and      direction. Note that this is the ﬁrst time that a
+          Lohner (2004) used a GA with computational ﬂuid         meteorological parameter is treated as an unknown.
+          dynamics to estimate locations of sources for           The disadvantage of this new formulation is that
+          maximum damage. Haupt (2005), Haupt et al.              because the source locations are different in each
+          (2006), and Allen et al. (2006) address contaminant     GA iteration, the model must recalculate the
+          source characterization by using a GA to couple a       dispersion from all potential source locations in
+          dispersion model with a backward-looking receptor       each iteration. Therefore, directly using a sophisti-
+          model. The method presented here extends those          cated dispersion model such as SCIPUFF (Sykes
+          prior efforts by simultaneously determining the         et al., 1998) imposes substantial computational cost.
+          surface wind direction along with the source            Therefore, we use instead a more computationally
+          characteristics. This new formulation has an ad-        efﬁcient Gaussian plume model to demonstrate the
+          vantage over the original because it is far less        method.
+          sensitive to the uncertainty in meteorological data:
+          the wind direction is actually determined directly by   2.2. Forward model
+          the algorithm.
+                                                                    The Gaussian plume model used here is
+          2. Model formulation                                                      !
+                                                                                              
+                                                                                        2                  2
+                                                                           Q         y          ðÞz H
+                                                                  C ¼           exp     r   exp     r     e
+            Our goal is to simultaneously determine surface        r    us s 2p      2s2             2s2
+                                                                          z y           y              z
+          wind direction, two dimensional source location                    
+                                                                                         2
+                                                                              ðÞz þH
+          (x,y), and source strength. Thus, each of these four         þexp       r     e    ,                    ð1Þ
+                                                                                   2s2
+          parameters forms one element of the parameter                              z
+          vector to be determined by the GA. Each iteration       where C is the concentration at receptor r,(x , y , z )
+                                                                          r                                  r  r  r
+          of the GA yields multiple trial solutions. The          are the Cartesian coordinates of the receptor in
+          relative merit of each trial solution is evaluated by   the downwind direction from the source, Q is the
+          comparingtheresulting dispersion model prediction       emission rate of the source, u is the wind speed, H is
+                                                                                                                 e
+          with receptor data. The GA then improves the set of     the effective height of the plume centerline above
+          trial solutions by mating the best chromosomes and      ground, and (s , s ) are the standard deviations of
+                                                                                y   z
+          performing mutations, as described in Haupt and         the concentration distribution in the y- and z-
+          Haupt (2004). A brief introduction to genetic           directions, respectively.
+          algorithms and their terminology is provided in           The model uses concentration forecasts for each
+          Appendix A. The approach described here is an           trial solution created using (1), receptor data for an
+          application of the model-based sensor data fusion       arbitrary number of sites, and the GA to ﬁnd the
+                                                                                                       ARTICLE IN PRESS
+                                                                            C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289                                                                                                2285
+                  combination of source location, strength, and sur-                                                                    the search spans the entire solution space to avoid
+                  face wind direction that provides the best match                                                                      converging to a local minimum. Each round of
+                  between the monitored receptor data and the                                                                           mating and mutating constitutes one GA iteration.
+                  expected concentrations. Here we assume zr ¼ 0:0                                                                      The GA is run for a pre-determined number of
+                  and He ¼ 0:0.                                                                                                         iterations, or until convergence has occurred, as
+                                                                                                                                        determined by our prior sensitivity runs, which
+                  2.3. Cost function                                                                                                    indicated that 100 iterations is sufﬁcient. A short
+                                                                                                                                        introduction to the GA is supplied in Appendix A.
+                       Thecost,orobjective, function used by the GA to
+                  evaluate each solution vector, is the root mean                                                                       2.5. Test plan
+                  square difference between concentrations predicted
+                  by (1) and receptor data values (each scaled by                                                                            To demonstrate and validate this method for
+                  taking its logarithm), summed over all receptors and                                                                  determining wind direction and source character-
+                  normalized. We deﬁne the cost function as                                                                             istics,         we use an identical twin experimental
+                                  qﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ              approach (see Daley, 1991); that is, we use synthetic
+                                      PTRðlog ðaCrþ1:0Þlog ðaRrþ1:0ÞÞ2                                                                 data produced by (1) as receptor data. The receptors
+                                           r¼1          10                                   10
+                  Cost ¼                            qﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ                     ,            are located on a grid surrounding the source, with
+                                                         P
+                                                              TRðlog ðaR þ1:0ÞÞ2
+                                                              r¼1          10        r                                                  2000 meters separating each receptor. To ascertain
+                                                                                                                       (2)              the dependence of model performance on the
+                                                                                                                                        quantity of receptors, model runs are performed
+                  where C is computed by (1), R is the receptor data                                                                    using 2-by-2, 4-by-4, 8-by-8, 16-by-16, and 32-by-32
+                                   r                                              r
+                  value at receptor r, TR is the total number of                                                                        grids of receptors. For all ﬁve receptor conﬁgura-
+                  receptors, and a is a constant. Allen et al. (2006)                                                                   tions, the source is located in the center of the
+                  show that taking a difference of logarithms results                                                                   receptor domain at the point deﬁned as the origin
+                  in better model performance than does taking a                                                                        (0.0,0.0). Synthetic data are produced for each
+                  simple difference. Adding 1.0 to C and R is                                                                           receptor conﬁguration for two different wind
+                                                                                                  r                  r
+                  necessary because the logarithm of zero is unde-                                                                      directions, 1801 and 2251. A wind direction of
+                  ﬁned, but its inclusion has the side effect of dwarﬁng                                                                1801 places the plume centerline directly between
+                  concentration values that are much less than 1.0. To
+                  cope with this side effect, C and R are scaled by a
+                                                                            r              r
+                  constant a, where a depends on the maximum C
+                                                                                                                           r
+                  and R values (Allen, 2006). Thus, at least some aC
+                               r                                                                                           r
+                  and aRr values are greater than 1.0.
+                  2.4. Genetic algorithm implementation
+                       Here the GA searches for the optimal wind
+                  direction, source location, and source strength. The
+                  GAstarts with a population of random vectors (i.e.
+                  chromosomes) that are each evaluated using (2).
+                  The GA then combines the best chromosomes in a
+                  process called mating, producing two new potential
+                  solution vectors. In contrast to our prior air
+                  contaminant work (Haupt, 2005, Haupt et al.,
+                  2006, Allen et al., 2006), here we use a uniform
+                  crossover scheme that blends each of the para-
+                  meters. This blending scheme is useful because the
+                  effects of the parameters are correlated, speciﬁcally                                                                 Fig. 1. The setup for a 4-by-4 grid of receptors. The black dot in
+                  the response of plume structure to wind direction                                                                     the center represents the source, and the Xs are the receptors,
+                  and source location.                                                                                                  each separated by 2000m. The dashed lines represent the plume
+                                                                                                                                        centerline for the two wind directions considered in the synthetic
+                       The mutation operator replaces some original                                                                     data sets, and the shaded area represents a sample plume for the
+                  parameters with randomly generated values so that                                                                     1801 wind direction. For clarity, only the 1801 plume is shown.
+                                                                    ARTICLE IN PRESS
+             2286                                  C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289
+             receptors, and a wind direction of 2251 places the                           (Nelder and Mead, 1965) with the GA-produced
+             plumecenterline directly over some of the receptors.                         solution as the starting point for the simplex. This
+             Fig. 1 shows the source and receptor setup for a                             coupled method is often called a hybrid GA
+             4-by-4 grid of receptors, where the black dot in the                         (Haupt and Haupt, 2004). Details of the simplex
+             center is the source, the Xs are the receptors, and                          implementation in our GA are in Allen (2006).In
+             the dashed lines represent the plume centerlines for                         each case, the hybrid solution was within the stated
+             the two wind directions considered.                                          tolerance of the correct solution.
+                                                                                             In addition to the results in Table 1, numerous
+             3. Results                                                                   additional hybrid runs (not shown) were able to ﬁnd
+                                                                                          the solution repeatedly, demonstrating the consis-
+                Model runs are performed for the ﬁve receptor                             tency of the algorithm. Solutions, however, can only
+             conﬁgurations and the two wind directions de-                                be found when using at least an 8-by-8 grid of
+             scribed in the previous section. Across these ten                            receptors. For a 2-by-2 receptor grid, solutions were
+             conﬁgurations, the GA parameters giving the best                             basically random. For a 4-by-4 grid, solutions were
+             results with minimal computing time are a popula-                            better, but nowhere near the exactness of the 8-by-8
+             tion size of 1200, a mutation rate of 0.01, selection                        grid solutions. This result suggests that a 4-by-4 grid
+             rate of 0.5, 100 iterations, and mating by blending                          of receptors does not provide enough information
+             all parameters.                                                              to distinguish the effects of wind direction from
+                Table 1 shows the results for six conﬁgurations                           those of source location and source strength. Only
+             (receptor grids of 8-by-8, 16-by-16, and 32-by-32,                           twoorthreeofthereceptorsina4-by-4gridprovide
+             for each of two wind directions, as described in                             useful data; the other receptors are either outside
+             Section 2.5). The skill scores of Table 1 are deﬁned                         the plume or nearly so. Because there are four
+             in Appendix B. All GA runs produced a solution                               parameters to be determined (wind direction, source
+             close to the actual. Three came within tolerance of                          strength, and two for source location), this is not
+             the correct solution, deﬁned as within 0.011 in wind                         surprising, as there are more unknowns than
+             direction, 1% of source strength, and 1.0m from the                          equations.
+             correct     source location. Due to the random
+             initialization of GA runs, each run of the same                              4. Noisy observations
+             conﬁguration is somewhat different. We ﬁnd that all
+             of the solutions in Table 1 can be improved,                                    The success with identical twin experiments is
+             however, using a traditional gradient descent                                partly due to the fact that both the synthetic
+             method such as the Nelder–Mead downhill simplex                              receptor data and the expected concentrations are
+                                                                                          calculated by (1). With real data, the dispersion
+                                                                                          model cannot provide a perfect match to the
+             Table 1                                                                      receptor data, because there are discrepancies
+             GA-producedwinddirections, source strengths, source locations,               between the ensemble means being predicted and
+             and skill scores for six synthetic conﬁgurations using a popula-             the concentrations being measured from turbulent
+             tion size of 1200, mutation rate of 0.01, after 100 iterations, for a        realizations. The match is compromised further by
+             single GA run
+                                                                                          monitoring errors. Therefore, to evaluate the effect
+             Conﬁguration           y (1)    Strength     (x, y) in m    Skill            of such errors on our technique, we contaminate the
+                                                                         score            synthetic data with white noise.
+             8-by-8, y ¼ 1801       184.12   2.96         417, 1346     1.4581              Twelve model runs are performed with six
+             8-by-8, y ¼ 2251       223.95   1.06         26, 56       0.1952           different signal-to-noise ratios (SNRs): inﬁnity (no
+             16-by-16,              180.01   1.00         1, 0          0.0029           noise), 100, 10, 1.0, 0.1, and 0.01. An SNR above
+             y ¼ 1801                                                                     1.0 indicates less noise than signal, and an SNR
+             16-by-16,              225.01   1.00         1, 1          0.0019           below 1.0 indicates more noise than signal. Analyses
+             y ¼ 2251                                                                     are made for wind directions of 1801 and 2251. Each
+             32-by-32,              180.00   1.00         0, 0           0.0000
+             y ¼ 1801                                                                     of these runs is performed repeatedly for each of the
+             32-by-32,              220.27   1.12         123, 519      0.6870           ﬁve receptor grid conﬁgurations from Section 2.5 to
+             y ¼ 2251                                                                     resolve the role of data quantity in determining the
+             The correct solution is y ¼ (1801 or 2251), strength ¼ 1.00, and             sensitivity of the results to various quantities of
+             (x, y) ¼ (0, 0). Lower skill scores are better (Appendix B).                 noise. Runs with more receptors are expected to
+                                                            ARTICLE IN PRESS
+                                            C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289                              2287
+               0.01          Skill scores for multiplicative noise             noise beyond SNR ¼ 0.1 does not affect the GAs
+                                                                               ability to compute the known solution, because
+                                                                               those solutions with noise more than ten times
+                                                                               greater than signal are already poor.
+                0.1
+                                                                               5. Summary and recommendations
+                  1
+                                                                                  Wehave described a method that simultaneously
+              SNR                                                              determines surface wind direction and contaminant
+                 10                                                            source characteristics using a genetic algorithm. The
+                                                                               model works extremely well for identical twin
+                                                                               experiments: it is able to ﬁnd the solution given a
+                100                                                            grid   of at least 8-by-8 receptors. For fewer
+                                                                               receptors, such as a 4-by-4 grid, performance was
+                 Inf                                                           less satisfactory, as a smaller set of receptors does
+                                                                               not provide enough information to distinguish wind
+                     2481632
+                                             n                                 direction from source characteristics. Note that if
+           Fig. 2. Contour plot of median skill score for various n-by-n       the quadrant of the transport was known, a quarter
+           receptor grids and signal-to-noise ratios (SNRs) for multiplicative of the grid would be sufﬁcient.
+           noise. The median skill scores are taken over 12 runs. Lower skill     To estimate real world robustness, the method is
+           scores denote better solutions. See Appendix B for skill score      also tested using synthetic data contaminated with
+           deﬁnition.                                                          multiplicative white noise. As long as the magnitude
+                                                                               of the noise does not exceed the magnitude of the
+                                                                               signal, the GA can ﬁnd the correct wind direction,
+           be less sensitive to noise than runs with fewer                     source location, and source strength fairly well,
+           receptors.                                                          particularly if there are numerous receptors.
+              Fig. 2 shows median skill scores across twelve                      Toreducethecomputationalcomplexity, thetests
+           runs for each combination of SNR and n-by-n                         presented here use a Gaussian plume equation to
+           receptor grid. Lower scores denote better solutions,                calculate expected downwind concentrations. Add-
+           with a score of 0.0 corresponding to an exact                       ing He to the search parameters is a relatively
+           solution (see Appendix B). Fig. 2 shows the results                 straightforward way to characterize release height
+           for multiplicative noise; results for additive noise                and we are investigating that approach. Simplifying
+           (not shown) are similar. The median skill score is                  assumptions include that the source is continuous,
+           considered instead of the mean, because the median                  at ground level, and the terrain is ﬂat. An
+           is less sensitive to outliers and is more indicative of             instantaneous release can be characterized by
+           whattoexpectinasinglerun.Thisﬁgureshowsthat                         modifying the model to use a puff equation for
+           the ability of the model to compute the solution is                 dispersion, which we are currently doing in follow-
+           not appreciably affected as long as the signal is                   onwork.Forarealdataapplication, we expect that
+           greater than the noise (SNR41.0). For SNR ¼ 1.0,                    a more sophisticated dispersion model such as
+           where the signal and noise are of equal magnitude,                  SCIPUFF would improve accuracy. The current
+           the model performs slightly better with additional                  model conﬁguration, however, requires a new set of
+           receptors beyond an 8-by-8 grid. Performance at                     dispersion calculations for each GA iteration,
+           this point has deteriorated, however, as indicated by               makingthedirect use of SCIPUFF computationally
+           the sharp skill score gradient between SNR ¼ 10.0                   intensive. Assuming ﬂat terrain and horizontally
+           and SNR¼1.0. For runs with more noise than                          homogeneous winds, SCIPUFF could be run a
+           signal (SNRo1.0), the GA is unable to compute the                   limited number of times before the GA initialization
+           solution to any reasonable degree of accuracy. It is                to create a grid of values. Using these gridded
+           likely that with this much noise, the actual plume                  values, the model could then calculate relevant
+           cannolongerbedetectedfromthereceptordata.At                         downwind concentrations for any point in space or
+           this noise level, we expect that no optimization                    time using bilinear interpolation. This application of
+           method can ﬁnd the solution. This conclusion is                     SCIPUFF is planned for future work as well as
+           supported by Fig. 2, which shows that additional                    testing the model with ﬁeld test data.
+                                                  ARTICLE IN PRESS
+          2288                       C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289
+          Acknowledgments                                         Appendix B. Skill scores
+            This work was supported by internal research and        Anobjective skill score is required to evaluate the
+          development funds from the PSU Applied Research         proximity of each solution to the actual solution.
+          Laboratory. The framework for the genetic algo-         The skill score used here is designed to weight the
+          rithm code used here was co-authored by Randy L.        error in wind direction, source strength, and source
+          Haupt. The authors wish to thank two anonymous          location equally. The errors in each parameter are
+          reviewers for helpful suggestions that have im-         normalized to a [0.0,1.0] scale, with a score of 0.0
+          proved the manuscript.                                  given to exact solution, and a score of 1.0 when
+                                                                  inaccuracy exceeds a predeﬁned upper bound.
+          Appendix A. Brief introduction to genetic algorithms      Theformulas for the three skill score components
+                                                                  are:
+            The genetic algorithm (GA) is an artiﬁcial                      jj
+                                                                          lnðÞy  y þ1
+          intelligence (AI) technique for search and optimiza-    S    ¼      GA     act    ,                   (A1)
+                                                                   wind         5:199
+          tion. The GA was initially introduced by Holland                  
+          (1975) and popularized by Goldberg (1989). The                         SGA     1       Sact    1
+          GAcombines ideas from genetics and evolutionary         Sstr ¼ max    4Sact 4 ; 4SGA4          ,
+          biology for optimization.                                                                             (A2)
+            The GA begins by initializing a random popula-                       
+          tion of potential solution sets called chromosomes.                             dist
+          Each chromosome is composed of genes, which are         Sloc ¼ 1:0746 exp 1500       þ1 ,           (A3)
+          each a parameter to be found. The ﬁtness or cost of     where y    is the wind direction found by the GA,
+          each chromosome is judged by the objective                     GA
+          function, also known as the cost function. The          yact is the actual wind direction, SGA is the source
+          chromosomes judged most ﬁt remain in the            strength found by the GA, Sact is the actual source
+          population while the least ﬁt chromosomes are       strength, and dist is the distance from the GA-
+          eliminated. Two GA operations are used to form a        computed source location to the actual source
+          new chromosome: mating and mutation. The                location in meters.
+          purpose of mating is to combine information from          The constants in these equations were computed
+          the best chromosomes to produce new offspring           to give the desired scores for various solutions. For
+          chromosomes that may be better solutions than           example, in the wind direction equation (A.1), the
+          those of the initial population. Mating involves two    constant 5.199 results in a score of 1.0 for the
+          processes: selection and crossover. Selection chooses   highest possible error (1801, because the smaller
+          whichtwochromosomeswillmate,usuallybasedon              difference between the two wind directions is taken).
+          relative ﬁtness. Crossover involves blending the        For each equation, if the computed value exceeds
+          parameters from each of the two chromosomes to          1.0, the value is truncated to 1.0. The ﬁnal skill score
+                                                                  is S   +S +S ,where0.0isaperfectscore,and
+          form offspring. The second major operation is              wind   str   loc
+          mutation, in which random changes are made to           3.0 is the worst possible score.
+          some of the genes. The offspring chromosomes
+          formed by these operations are then evaluated by        References
+          the cost function and the process iterates. Many
+          variations of this process exist (Haupt and Haupt,      Allen, C.T., 2006. Source characterization and meteorological
+          2004).                                                    data optimization with a genetic algorithm-coupled disper-
+            Forfunctionswithasinglesolutionbasin, the GA            sion/backward model. M.S. Thesis, Department of Meteor-
+          often takes longer to ﬁnd the solution than               ology, The Pennsylvania State University, 69pp. available at:
+                                                                    /http://www.meteo.psu.edu/%7Eseh19/reprints/CTAllen_thesis.
+          traditional steepest descent methods. For more            htmlS.
+          complex cost functions with many local minima,          Allen, C.T., Haupt, S.E., Young, G.S., 2006. Source character-
+          however, it often ﬁnds the global solution when           ization with a genetic algorithm-coupled dispersion/backward
+          more traditional methods fail. Careful choice             model incorporating SCIPUFF. Journal of Applied Meteor-
+          of the population size, crossover strategy, and           ology and Climatology, accepted for publication.
+                                                                  Camelli, F., Lohner, R., 2004. Assessing maximum possible
+          mutation rate can result in a reasonably efﬁcient         damage for contaminant release event. Engineering Compu-
+          algorithm.                                                tations 21, 748–760.
+                                                            ARTICLE IN PRESS
+                                            C.T. Allen et al. / Atmospheric Environment 41 (2007) 2283–2289                              2289
+           Chang, J.C., Franzese, P., Chayantrokom, K., Hanna, S.R.,           Haupt, S.E., Young, G.S., Allen, C.T., 2006. Validation of a
+              2003. Evaluations of CALPUFF, HPAC, and VLSTRACK                     receptor/dispersion model coupled with a genetic algorithm
+              with two mesoscale ﬁeld datasets. Journal of Applied                 using synthetic data. Journal of Applied Meteorology and
+              Meteorology 42, 453–466.                                             Climatology 45, 476–490.
+           Daley, R., 1991. Atmospheric Data Analysis. Cambridge               Holland, J.H., 1975. Adaptation in Natural and Artiﬁcial
+              University Press, Cambridge, UK.                                     Systems. The University of Michigan Press, Ann Arbor.
+           Goldberg, D.E., 1989. Genetic Algorithms in Search, Optimiza-       Nelder, J.A., Mead, R., 1965. A simplex method for function
+              tion, and Machine Learning. Addison-Wesley, New York.                minimization. Computer Journal 7, 308–313.
+           Haupt, R.L., Haupt, S.E., 2004. Practical Genetic Algorithms,       Sykes, R.I., Parker, S.F., Henn, D.S., Cerasoli, C.P., Santos, L.P.,
+              second ed with CD. Wiley, New York, NY, 255pp.                       1998. PC-SCIPUFF version 1.2PD technical documentation.
+           Haupt, S.E., 2005. A demonstration of coupled receptor/                 ARAP Report 718, Titan Research and Technology Division,
+              dispersion modeling with a genetic algorithm. Atmospheric            Titan Corp., Princeton, NJ, 172 pp. available at: /http://www.
+              Environment 39, 7181–7189.                                           titan.com/products-services/336/download_scipuff.htmlS.

@@ -1,0 +1,715 @@
+                                                                                                                      ∗
+                                           Stoichioimetry of Chemical Reactions
+                                                                    James B. Rawlings†
+                                            Department of Chemical and Biological Engineering
+                                                         University of Wisconsin-Madison
+                                                                   Madison, WI 53706
+                                                                   September 1, 2014
+                                                                       c
+                                                          Copyright  2014 by James B. Rawlings
+                          1 ChemicalReactions and Stoichiometry
+                          Thesecondexampleisknownasthewatergasshiftreaction. Theoverallstoichiometry of
+                          this reaction is
+                                                                   H O+CO-⇀CO +H                                                    (1)
+                                                                     2         ↽-     2      2
+                          The rate of this reaction is important in determining the CO/CO ratio in exhaust gases
+                                                                                                          2
+                          from internal combustion engines, and in determining the H content in the feed for fuel
+                                                                                                    2
+                          cells.  It also is known that the following two reactions are needed to describe what is
+                          happening at the molecular level,
+                                                                   H O+ H-⇀ H +OH                                                   (2)
+                                                                     2         ↽-     2
+                                                                    OH+CO-⇀CO + H                                                   (3)
+                                                                               ↽-     2
+                          Reactions 1–3 comprise a simple reaction network. There are three chemical reactions and
+                          six different chemical species taking part in the three reactions, H, H , OH, H O, CO, and
+                                                                                                              2         2
+                          CO2.
+                              In order to organize the way we discuss chemical reactions, the following notation is
+                          convenient. Let the symbol, A , represent the jth species taking part in a reaction. In the
+                                                               j
+                          ﬁrst example, we can choose A = NO, A = O , and A = NO . In the water gas shift
+                                                                 1            2      2         3         2
+                          example, we can choose A = H, A = H , A = OH, A = H O, A = CO, and A = CO .
+                                                          1          2      2    3           4      2      5                6        2
+                             ∗Parts of these notes are taken from Rawlings and Ekerdt (2012)
+                             †rawlings@engr.wisc.edu
+                                                                                1
+                      CBE255                     Stoichiometry of Chemical Reactions                       2014
+                      Using the A notation, we can express the water gas shift reactions as
+                                  j
+                                                     A + A -⇀ A + A
+                                                      4        5 ↽-     6       2
+                                                     A + A -⇀ A + A
+                                                      4        1 ↽-     2       3                            (4)
+                                                     A + A -⇀ A + A
+                                                      3        5 ↽-     6       1
+                      Reactions 4 suppress the identities of the species for compactness. We can further com-
+                      press the description by moving all of the variables to the right-hand side of the chemical
+                      reaction symbol and replacing it with an equality sign,
+                                                       −A −A +A +A =0
+                                                          4     5    6    2
+                                                       −A −A +A +A =0                                        (5)
+                                                          4     1    2    3
+                                                       −A −A +A +A =0
+                                                          3     5    6    1
+                      Againnoticethesignconventionthatproducts havepositivecoefﬁcientsandreactants have
+                                                          1
+                      negative coefﬁcients in Equations 5. Equations 5 now resemble a set of three linear alge-
+                      braic equationsandmotivatestheuseofmatrices. Usingtherulesofmatrixmultiplication,
+                      one can express Equations 5 as
+                                                                           A 
+                                                                           1 
+                                                                        A   
+                                                0 1     0 −1 −1 1  2                 0
+                                                                        A   
+                                             −1 1      1 −1      0 0  3 = 0                            (6)
+                                                                           A 
+                                                1 0 −1       0 −1 1  4               0
+                                                                           A 
+                                                                           5 
+                                                                            A
+                                                                              6
+                      The matrix appearing in Equation 6 provides an efﬁcient description of the stoichiometry
+                      for the reaction network, and is appropriately known as the stoichiometric matrix. Giving
+                      the stoichiometric matrix the symbol ν, and writing A to denote the column vector of the
+                      A ,j = 1,...,6, our ﬁnal summary of the water gas shift reaction appears as
+                        j
+                                                               νA=0
+                      The element ν    in the stoichiometric matrix is the stoichiometric coefﬁcient for the jth
+                                     ij
+                      species in the ith reaction. The index i runs from 1 to nr, the total number of reactions in
+                      the network, and the index j runs from 1 to n , the total number of species in the network.
+                                                                   s
+                      Wesaythatνisann ×n matrix. Afterpilingupthismuchabstractiontodescribewhat
+                                           r    s
+                      started out as a simple set of three reactions, let us work a few examples to reinforce the
+                      concept of the stoichiometric matrix.
+                        1Boldface letters provide a mnemonic device.
+                                                                  2
+                  CBE255               Stoichiometry of Chemical Reactions            2014
+                  Example 1: Stoichiometric matrix for a single reaction
+                  Find the stoichiometric matrix for the nitric oxide example,
+                                               2NO+O -⇀2NO
+                                                      2↽-   2
+                  Solution
+                  The nitric oxide example consists of one reaction and three species. We can assign the
+                  species to the A as follows: A = NO, A = O , A = NO . The reaction can then be written
+                                          1      2    2  3    2
+                  as                                                
+                                                                  A
+                                                   h           i 1 
+                                   −2A −A +2A = −2 −1 2  A =0
+                                      1    2    3                  2
+                                                                  A
+                                                                   3
+                  Thestoichiometric matrix for a single reaction is a row vector, in this case,
+                                              ν=h −2 −1 2 i
+                                                                                         
+                  2 Independent Reactions
+                  To motivate the discussion of independence of chemical reactions, let us again consider
+                  the water gas shift reaction
+                                             H O+CO-⇀CO + H
+                                              2      ↽-   2   2
+                                             H O+ H-⇀ H +OH                             (7)
+                                              2      ↽-   2
+                                              OH+CO-⇀CO + H
+                                                     ↽-   2
+                  The issue of independence centers on the question of whether or not we can express any
+                  reaction in the network as a linear combination of the other reactions. If we can, then the
+                  setofreactionsisnotindependent. Itisnotnecessarytoeliminateextrareactionsandwork
+                  with the smallest set, but it is sometimes preferable. In any case, the concept is important
+                  and is examined further. Before making any of these statements precise, we explore the
+                  question of whether or not the three reactions listed in Reactions 7 are independent. Can
+                  weexpresstheﬁrstreaction as a linear combination of the second and third reactions? By
+                  linear combination we mean multiplying a reaction by a number and adding it to the other
+                  reactions. It is clear from inspection that the ﬁrst reaction is the sum of the second and
+                  third reactions, so the set of three reactions is not independent.
+                                          H O + H -⇀ H + OH
+                                           2          ↽-    2
+                                       + OH + CO -⇀ CO + H
+                                                      ↽-    2
+                                          H O + CO -⇀ CO + H
+                                           2          ↽-    2      2
+                                                     3
+                    CBE255                 Stoichiometry of Chemical Reactions                 2014
+                    If we deleted the ﬁrst reaction from the network, would the remaining two reactions be
+                    independent?
+                                                 H O+ H-⇀ H +OH                                  (8)
+                                                   2      ↽-    2
+                                                  OH+CO-⇀CO + H                                  (9)
+                                                          ↽-    2
+                    The answer is now yes, because no multiple of Reaction 8 can equal Reaction 9. There is
+                    no way to produce CO or CO2 from only Reaction 8. Likewise there is no way to produce
+                    H orH OfromonlyReaction9.
+                     2    2
+                      This discussion is not meant to imply that there is something wrong with the ﬁrst
+                    reaction in Reactions 7. Indeed if we focus attention on the second reaction, we can again
+                    ask the question whether or not it can be written as a linear combination of the ﬁrst and
+                    third reactions. The answer is yes because the second reaction is the ﬁrst reaction minus
+                    the third reaction.
+                                              H O + CO -⇀ CO           + H
+                                               2            ↽-      2       2
+                                          − {OH + CO -⇀ CO             + H}
+                                                            ↽-      2
+                                              H O + H        -⇀    H   + OH
+                                               2            ↽-      2
+                    So the ﬁrst and third reactions could be chosen as the independent set of two reactions.
+                    Finally, the third reaction in Reaction 7 is equal to the ﬁrst reaction minus the second
+                    reaction, so the ﬁrst and second reactions could be chosen as an independent set. For this
+                    example then, any two of the reactions comprise an independent set. The situation is not
+                    always this simple as we will see from the chemical vapor deposition chemistry.
+                      Before making the problem more complicated, we explore how to automate the preced-
+                    ing analysis by exploiting the stoichiometric matrix. If you are familiar with linear algebra,
+                    theissueofindependenceofreactionsisobviouslyrelatedtotherankofthestoichiometric
+                    matrix. Familiarity with these concepts, although helpful, is not required to follow the sub-
+                    sequent development. We now consider the stoichiometric matrix for the water gas shift
+                    reaction presented in Equation 6
+                                                 0 1      0 −1 −1 1 
+                                            ν= −1 1       1 −1     0 0                        (10)
+                                                 1 0 −1        0 −1 1 
+                    Wecanmakeanimportantmathematicalconnectiontotheprecedingphysicalarguments.
+                    The question of whether or not the ith reaction can be written as a linear combination of
+                    theotherreactionsisthesameasthequestionofwhetherornottheithrow oftheνmatrix
+                    can be written as a linear combination of the other rows. The linear independence of the
+                    reactions in a reaction network is equivalent to the linear independence of the rows in the
+                    corresponding stoichiometric matrix.
+                      Therankofamatrixisdeﬁnedasthenumberoflinearlyindependentrows(orequiva-
+                    lently, columns) in the matrix. Therefore, the number of linearly independent reactions in
+                                                           4
+                   CBE255                  Stoichiometry of Chemical Reactions                2014
+                                                                 H H
+                                                H             H Si Si H
+                                             H Si
+                                                     H           H H
+                                                  H Si H
+                                                     H
+                                            V
+                          Figure 1: Deﬁning the reaction rate, r, for the reaction SiH + SiH -⇀Si H .
+                                                                             2     4↽- 2 6
+                   a network, n , is equal to the rank of ν. There are efﬁcient numerical algorithms available
+                               i
+                   for ﬁnding the rank of a matrix and a set of linearly independent rows. The focus of our
+                   attention is not on the algorithm, but on how we can exploit the results of the algorithm to
+                   analyzesetsofchemicalreactions. YoushouldconsultStrangStrang(1980)oranotherlin-
+                   ear algebra text for a lucid explanation of the algorithm, Gaussian elimination with partial
+                   pivoting.
+                   3 Reaction Rates and Production Rates
+                   In order to describe the change in composition in a reactor, one has to know the reaction
+                   rates. As an example, we consider the following reaction in CVD chemistry
+                                                  SiH +SiH -⇀Si H                              (11)
+                                                     4     2↽- 2 6
+                   The reaction rate, r, is deﬁned as the number of times this reaction event takes place per
+                   time per volume. One can imagine turning SiH , SiH and Si H molecules loose in a box
+                                                             4    2      2 6
+                   of some ﬁxed volume V as depicted in Figure 1. We deﬁne the reaction extent, ε, to keep
+                   track of the number of times this reaction event occurs. Imagine that we could somehow
+                   count up the net number of times an SiH molecule hit an SiH molecule and turned into
+                                                        4                  2
+                   an Si H molecule during a short period of time. The change in the reaction extent, ∆ε, is
+                        2 6
+                   the net number of reaction events that occur in the time interval ∆t. The reaction rate is
+                   then                                     ∆ε
+                                                       r = ∆tV                                 (12)
+                   If the forwardevent(anSiH moleculeandanSiH moleculeturningintoanSi H molecule)
+                                           4                  2                       2 6
+                   occurs more often than the reverse event (an Si H molecule decomposing into an SiH
+                                                               2 6                                4
+                   molecule and an SiH molecule), then the change in ε is positive and the reaction rate is
+                                      2
+                   positive. If the reverse event occurs more often than the forward event, then the change in
+                   ε andreactionratearenegative. Ifthesystemisatequilibrium,thenthechangeinε iszero
+                                                          5
+                         CBE255                         Stoichiometry of Chemical Reactions                               2014
+                         and the forward and reverse events occur in equal numbers. The extent ε is a number of
+                         molecular change events and therefore the units of r in Equation 12 are #/(time·volume).
+                         If one divides by Avogadro’snumber,theunitsofextentaremolesandtheunitsofreaction
+                         rate are moles/(time·volume), which are the usual units for extent and reaction rate in this
+                         text. Finally, weoftendealwithphysicalsituationsinwhichweassumethematerialbehaves
+                         as a continuum and we can ignore the discrete nature of the molecules. This means we can
+                         take the volume V large enough to average the random ﬂuctuations of the molecules, but
+                         small enough that there is negligible spatial variation in the average concentrations of the
+                         componentsorthereactionratewithinV. Underthiscontinuumassumption,wecanspeak
+                         of the reaction rate as deﬁned at a point in space within some larger reacting system or
+                         physical reactor equipment.
+                             Noticeinthedeﬁnitionofreactionrate,wearetakingthereactionstoichiometryliterally.
+                         Weare postulating that these collision and transformation events are taking place at the
+                         molecular level. These literal reactions are known as elementary reactions.
+                             It is difﬁcult to measure reaction rates directly, because we do not directly sense molec-
+                         ular transformation events. We can measure concentrations, however. It is important
+                         to connect the reaction rate to the rate of change of the concentrations of the various
+                         species in the reactor, which are the quantities we usually care about in a commercial re-
+                         actor. We deﬁne production rate, Rj, as the rate at which the jth species is produced
+                         (moles/(time·volume)) due to the chemical reactions taking place. It is clear looking at the
+                         stoichiometry in Reaction 11 that each time the forward reaction event occurs, an Si H
+                                                                                                                            2 6
+                         molecule is produced. Each time the reverse reaction occurs, an Si2H6 molecule is con-
+                         sumed. The production rate of Si H , R             , is therefore directly related to the reaction
+                                                                2 6     Si H
+                                                                         2 6
+                         rate,
+                                                                       R      =r
+                                                                         Si H
+                                                                          2 6
+                         Notice that if r is positive R        is positive as we expect because Si H is being produced.
+                                                         Si2H6                                        2 6
+                         Similar arguments lead to relating the other production rates to the reaction rate,
+                                                                      RSiH =−r
+                                                                           4
+                                                                      RSiH =−r
+                                                                           2
+                         Noticethatwehavethreeproductionrates,oneforeachspecies,butonlyonereactionrate,
+                         because there is only a single reaction. If we now introduce the production rate vector, R,
+                                                                          RSiH    
+                                                                               4  
+                                                                    R= RSiH       
+                                                                                2
+                                                                            RSi H
+                                                                               2 6
+                         wecansummarizetheconnectionbetweenthethreeproductionrates and the single reac-
+                         tion rate by                                           
+                                                                          −1 
+                                                                     R= −1 r                                              (13)
+                                                                              1
+                                                                            6
+                        CBE255                       Stoichiometry of Chemical Reactions                             2014
+                        Notice that the column vector in Equation 13 is just the transpose of the row vector that
+                        comprises ν = −1 −1 1 , which follows from Reaction 11
+                                         [          ]
+                            Consider what happens to the relationship between the production and reaction rates
+                        if there is more than one reaction. Recall the water gas shift reaction,
+                                                             H O+CO-⇀CO + H
+                                                               2        ↽-     2     2
+                                                             H O+ H-⇀ H +OH
+                                                               2        ↽-     2
+                                                              OH+CO-⇀CO + H
+                                                                        ↽-     2
+                        Three reaction rates are required to track all three reactions. Let r denote the reaction
+                                                                                                   i
+                        rate for the ith reaction. What production rate of atomic hydrogen, H, results from these
+                        three reactions? We notice that H does not take part in the ﬁrst reaction, is consumed in
+                        the second reaction, and is produced in the third reaction. We therefore write
+                                                   R =(0)r +(−1)r +(1)r =−r +r
+                                                     H        1          2         3      2    3
+                        Consider the second species, H2. It is produced in the ﬁrst and second reactions and does
+                        not take part in the third reaction. Its productionrate can therefore be expressed as
+                                                    R =(1)r +(1)r +(0)r =r +r
+                                                      H          1        2        3    1    2
+                                                       2
+                        Youshouldexaminetheremainingfourspeciesandproducethefollowingmatrixequation,
+                                                      R        0 −1            1 
+                                                      H                           
+                                                      R        1 1 0 
+                                                      H2                           r
+                                                      R        0 1 −1  1 
+                                                      OH =                         r                             (14)
+                                                      R        −1 −1           0       2
+                                                      H2O                          r
+                                                      R        −1         0 −1         3
+                                                      CO                          
+                                                        R              1     0    1
+                                                         CO2
+                        The fundamental relationship between the reaction rates and the production rates now
+                        emerges. Compare the matrices in Equations 6 and 14. Notice that the ﬁrst row of the
+                        matrixinEquation6isthesameastheﬁrstcolumnofthematrixinEquation14. Moreover,
+                        each row of the matrix in Equation 6 is the same as the corresponding column of the
+                        matrix in Equation 14. In other words, the two matrices are transposes of each other. We
+                        can therefore summarize Equation 14 as
+                                                                    R= νT r                                            (15)
+                        in which νT denotes the transpose of the stoichiometric matrix. Equation 15 implies that
+                        onecanalwayscomputetheproductionratesfromthereactionrates. Thatcomputationis
+                        asimplematterofmatrixmultiplication. Thereverseproblem,deducingthereactionrates
+                        fromtheproductionrates,isnotsosimpleasitinvolvessolvingasetofequations. Wewill
+                        see in the next section under what conditions that solution can be found.
+                                                                         7
+                      CBE255                     Stoichiometry of Chemical Reactions                        2014
+                      Notation
+                        a    formula number for element l in species j
+                         jl
+                        A    jth species in the reaction network
+                          j
+                        El   lth element comprising the species
+                        i    reaction index, i = 1,2,...,nr
+                        j    species index, j = 1,2,...,n
+                                                       s
+                        M    molecular weight of the jth species
+                          j
+                        n    numberofindependent reactions in reaction network
+                          i
+                        n    total number of reactions in reaction network
+                          r
+                        n    total number of species in reaction network
+                          s
+                        r    reaction rate for ith reaction
+                         i
+                        R    production rate for jth species
+                         j
+                        ε    extent of reaction i
+                         i
+                        ν    stoichiometric number for the jth species in the ith reaction
+                         ij
+                      4 Exercises
+                      Exercise 1: Finding independent sets of reactions
+                      Consider the following set of chemical reactions,
+                                                         2N O -⇀2N O + O                                     (16)
+                                                           2 5↽-     2 4      2
+                                                          N O -⇀ NO +NO                                      (17)
+                                                           2 5↽-        2     3
+                                                  NO + NO -⇀ N O                                             (18)
+                                                     2        3↽-    2 5
+                                                  NO + NO -⇀ NO + O +NO                                      (19)
+                                                     2        3↽-       2     2
+                                                   NO+ N O -⇀ 3NO                                            (20)
+                                                           2 5↽-        2
+                                                  NO + NO -⇀ N O                                             (21)
+                                                     2        2↽-    2 4
+                        (a) Determinethestoichiometricmatrix,ν,andthespecieslist,A,forthisreactionsystem
+                            so the reaction network is summarized by
+                                                                   νA=0
+                        (b) Use Octave, Matlab, or your favorite software package to determine the rank of the
+                            stoichiometric matrix. How many of the reactions are linearly independent?
+                        (c) Now that you have found the number of independent reactions, n , which n of the
+                                                                                               i         i
+                            originalsetof6reactionscanbechosenasanindependentset? Tryguessingsomeset
+                                                                   8
+                       CBE255                       Stoichiometry of Chemical Reactions                          2014
+                             of n reactions and determine the rank of the new stoichiometric matrix. Stop when
+                                  i
+                             you have determined successfully one or more sets of n independent reactions.
+                                                                                         i
+                             Hint: you want to examine the rank of sub-matrices obtained by deleting rows (i.e.,
+                             reactions)fromtheoriginalstoichiometricmatrix. InOctave,ifyouassigntheoriginal
+                             stoichiometric matrix to a name, stoi, then you can obtain the rank of the stoichio-
+                             metric matrix associated with deleting the ﬁfth reaction, for example, by
+                             stoi2 = [stoi(1:4,:);stoi(6,:)]
+                             rank(stoi2)
+                             Do you see how the indices in forming stoi2 work out? Notice we do not have to
+                             enter any more matrices after we build the original stoichiometric matrix to test the
+                             ranks of various reaction networks.
+                         (d) What do you think of a colleague’s answer that contains Reactions 17 and 18 in the
+                             ﬁnal set. Can this be correct? Why or why not?
+                       Exercise 2: The stoichiometric matrix
+                         (a) WhatisthestoichiometricmatrixforthefollowingreactionnetworkBensonandSrini-
+                             vasan (1955)? By inspection, how many of the reactions are linearly independent?
+                             Howwouldyoucheckyouranswerifyouhadaccesstoacomputer?
+                                                             H + I -⇀2HI
+                                                               2    2↽-
+                                                                    I -⇀ 2I
+                                                                    2↽-
+                                                               I +H -⇀ HI+H
+                                                                    2↽-
+                                                              H+ I -⇀ HI+ I
+                                                                    2↽-
+                         (b) Given a stoichiometric matrix for a reaction network with n species and n reactions
+                                                                                           s               r
+                                                         n
+                                                           s
+                                                         Xν A =0,           i = 1,2,...,nr
+                                                              ij j
+                                                         j=1
+                             What is the production rate of the jth species, R , in terms of the reaction rates for
+                                                                                 j
+                             the reactions, r ?
+                                             i
+                                                                      9
+                   CBE255                 Stoichiometry of Chemical Reactions                2014
+                   Exercise 3: Finding reaction rates from production rates
+                   Consider again the water gas shift reaction presented in Reactions 1–3. Assume the pro-
+                   duction rates have been measured and are, in some units of moles/(time·volume),
+                                                  R      −1 
+                                                  H            
+                                                  R      3 
+                                                  H2           
+                                                  R      1 
+                                                  OH =         
+                                                  R      −3 
+                                                  H2O          
+                                                  R      −2 
+                                                  CO           
+                                                   R            2
+                                                     CO2
+                     (a) If you choose the ﬁrst two reactions as a linearly independent set, what are the two
+                        reaction rates that are consistent with these data. Is this answer unique?
+                     (b) Repeat the calculation if you choose the second and third reactions as the linearly
+                        independent set of reactions. Is this answer unique?
+                     (c) How can these reaction rates differ, when the production rates are the same? Can we
+                        determine which set of reactions is really causing this measured production rate?
+                   Exercise 4: Independent reactions for bromine hydrogenation
+                   Consider the following set of chemical reactions Herzfeld (1919); Polanyi (1920),
+                                                 H + Br -⇀2HBr
+                                                  2    2↽-
+                                                      Br -⇀ 2Br
+                                                       2↽-
+                                                 Br+ H -⇀ HBr+ H
+                                                       2↽-
+                                                 H+ Br -⇀ HBr+Br
+                                                       2↽-
+                                                 H+HBr-⇀ H +Br
+                                                        ↽-    2
+                                                     2Br -⇀ Br
+                                                        ↽-    2
+                     (a) Determinethestoichiometricmatrix,ν,andthespecieslist,A,forthisreactionsystem
+                        so the reaction network is summarized by
+                                                         νA=0
+                     (b) Use Octave or Matlab to determine the rank of the matrix using the rank function.
+                        Howmanyreactionsarelinearly independent?
+                     (c) Now that you have found the number of independent reactions,n , which n of the
+                                                                                 i        i
+                        original set of six reactions can be chosen as an independent set? Try guessing some
+                        set of n reactions and determine the rank of the new stoichiometric matrix. Stop
+                               i
+                        whenyouhavedeterminedsuccessfullyoneormoresetsofn independentreactions.
+                                                                            i
+                                                         10
+                   CBE255                 Stoichiometry of Chemical Reactions               2014
+                   Exercise 5: Independent reactions for methane oxidation
+                   Consider a mixture of CO, H , and CH that is fed into a furnace with O and produces CO,
+                                           2       4                            2
+                   CO , and H O. The following chemical reactions have been suggested to account for the
+                      2      2
+                   products that form.
+                                               CO+1O -⇀CO
+                                                    2 2↽-    2
+                                               H +1O -⇀H O
+                                                 2  2 2↽- 2
+                                              CH + 2O -⇀CO +2H O
+                                                 4     2↽-   2     2
+                                              CH +3O -⇀ CO+2H O
+                                                 4  2 2↽-          2
+                     (a) Are these reactions linearly independent? How many reactions comprise a linearly
+                        independent set?
+                    (b) List all sets of linearly independent reactions. Which reaction is included in all of the
+                        linearly independent sets of reactions? Why?
+                   Exercise 6: Production rates from reaction rates
+                     (a) Consider the following set of chemical reactions,
+                                                2N O -⇀2N O + O
+                                                   2 5↽-   2 4     2
+                                                 N O -⇀ NO +NO
+                                                   2 5↽-     2     3
+                                          NO + NO -⇀ N O
+                                             2       3↽-   2 5
+                                          NO + NO -⇀ NO + O +NO
+                                             2       3↽-     2     2
+                                           NO+ N O -⇀ 3NO
+                                                   2 5↽-     2
+                                          NO + NO -⇀ N O
+                                             2       2↽-   2 4
+                        Determine the rates of production of each component in terms of the rates of each
+                        reaction.
+                                                        11
+                  CBE255                Stoichiometry of Chemical Reactions              2014
+                    (b) Butene isomerization reactions are shown below.
+                                                      k1
+                                            1−butene -⇀   cis −2−butene
+                                                     ↽-
+                                                     k−1
+                                                      k2
+                                            1−butene -⇀trans−2−butene
+                                                     ↽-
+                                                     k−2
+                                                      k3
+                                            1−butene -⇀        isobutene
+                                                     ↽-
+                                                     k−3
+                                                      k4
+                                        cis −2−butene -⇀trans−2−butene
+                                                     ↽-
+                                                     k−4
+                                                      k5
+                                        cis −2−butene -⇀       isobutene
+                                                     ↽-
+                                                     k−5
+                       Determine the rates of production of each component in terms of the rates of each
+                       reaction.
+                  Exercise 7: Eliminating reaction intermediates
+                  Consider the following reaction mechanism with ﬁve reactions and eight species, A–H.
+                                                    A -→ B+C                              (22)
+                                                    C -→ B+D                              (23)
+                                                 A+B -→ E+ F                              (24)
+                                                     F -→ G+ B                            (25)
+                                                 B+ F -→ H                                (26)
+                  and assume that species B, C, and F are highly reactive intermediates.
+                    (a) What is the maximum number of linearly independent linear combinations of these
+                       ﬁvereactions that do not contain species B, C, and F as reactants or products. Justify
+                       your answer.
+                    (b) List one set of these independent reactions that contains only small, integer-valued
+                       stoichiometric coefﬁcients.
+                  Exercise 8: Stoichiometry short questions
+                    (a) What is the difference between a set of reactions that is linearly independent and a
+                       set of reactions that is linearly dependent?
+                    (b) For the reaction
+                                                2NO+O -⇀2NO
+                                                       2↽-    2
+                       is it likely that this overall reaction would occur also as a molecular event? Why or
+                       whynot?
+                                                      12
+                     CBE255                   Stoichiometry of Chemical Reactions                     2014
+                       (c) Consider the set of reactions
+                                              A + B + 2C -⇀ D + E
+                                                                    ↽-
+                                                                A -⇀ B + E
+                                                                    ↽-
+                                                      2B   + 2C -⇀ D
+                                                                    ↽-
+                            1. Write out the species list and stoichiometric matrix. For ease of grading, please
+                               keep the species in alphabetical order in the species list.
+                            2. By inspection, what is the rank of this matrix? Explain your answer.
+                     Exercise 9: Reaction rates from production rates
+                     Consider the two reactions
+                                                              A-⇀B
+                                                               ↽-
+                                                             2B-⇀C
+                                                               ↽-
+                     Thefollowing production rates were observed in the laboratory for this mechanism:
+                          R =−4.5mol/(timevol)        R =2.2mol/(timevol)       R =0.5mol/(timevol)
+                           A                           B                         C
+                       (a) Fromthesemeasurements,providealeast-squaresestimateofthetworeactionrates.
+                          Recall the least-squares estimate formula is
+                                                                  T −1
+                                                        rest = (ν ν )  νRmeas
+                       (b) Write out the production rates for all the species in terms of the two reaction rates.
+                       (c) Calculate the three production rates using the estimated reaction rates. Compare this
+                          result to the measuredproductionrates. Commentonwhythetwosetsofproduction
+                          rates are or are not different from each other.
+                     Exercise 10: Least squares estimate for multiple measurements
+                     Consider again the water gas shift reaction presented in Reactions 1–3. Consider the ﬁrst
+                     two reactions as a linearly independent set.
+                                                     H O+CO-⇀CO + H
+                                                       2       ↽-   2     2
+                                                     H O+ H-⇀ H +OH
+                                                       2       ↽-   2
+                                                               13
+                      CBE255                    Stoichiometry of Chemical Reactions                       2014
+                      Weareprovidedwiththefollowingsixreplicateexperimentalmeasurementsofthespecies
+                      production rates, all of which are subject to small measurement errors.
+                                        R       −2.05 −2.06 −1.93 −1.97 −2.04 −1.92 
+                                        H                                                         
+                                        R       2.94        3.02    3.04    2.93     3.06    3.04 
+                                        H2                                                        
+                                        R       2.01        1.94    2.01    1.92     2.01    2.04 
+                               R    = OH =                                                        
+                                meas    R       −2.98 −2.98 −2.98 −2.99 −2.96 −2.96 
+                                        H2O                                                       
+                                        R       −1.03 −1.03 −0.98 −1.07 −0.95 −1.08 
+                                        CO                                                        
+                                         R             0.97    1.05    1.06    1.09     1.00    1.07
+                                           CO2
+                        (a) Consider each column of Rmeas, that is each production rate measurement, and com-
+                           pute a least-squares estimate of r for that measurement. Conﬁrm that your six least-
+                           squares estimates are:
+                                             rest = " 0.98  1.03 1.03 1.06 0.98 1.06 #
+                                                      2.01 1.99 1.98 1.92 2.03 1.96
+                        (b) Next consider all six measurements simultaneously. Find one estimate of r that si-
+                           multaneously minimizes the squared errors of all six of the measured production
+                           rates. Conﬁrm that your estimate is
+                                           rest = " 1.02 #     all six measurements considered
+                                                    1.98
+                                Hint: Consider the least squares problem Ax = b. To create the b vector for this
+                                problem, you can manually insert the six Rmeas vectors into one column vector, or
+                                you may want to try the Matlab command: reshape. To create the A matrix, you
+                                can manually insert the stoichiometric matrix six times, or you may want to use
+                                the Matlabcommand: repmatorkron. Thefunctionsreshape,repmat,andkron
+                                are powerful and convenient tools for reorganizing matrices and vectors. See the
+                                Matlabhelpfortheir use.
+                        (c) Plot the six single-measurement estimates and the one multiple-measurement esti-
+                           mate with r ,r as the x-y axes. Where does the multiple-measurement estimate lie
+                                       1  2
+                           with respect to the six single-measurement estimates? Which of the seven estimates
+                           available do you think is the most reliable estimate of the two reaction rates and why?
+                      Exercise 11: Don’t retype data!
+                      Next consider Exercise 10 with 500 measurements. The measurements are in the ﬁle
+                                                         lots of data.dat
+                      with the ﬁrst few measurements shown below
+                                                                 14
+                     CBE255                   Stoichiometry of Chemical Reactions                     2014
+                      -2.05    -2.06   -1.93    -1.97    -2.04   -1.92    -1.99   -2.00    -2.05
+                       2.94     3.02    3.04     2.93     3.06    3.04     3.00    2.94     3.01
+                       2.01     1.94    2.01     1.92     2.01    2.04     2.06    1.90     1.98
+                      -2.98    -2.98   -2.98    -2.99    -2.96   -2.96    -2.99   -2.96    -2.96
+                      -1.03    -1.03   -0.98    -1.07    -0.95   -1.08    -1.04   -1.01    -1.00
+                       0.97     1.05    1.06     1.09     1.00    1.07     0.98    1.02     1.01
+                     Downloadthe500measurementswithyourbrowser,savethemtoaﬁlenamedlots of data.dat,
+                     and load the data into Matlab using the load command.
+                                               b = load (’lots of data.dat’)
+                     Thematrix of 500 measurements will then be stored in the variable b.
+                       (a) Repeat Exercise 10 (a)–(c) on these data.
+                       (b) Describe the pattern of points for the 500 estimates? Do you see any structure to
+                          these estimates?
+                     Exercise 12: Writing functions in Matlab and Octave
+                     Let’s do Exercise 11 with a function instead of a script ﬁle. Deﬁne the following function
+                                                xls = least sq(datafile, A)
+                     in whichdatafileisthenameofaﬁlecontainingthemeasurements,andAistheAmatrix
+                     corresponding to the linear model
+                                                            Ax=b
+                     Note that variables can be set to names; these variables are called strings. You assign the
+                     variable datafile to the name of the ﬁle containing the data by setting the name inside
+                     quotes
+                                        datafile = ’name of file containing data’
+                        Your function should ﬁrst load the ﬁle datafile. Then it should check how many
+                     experiments are contained in the ﬁle. Assume each column contained in the ﬁle is a mea-
+                     surement of b. Then stack the measurements in a column vector, stack the A matrix the
+                                                            ˆ
+                     appropriate number of times, solve for x, and return the single estimated value using all
+                     of the measurements.
+                        Check your function by writing a short script that calls the function least sq to solve
+                     Exercise 11 and check your result against your previous calculation in Exercise 11.
+                     Exercise 13: Functions with multiple return arguments
+                     Let’s write a function to do Exercise 1. Use the nchoosek function inside your function to
+                     makeyourcodeasgeneralaspossible.
+                        Write a function
+                                                 [indreac, r] = ind sets(V)
+                     in which V is a stoichiometric matrix, r is its rank r, and indreac is a matrix containing
+                                                               15
+                     CBE255                   Stoichiometry of Chemical Reactions                     2014
+                     the set of all linearly independent reactions, with each row containing a set of r integers
+                     corresponding to a set of reactions that are linearly independent. A function can return
+                     morethanoneargument,byplacingthelistofreturnargumentsinsidesquarebracketsas
+                     above.
+                       (a) Pass in the stoichiometric matrix from Exercise 1 to check your function. Print out
+                          the returned matrix indreac for this problem.
+                       (b) Find your own favorite chemical reaction set with 7 or more reactions and species
+                          whose rank is at least 2 less than the number of reactions. Apply your function to
+                          this stoichiometric matrix and print out the list of all linearly independent reactions.
+                          Notice that when you have a calculation that you need to repeat many times on dif-
+                          ferent data, it’s convenient to write and store a function to perform the calculation.
+                     Exercise 14: Estimating reaction rates from production rates — number of measure-
+                     ments
+                     Consider the chemical reactions
+                                                       A+B -→ C        r1
+                                                           C -→ D      r2
+                     Wehavemeasurementsofproduction rates and would like to estimate the corresponding
+                     reaction rates.
+                       (a) Assume we can measure A, B, C, and D concentrations. Fifty measurements are avail-
+                          able on the class website in this ﬁle
+                                                           loseinfo.dat
+                          with the ﬁrst seven measurements shown below
+                          R_A     -7.54     -6.99    -6.88     -7.31    -7.12     -7.39    -7.33
+                          R_B     -7.42     -6.91    -6.90     -6.94    -7.38     -7.32    -6.95
+                          R_C       2.92     2.90      2.91     3.20      3.05     3.36     2.69
+                          R_D       4.23     4.04      4.07     4.17      3.70     4.04     4.25
+                          Compute least squares estimates of the reaction rates for each of the 50 measure-
+                          ments. Next compute the single best reaction rate estimate for all 50 measurements.
+                          Plot the 50 estimates and the single best estimate for all 50 measurements on one
+                          plot.
+                       (b) Assume we are able to measure A, B, and C only. Delete the last row from the mea-
+                          surement matrix and repeat part (14a).
+                                                               16
+                     CBE255                   Stoichiometry of Chemical Reactions                     2014
+                       (c) Assume we are able to measure A and B only. Delete the last two rows from the
+                          measurement matrix and repeat part (14a).
+                       (d) Compareandcontrastthereactionrateestimatesforthethreesetsofmeasurements
+                          (A,B,C,D), (A,B,C) and (A,B). Discuss the effect of removing species measurements on
+                          the estimated reaction rates.
+                     References
+                     S. W. Benson and R. Srinivasan. Some complexities in the reaction system:H2 + I2 = 2HI. J.
+                       Chem.Phys., 23(1):200–202, 1955.
+                     K. F. Herzfeld. Zur Theorie der Reaktionsgeschwindigkeiten in Gasen. Annalen der Physik,
+                       59(15):635–667, 1919.
+                     M. Polanyi. Reaktionsisochore und Reaktionsgeschwindigkeit vom Standpunkte der Statis-
+                       tik. Zeitschrift fur Electrochemie und angewandte physikalische Chemie, 26:49–54, 1920.
+                     J. B. Rawlings and J. G. Ekerdt. Chemical Reactor Analysis and Design Fundamentals. Nob
+                       Hill Publishing, Madison, WI, 2nd edition, 2012. 664 pages, ISBN 978-0-9759377-2-3.
+                     G. Strang. Linear Algebra and its Applications. Academic Press, New York, second edition,
+                       1980.
+                                                               17
