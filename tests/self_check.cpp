@@ -1,3 +1,4 @@
+#include "adjoint/SourceEstimator.hpp"
 #include "core/Config.hpp"
 #include "core/Validation.hpp"
 #include "numerics/AdvectionDiffusionSolver.hpp"
@@ -6,8 +7,10 @@
 #include "sim/SensorManager.hpp"
 #include "sim/Simulator.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -141,6 +144,288 @@ int main() {
         if (sensors.sensors().front().history.size() != 2) {
             std::cerr << "Lowering history capacity should trim existing history\n";
             ++failures;
+        }
+    }
+
+    // --- SDE/PDE/theory cross-check -----------------------------------
+    // For zero wind and constant scalar diffusivity D = kappa*I, the
+    // Fokker-Planck correspondence (drift = w + div(D) = 0, covariance = 2D)
+    // predicts both the PDE concentration field and the SDE particle cloud
+    // should have spatial variance growing at rate 2*kappa per axis. These
+    // two checks verify the actual numerical solvers against that closed-form
+    // theory, independently of each other.
+    constexpr float kKappa = 4.0f;
+
+    {
+        atm::DomainConfig domain;
+        domain.x_min = 0.0f;
+        domain.x_max = 2400.0f;
+        domain.y_min = 0.0f;
+        domain.y_max = 2400.0f;
+        domain.nx = 161;
+        domain.ny = 161;
+
+        atm::PhysicsConfig physics;
+        physics.deposition_rate = 0.0f;
+        physics.constant_scalar_diffusivity = kKappa;
+
+        atm::Fields fields(domain, physics);
+        fields.set_wind_preset(atm::Fields::WindPreset::Zero);
+        fields.set_diffusivity_preset(atm::Fields::DiffusivityPreset::ConstantScalar);
+
+        atm::SourceConfig source_cfg;
+        source_cfg.base_emission = 1000.0f;
+        source_cfg.decay_rate = 0.0f;
+        source_cfg.lifespan = 1.0e6f;
+        source_cfg.sigma = 30.0f;
+        source_cfg.max_sources = 1;
+
+        atm::SourceModel source_model(domain, source_cfg);
+        source_model.activate(atm::Vec2(0.5f * (domain.x_min + domain.x_max), 0.5f * (domain.y_min + domain.y_max)));
+
+        atm::AdvectionDiffusionSolver pde(domain, physics.deposition_rate);
+        const float dt = 2.0f;
+
+        // One-step burst: with a zero field, adv/diff contribute nothing, so
+        // this deposits exactly dt * source_density as the initial condition.
+        pde.step(0.0f, dt, fields, source_model, atm::BoundaryMode::Periodic);
+        source_model.deactivate();
+
+        auto variance_xy = [&](const std::vector<float>& c) {
+            double mass = 0.0, mx = 0.0, my = 0.0;
+            for (int j = 0; j < domain.ny; ++j) {
+                for (int i = 0; i < domain.nx; ++i) {
+                    const double x = domain.x_min + static_cast<double>(i) * pde.dx();
+                    const double y = domain.y_min + static_cast<double>(j) * pde.dy();
+                    const double w = c[static_cast<std::size_t>(j * domain.nx + i)];
+                    mass += w;
+                    mx += w * x;
+                    my += w * y;
+                }
+            }
+            mx /= mass;
+            my /= mass;
+            double vx = 0.0, vy = 0.0;
+            for (int j = 0; j < domain.ny; ++j) {
+                for (int i = 0; i < domain.nx; ++i) {
+                    const double x = domain.x_min + static_cast<double>(i) * pde.dx();
+                    const double y = domain.y_min + static_cast<double>(j) * pde.dy();
+                    const double w = c[static_cast<std::size_t>(j * domain.nx + i)];
+                    vx += w * (x - mx) * (x - mx);
+                    vy += w * (y - my) * (y - my);
+                }
+            }
+            return std::make_pair(vx / mass, vy / mass);
+        };
+
+        float t = dt;
+        const auto [vx_a, vy_a] = variance_xy(pde.concentration());
+
+        for (int k = 0; k < 20; ++k) {
+            pde.step(t, dt, fields, source_model, atm::BoundaryMode::Periodic);
+            t += dt;
+        }
+        const float t_b = t;
+        const auto [vx_b, vy_b] = variance_xy(pde.concentration());
+
+        for (int k = 0; k < 60; ++k) {
+            pde.step(t, dt, fields, source_model, atm::BoundaryMode::Periodic);
+            t += dt;
+        }
+        const float t_c = t;
+        const auto [vx_c, vy_c] = variance_xy(pde.concentration());
+
+        const float rate_x = static_cast<float>((vx_c - vx_b) / (t_c - t_b));
+        const float rate_y = static_cast<float>((vy_c - vy_b) / (t_c - t_b));
+        const float expected = 2.0f * kKappa;
+        (void)vx_a;
+        (void)vy_a;
+        if (std::abs(rate_x - expected) > 0.25f * expected || std::abs(rate_y - expected) > 0.25f * expected) {
+            std::cerr << "PDE variance growth rate mismatch: got (" << rate_x << ", " << rate_y << "), expected "
+                      << expected << "\n";
+            ++failures;
+        }
+    }
+
+    {
+        atm::DomainConfig domain;
+        domain.x_min = 0.0f;
+        domain.x_max = 4000.0f;
+        domain.y_min = 0.0f;
+        domain.y_max = 4000.0f;
+        domain.nx = 8;
+        domain.ny = 8;
+
+        atm::PhysicsConfig physics;
+        physics.constant_scalar_diffusivity = kKappa;
+
+        atm::Fields fields(domain, physics);
+        fields.set_wind_preset(atm::Fields::WindPreset::Zero);
+        fields.set_diffusivity_preset(atm::Fields::DiffusivityPreset::ConstantScalar);
+
+        atm::SourceConfig source_cfg;
+        source_cfg.sigma = 50.0f;
+        source_cfg.particle_scale = 1.0f;
+
+        atm::ParticleSystem particles(domain, source_cfg, 25000);
+        particles.emit(20000.0f, 1.0f, atm::Vec2(2000.0f, 2000.0f), 1.0f);
+
+        if (particles.particles().size() < 15000) {
+            std::cerr << "SDE burst emission produced too few particles for a stable variance check\n";
+            ++failures;
+        } else {
+            const float dt = 2.0f;
+            const int steps = 50;
+            float t = 0.0f;
+            for (int k = 0; k < steps; ++k) {
+                particles.step(t, dt, fields, 0.0f);
+                t += dt;
+            }
+
+            double mx = 0.0, my = 0.0;
+            for (const auto& p : particles.particles()) {
+                mx += p.x();
+                my += p.y();
+            }
+            const double n = static_cast<double>(particles.particles().size());
+            mx /= n;
+            my /= n;
+
+            double vx = 0.0, vy = 0.0;
+            for (const auto& p : particles.particles()) {
+                vx += (p.x() - mx) * (p.x() - mx);
+                vy += (p.y() - my) * (p.y() - my);
+            }
+            vx /= n;
+            vy /= n;
+
+            const float expected = 2.0f * kKappa;
+            const float rate_x = static_cast<float>(vx) / t;
+            const float rate_y = static_cast<float>(vy) / t;
+            if (std::abs(rate_x - expected) > 0.2f * expected || std::abs(rate_y - expected) > 0.2f * expected) {
+                std::cerr << "SDE variance growth rate mismatch: got (" << rate_x << ", " << rate_y << "), expected "
+                          << expected << "\n";
+                ++failures;
+            }
+        }
+    }
+
+    // --- Source estimation methods: known-source recovery ---------------
+    // Builds a small deterministic scenario (zero wind, a source at a known
+    // location, a ring of noiseless sensors) and checks that all three
+    // SourceEstimationMethod implementations recover a location near the
+    // true source, rather than crashing, returning NaNs, or silently
+    // reporting insufficient_signal.
+    {
+        atm::Config cfg{};
+        cfg.domain.x_min = 0.0f;
+        cfg.domain.x_max = 3000.0f;
+        cfg.domain.y_min = 0.0f;
+        cfg.domain.y_max = 3000.0f;
+        cfg.domain.nx = 80;
+        cfg.domain.ny = 80;
+        cfg.physics.deposition_rate = 0.0f;
+        cfg.physics.constant_scalar_diffusivity = 6.0f;
+        cfg.source.base_emission = 5.0f;
+        cfg.source.decay_rate = 0.0f;
+        cfg.source.lifespan = 1.0e6f;
+        cfg.source.sigma = 60.0f;
+        cfg.source.particle_scale = 0.0f; // sensors read the PDE field only; skip SDE work entirely
+        cfg.numerics.dt = 1.0f;
+        cfg.numerics.time_scale = 1.0f;
+        cfg.numerics.max_substeps_per_frame = 1;
+
+        atm::Simulator sim(cfg);
+        while (sim.wind_preset() != atm::Fields::WindPreset::Zero) {
+            sim.cycle_wind_model(1);
+        }
+
+        const atm::Vec2 true_source(1500.0f, 1500.0f);
+        sim.set_source(true_source);
+
+        atm::SensorManager sensor_manager(20.0f, 0.0f, 50, 5.0f, 0.0f);
+        constexpr int kNumSensors = 5;
+        constexpr float kRadius = 150.0f;
+        for (int i = 0; i < kNumSensors; ++i) {
+            const float angle = 2.0f * 3.14159265f * static_cast<float>(i) / static_cast<float>(kNumSensors);
+            const atm::Vec2 pos(
+                true_source.x() + kRadius * std::cos(angle), true_source.y() + kRadius * std::sin(angle));
+            sensor_manager.add_sensor(pos, sim.time_s());
+        }
+
+        constexpr int kSteps = 400;
+        for (int k = 0; k < kSteps; ++k) {
+            sim.step(cfg.numerics.dt);
+            sensor_manager.step(sim.time_s(), sim.pde(), cfg.domain);
+        }
+
+        atm::SourceEstimationConfig est_cfg;
+        est_cfg.detection_threshold = 1.0e-12f;
+        est_cfg.gaussian_sigma = cfg.source.sigma;
+        est_cfg.adjoint_grid_nx = 48;
+        est_cfg.adjoint_grid_ny = 48;
+        est_cfg.max_lookback_s = 500.0f;
+        est_cfg.max_samples_per_sensor = 100;
+        est_cfg.adjoint_dt_s = 1.0f;
+        est_cfg.candidate_count = 4;
+        est_cfg.refinement_levels = 2;
+        est_cfg.search_grid_nx = 10;
+        est_cfg.search_grid_ny = 10;
+        est_cfg.search_time_count = 6;
+        est_cfg.response_quadrature_points = 6;
+        est_cfg.relative_model_error = 0.05f;
+        est_cfg.amplitude_ridge = 1.0e-8f;
+
+        atm::SourceEstimator estimator(est_cfg);
+        const auto results = estimator.estimate_all(sensor_manager.sensors(), sim);
+
+        if (results.size() != 3) {
+            std::cerr << "estimate_all should return exactly 3 results (one per method)\n";
+            ++failures;
+        }
+
+        // AdjointBacktracking/RegularizedLeastSquares report a point estimate
+        // meant to be accurate; BayesianGrid deliberately trades resolution
+        // (a coarse search_grid_nx x search_grid_ny grid, covered with only
+        // O(#sensors) adjoint solves) for a real posterior with calibrated
+        // uncertainty, so the right check for it is "does the credible
+        // region cover the truth", not "is the point estimate close".
+        constexpr float kTolerance_m = 400.0f;
+        constexpr float kCredibleSigma = 3.0f;
+        constexpr float kMinStd_m = 50.0f;
+        for (const auto& r : results) {
+            const std::string_view name = atm::source_estimation_method_name(r.method);
+            if (!r.success || r.insufficient_signal) {
+                std::cerr << "SEM method '" << name << "' failed to produce an estimate: " << r.message << "\n";
+                ++failures;
+                continue;
+            }
+            if (std::isnan(r.x_star.x()) || std::isnan(r.x_star.y()) || std::isnan(r.t_star_s)) {
+                std::cerr << "SEM method '" << name << "' produced NaN output\n";
+                ++failures;
+                continue;
+            }
+            const float dist = (r.x_star - true_source).norm();
+            if (r.method == atm::SourceEstimationMethod::BayesianGrid) {
+                const float dx = std::abs(r.x_star.x() - true_source.x());
+                const float dy = std::abs(r.x_star.y() - true_source.y());
+                const float allowed_x = kCredibleSigma * std::max(kMinStd_m, r.x_std_m);
+                const float allowed_y = kCredibleSigma * std::max(kMinStd_m, r.y_std_m);
+                if (dx > allowed_x || dy > allowed_y) {
+                    std::cerr << "SEM method '" << name << "' localized to (" << r.x_star.x() << ", "
+                              << r.x_star.y() << ") with std (" << r.x_std_m << ", " << r.y_std_m
+                              << "); true source (" << true_source.x() << ", " << true_source.y()
+                              << ") falls outside its " << kCredibleSigma << "-sigma credible region\n";
+                    ++failures;
+                }
+                continue;
+            }
+            if (dist > kTolerance_m) {
+                std::cerr << "SEM method '" << name << "' localized to (" << r.x_star.x() << ", " << r.x_star.y()
+                          << "), " << dist << " m from the true source (" << true_source.x() << ", "
+                          << true_source.y() << "); expected within " << kTolerance_m << " m\n";
+                ++failures;
+            }
         }
     }
 

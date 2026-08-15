@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
@@ -34,6 +35,7 @@ void DataRecorder::start_recording() {
     records_.clear();
     source_events_.clear();
     recording_ = true;
+    recording_start_wall_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 }
 
 void DataRecorder::stop_recording() {
@@ -57,6 +59,7 @@ const std::vector<DataRecorder::SourceEvent>& DataRecorder::source_events() cons
 void DataRecorder::add_reading(
     std::size_t sensor_index,
     const Vec2& position,
+    const std::string& label,
     float time_s,
     float raw_concentration,
     float conc_scale_ug_per_m2,
@@ -68,6 +71,7 @@ void DataRecorder::add_reading(
     }
     auto& rec = records_[sensor_index];
     rec.position = position;
+    rec.label = label;
     const float conc_ug_m3 = raw_concentration * conc_scale_ug_per_m2 / std::max(1.0e-6f, mixing_height_m);
     rec.readings.push_back({time_s, conc_ug_m3, wind_uv.x(), wind_uv.y()});
 }
@@ -152,6 +156,34 @@ std::string DataRecorder::export_csv(
         lon = geo_projection_.lon0_deg + xm / (geo_projection_.cos_lat0 * R_EARTH * DEG2RAD);
     };
 
+    // Datetime_UTC anchor: when the sensor network was loaded from the real
+    // wildfire CSV, anchor to that event's actual start so exported
+    // timestamps line up with the real record; otherwise anchor to when
+    // recording began.
+    std::tm wildfire_start_tm{};
+    wildfire_start_tm.tm_year = 2024 - 1900;
+    wildfire_start_tm.tm_mon = 11 - 1;
+    wildfire_start_tm.tm_mday = 8;
+#ifdef _WIN32
+    const std::time_t wildfire_start_utc = _mkgmtime(&wildfire_start_tm);
+#else
+    const std::time_t wildfire_start_utc = timegm(&wildfire_start_tm);
+#endif
+    const std::time_t datetime_anchor = has_geo_projection_ ? wildfire_start_utc : recording_start_wall_;
+
+    auto format_datetime_utc = [&](float time_s_val) {
+        const std::time_t t = datetime_anchor + static_cast<std::time_t>(std::lround(time_s_val));
+        std::tm tm_utc{};
+#ifdef _WIN32
+        gmtime_s(&tm_utc, &t);
+#else
+        gmtime_r(&t, &tm_utc);
+#endif
+        std::ostringstream oss;
+        oss << std::put_time(&tm_utc, "%Y-%m-%d %H:%M:%S") << "+00:00";
+        return oss.str();
+    };
+
     out << std::fixed << std::setprecision(6);
     out << "# Atmospheric Tool - Forward Simulation Export\n"
         << "# Wind model: " << wind_model << "\n"
@@ -183,9 +215,9 @@ std::string DataRecorder::export_csv(
     }
 
     if (has_geo_projection_) {
-        out << "time_s,lat_deg,lon_deg,concentration_ug_m3,wind_u_m_s,wind_v_m_s\n";
+        out << "time_s,Datetime_UTC,site_name,lat_deg,lon_deg,pm25_ugm-3,wind_u_component,wind_v_component\n";
     } else {
-        out << "time_s,x_m,y_m,concentration_ug_m3,wind_u_m_s,wind_v_m_s\n";
+        out << "time_s,Datetime_UTC,site_name,x_m,y_m,pm25_ugm-3,wind_u_component,wind_v_component\n";
     }
 
     struct Entry {
@@ -209,7 +241,8 @@ std::string DataRecorder::export_csv(
     for (const auto& e : entries) {
         const auto& rec = records_[e.sensor_idx];
         const auto& r = rec.readings[e.reading_idx];
-        out << r.time_s << ",";
+        const std::string label = rec.label.empty() ? ("Sensor_" + std::to_string(e.sensor_idx)) : rec.label;
+        out << r.time_s << "," << format_datetime_utc(r.time_s) << "," << label << ",";
         if (has_geo_projection_) {
             float lat, lon;
             domain_to_latlon(rec.position.x(), rec.position.y(), lat, lon);

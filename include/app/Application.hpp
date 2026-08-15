@@ -54,6 +54,8 @@ private:
     sf::Vector2f domain_to_right_panel(const Vec2& x) const;
     void run_source_estimation();
     void clear_source_estimation();
+    void sync_source_estimation_view();
+    void cycle_estimation_method(int direction);
     void load_ny_sites();
     void apply_ny_sensor_preset();
     void build_ecs_ui();
@@ -90,6 +92,8 @@ private:
     SourceEstimator source_estimator_;
     SourceEstimationView source_estimation_;
     FeynmanKacAnimation feynman_kac_anim_;
+    std::vector<SourceEstimateResult> estimation_results_;
+    int selected_estimation_method_ = 0;
     DataRecorder data_recorder_;
     std::string recording_status_;
     std::string sites_status_;
@@ -108,8 +112,8 @@ private:
     bool show_adjoint_overlay_ = true;
     bool show_ecs_quick_panel_ = false;
     bool pde_auto_color_scale_ = true;
-    float concentration_scale_ug_per_m2_ = 1.0e5f;
-    float mixing_height_m_ = 1.0f;
+    float concentration_scale_ug_per_m2_ = 1.923e8f;
+    float mixing_height_m_ = 800.0f;
     float pde_fixed_color_scale_ = 1.0e-4f;
     float pde_color_scale_runtime_ = 4.0e-4f;
     int menu_index_ = 0;

@@ -1,7 +1,9 @@
 #include "app/Application.hpp"
 
 #include <algorithm>
+#include <iomanip>
 #include <optional>
+#include <sstream>
 
 namespace atm {
 
@@ -92,6 +94,9 @@ void Application::process_events() {
             }
             if (key->code == sf::Keyboard::Key::J) {
                 show_adjoint_overlay_ = !show_adjoint_overlay_;
+            }
+            if (key->code == sf::Keyboard::Key::M) {
+                cycle_estimation_method(1);
             }
             if (key->code == sf::Keyboard::Key::L) {
                 load_ny_sites();
@@ -343,15 +348,75 @@ void Application::run_source_estimation() {
     feynman_kac_anim_.wall_accum_s = 0.0f;
     feynman_kac_anim_.active = true;
 
+    // The animation above is a diagnostic view of backward probability flow
+    // seeded from the latest readings; the actual (x*, t*) estimate and
+    // posterior heatmap come from running all configured estimation methods.
+    estimation_results_ = source_estimator_.estimate_all(sensors, sim());
+    if (!estimation_results_.empty()) {
+        selected_estimation_method_ = std::clamp(
+            selected_estimation_method_, 0, static_cast<int>(estimation_results_.size()) - 1);
+    }
+    sync_source_estimation_view();
+}
+
+void Application::sync_source_estimation_view() {
     source_estimation_.has_result = false;
     source_estimation_.has_error_m = false;
-    source_estimation_.status = "FK anim: "
-        + std::to_string(static_cast<int>(feynman_kac_anim_.solution.snapshots.size())) + " frames";
+
+    if (estimation_results_.empty()
+        || selected_estimation_method_ < 0
+        || selected_estimation_method_ >= static_cast<int>(estimation_results_.size())) {
+        source_estimation_.status = "No estimate available.";
+        return;
+    }
+
+    const auto& r = estimation_results_[static_cast<std::size_t>(selected_estimation_method_)];
+    std::ostringstream oss;
+    oss << "[" << (selected_estimation_method_ + 1) << "/" << estimation_results_.size() << "] "
+        << source_estimation_method_name(r.method) << ": ";
+
+    if (!r.success || r.insufficient_signal) {
+        oss << r.message;
+        source_estimation_.status = oss.str();
+        return;
+    }
+
+    source_estimation_.has_result = true;
+    source_estimation_.x_star = r.x_star;
+    source_estimation_.t_star_s = r.t_star_s;
+    source_estimation_.nx = r.nx;
+    source_estimation_.ny = r.ny;
+    source_estimation_.p_star = r.p_star;
+
+    oss << r.message;
+    if (r.method != SourceEstimationMethod::AdjointBacktracking) {
+        oss << std::fixed << std::setprecision(2) << " | q0_std=" << r.q0_std << " wrmse=" << r.weighted_rmse;
+        if (r.weakly_identified) {
+            oss << " (weakly identified)";
+        }
+    }
+    source_estimation_.status = oss.str();
+
+    if (has_last_source_click_) {
+        source_estimation_.has_error_m = true;
+        source_estimation_.error_m = (r.x_star - last_source_click_).norm();
+    }
+}
+
+void Application::cycle_estimation_method(int direction) {
+    if (estimation_results_.empty()) {
+        return;
+    }
+    const int n = static_cast<int>(estimation_results_.size());
+    selected_estimation_method_ = ((selected_estimation_method_ + direction) % n + n) % n;
+    sync_source_estimation_view();
 }
 
 void Application::clear_source_estimation() {
     source_estimation_ = SourceEstimationView{};
     feynman_kac_anim_ = FeynmanKacAnimation{};
+    estimation_results_.clear();
+    selected_estimation_method_ = 0;
 }
 
 void Application::load_ny_sites() {
@@ -374,8 +439,8 @@ void Application::load_ny_sites() {
     gp.cy_data   = pp.cy_data;
     data_recorder_.set_geo_projection(gp);
     sensor_manager_.clear();
-    for (const auto& pos : positions) {
-        sensor_manager_.add_sensor(pos, sim().time_s());
+    for (std::size_t i = 0; i < positions.size(); ++i) {
+        sensor_manager_.add_sensor(positions[i], sim().time_s(), i < sites.size() ? sites[i].name : "");
     }
     sites_status_ = "L: loaded " + std::to_string(positions.size()) + " NY sites";
 }

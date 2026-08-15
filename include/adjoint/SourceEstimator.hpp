@@ -86,6 +86,13 @@ public:
         const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const;
 
 private:
+    SourceEstimateResult estimate_adjoint_backtracking(
+        const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const;
+    SourceEstimateResult estimate_regularized_least_squares(
+        const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const;
+    SourceEstimateResult estimate_bayesian_grid(
+        const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const;
+
     SourceEstimationConfig cfg_;
     AdjointSolver solver_;
 };

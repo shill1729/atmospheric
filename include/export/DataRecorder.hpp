@@ -2,6 +2,7 @@
 
 #include "core/Types.hpp"
 
+#include <ctime>
 #include <string>
 #include <vector>
 
@@ -18,6 +19,7 @@ public:
 
     struct SensorRecord {
         Vec2 position;
+        std::string label;
         std::vector<Reading> readings;
     };
 
@@ -54,6 +56,7 @@ public:
     void add_reading(
         std::size_t sensor_index,
         const Vec2& position,
+        const std::string& label,
         float time_s,
         float raw_concentration,
         float conc_scale_ug_per_m2,
@@ -82,6 +85,10 @@ private:
     std::vector<SourceEvent> source_events_;
     bool has_geo_projection_ = false;
     GeoProjection geo_projection_ {};
+    // Wall-clock time recording started, used as the Datetime_UTC anchor for
+    // exported rows when the sensor network wasn't loaded from the real
+    // wildfire CSV (which anchors to that event's actual start instead).
+    std::time_t recording_start_wall_ = 0;
 };
 
 } // namespace atm

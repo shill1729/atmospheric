@@ -15,7 +15,7 @@ The two models share the same wind field, diffusivity model, source process, and
 - Wind vector overlay (toggle)
 - Runtime controls for speed, boundary mode, trails, and HUD/menu preferences
 - PDE-panel sensors with periodic concentration sampling and on-plot readouts
-- Pause-time adjoint source estimation from sensor history (posterior heatmap + \((x^*, t^*)\))
+- Pause-time source term estimation from sensor history — three methods (adjoint backtracking, regularized least squares, Bayesian grid), cycled with `M`, each reporting a posterior heatmap, \((x^*, t^*)\), and (for the latter two) amplitude/uncertainty estimates
 
 ## Mathematical Model
 
@@ -114,6 +114,30 @@ x^*=\arg\max_x \int_0^T p(t,x)dt,\quad
 p=\phi/Z.
 $$
 
+This is `SourceEstimationMethod::AdjointBacktracking` — the summed-forcing heuristic above (detection-only, agnostic to reading magnitude).
+
+### Regularized least squares and Bayesian grid (linear source-receptor inversion)
+
+Both remaining methods (`RegularizedLeastSquares`, `BayesianGrid`) are built on the same linear source-receptor model, by adjoint reciprocity: solving the backward adjoint PDE once per sensor $i$, forced by a unit-weight bump at that sensor's own gated observation times, yields a sensitivity field $h_i(x,t)$ such that a unit-amplitude source released at $(x,t)$ is predicted to produce a response
+
+$$
+y_i \approx q_0\, h_i(x,t)
+$$
+
+at sensor $i$, where $y_i=\sum_{k:\,\tilde c_i(t_k)>c_T} \tilde c_i(t_k)$ is that sensor's own sum of gated noisy readings over the lookback window. $h_i$ is evaluated (bilinearly/linearly interpolated) on a coarse `search_grid_nx`$\times$`search_grid_ny`$\times$`search_time_count` candidate grid, so the whole domain is covered with $O(\#\text{sensors})$ adjoint solves rather than one solve per candidate.
+
+**Regularized least squares.** At each candidate $(x,t)$, $q_0$ has the closed-form ridge (ie. Bayesian-linear-regression MAP) solution
+
+$$
+\hat q_0 = \frac{\sum_i w_i h_i y_i}{\sum_i w_i h_i^2 + \rho}, \qquad
+w_i = \sigma_i^{-2},\ \ \sigma_i = \varepsilon_{\text{rel}}\max(|y_i|,\epsilon),
+$$
+
+with $\rho=$ `amplitude_ridge` and $\varepsilon_{\text{rel}}=$ `relative_model_error`. The best `candidate_count` coarse cells (by weighted RSS) are refined over `refinement_levels` rounds of a shrinking local grid search. Positional uncertainty comes from the profile-likelihood curvature of the weighted RSS at the optimum ($\text{std}=\sqrt{2/\partial^2_\theta \text{RSS}}$); $q_0$'s uncertainty is the exact linear-regression variance $1/\sum_i w_i h_i^2$.
+
+**Bayesian grid.** At each candidate cell, $q_0$ is marginalized out via quadrature (`response_quadrature_points` nodes, centered on that cell's own ridge estimate $\pm 6$ standard deviations, since a tight $\varepsilon_{\text{rel}}$ makes the likelihood sharply peaked) to get a marginal likelihood/evidence, normalized into a posterior $p(x,y\mid \text{data})$ over the search grid (reusing the same `p_star` field/heatmap as `AdjointBacktracking`) and a per-cell posterior mean/variance for $q_0$. Reported $x^*,y^*$ use a standard 3-point parabolic sub-cell refinement of the discrete argmax; reported $x_{\text{std}},y_{\text{std}},t_{\text{std}}$ are floored at the grid's own quantization noise ($\text{cell width}/\sqrt{12}$) so a sharp likelihood can't misreport more precision than a coarse grid can actually resolve.
+
+Both methods reuse the audited `AdjointSolver` unchanged; see `src/adjoint/SourceEstimator.cpp` for the implementation and `tests/self_check.cpp` for a known-source recovery regression test of all three methods.
 
 ## Initial and Boundary Conditions
 
@@ -237,6 +261,21 @@ Example:
   --mixing-height 1000
 ```
 
+### Faithful NY wildfire event export
+
+The interactive defaults (`--source-decay`, `--source-lifespan`) are kept fast so a clicked source fully evolves in seconds, not hours, for a responsive demo. The real Nov 2024 event's rise/decay time constants are much slower (see [Calibration](#calibration)) — for an offline export meant to mimic that event's actual timescale rather than the interactive demo, override them explicitly:
+
+```bash
+./build-release/atmospheric \
+  --source-decay 6.7e-6 \
+  --source-lifespan 176400 \
+  --source-sigma 95 \
+  --conc-scale 1.923e8 \
+  --mixing-height 800
+```
+
+Then press `L` to load the NY site network, `N` to apply the matching hourly-observation sensor preset, click a source, and record/export as described below.
+
 ## Runtime Controls
 
 - `Left click` (left panel): add source (up to `source-max` active sources)
@@ -245,7 +284,8 @@ Example:
 - `K`: cycle diffusivity model
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `C`: toggle PDE color scaling mode (auto/fixed)
-- `E`: run source estimation (requires paused state)
+- `E`: run source estimation (requires paused state) — runs all three `SourceEstimationMethod`s (adjoint backtracking, regularized least squares, Bayesian grid) and displays the selected one's $(x^*,t^*)$ marker and posterior heatmap
+- `M`: cycle which estimation method's result is displayed/HUD-reported
 - `J`: toggle adjoint overlay on the right panel
 - `L`: clear sensors and load the NY wildfire site network from `wildfire_pm25_dataset.csv` (equirectangular projection, scaled to fit current domain)
 - `N`: apply NY observation preset — physical sample period 300 s, averaging window 3600 s (mimics 5-min readings averaged to 1-hour reports); does not change domain or physics
@@ -293,6 +333,23 @@ Press **`N`** after loading to apply the matching observation preset (5-min phys
 
 The `R` (reset) key always clears sensors regardless of how they were placed.
 
+## Calibration
+
+The `analysis/` Python package infers real-world scales from `wildfire_pm25_dataset.csv` and `multimonth_pm25_dataset.csv` and turns them into concrete simulator defaults, so the synthetic data is quantitatively (not just structurally) faithful to the real event, at whatever numerical scale the simulator actually runs at:
+
+- `analysis/io.py` — standardized loaders for both datasets
+- `analysis/scales.py` — site-spacing, concentration, temporal (rise/decay/decorrelation), and wind statistics from real data
+- `analysis/forward_model.py` — a numpy replica of `AdvectionDiffusionSolver`'s update, used to translate a real concentration scale (e.g. the network-mean event peak) into a `--conc-scale` value, since that conversion has no closed form for an arbitrary wind/diffusivity field
+- `analysis/report.py` — orchestrates the above into `analysis/calibration_report.md`
+
+Regenerate the report after either dataset changes:
+
+```bash
+.venv/bin/python3 -m analysis.report
+```
+
+`include/core/Config.hpp`'s defaults (`mixing_height_m`, `concentration_scale_ug_per_m2`, `source.sigma`, `app.sensor_noise_std`) and `src/science/Fields.cpp`'s wind preset magnitudes were set from this report's output; each has a comment citing which real-data quantity it matches. The "Faithful NY wildfire event export" example above uses the report's `faithful_source_decay_rate_per_s`/`faithful_source_lifespan_s` recommendations.
+
 ## CSV Export
 
 The forward simulation as observed by the sensor network can be exported to a CSV file for offline analysis.
@@ -333,13 +390,19 @@ The file begins with `#` metadata comment lines followed by a data header and on
 # Sensor averaging window (s): 5.0
 # Sensors recorded: 3
 # Concentration: sensor window-averaged reading converted to ug/m^3
-time_s,x_m,y_m,concentration_ug_m3,wind_u_m_s,wind_v_m_s
+time_s,Datetime_UTC,site_name,x_m,y_m,pm25_ugm-3,wind_u_component,wind_v_component
 ```
 
-- `time_s` — simulation time at end of the averaging window
-- `x_m`, `y_m` — sensor domain coordinates (meters)
-- `concentration_ug_m3` — noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion
-- `wind_u_m_s`, `wind_v_m_s` — wind vector at the sensor site sampled at report time
+(or `...,lat_deg,lon_deg,...` in place of `x_m,y_m` when sensors were loaded via `L`/the NY wildfire site network, back-projecting to real coordinates.)
+
+Column names deliberately mirror `wildfire_pm25_dataset.csv`/`multimonth_pm25_dataset.csv` where the concept matches, so exported synthetic data is close to a drop-in replacement for tooling built against the real datasets:
+
+- `time_s` — simulation time at end of the averaging window (no real-data equivalent; kept for simulation traceability)
+- `Datetime_UTC` — synthetic timestamp: `time_s` offset from the real Nov 2024 wildfire event's start (if sensors were loaded from that CSV) or from wall-clock recording start otherwise
+- `site_name` — sensor label; the real site name when loaded via `L`, else `Sensor_<index>`
+- `x_m`, `y_m` — sensor domain coordinates (meters); replaced by `lat_deg`, `lon_deg` when a geo projection is active
+- `pm25_ugm-3` — noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion
+- `wind_u_component`, `wind_v_component` — wind vector at the sensor site sampled at report time
 
 Legacy menu controls (modal preferences overlay):
 - `Up/Down`: select option
@@ -395,6 +458,12 @@ src/
 
 tests/
   self_check.cpp                     # Lightweight ctest regression checks
+
+analysis/
+  io.py                               # Real-dataset loaders
+  scales.py                           # Spatial/temporal/concentration/wind scale inference
+  forward_model.py                    # numpy PDE replica for conc-scale calibration
+  report.py                           # Orchestrates the above into calibration_report.md
 
 fonts/
   arial.ttf

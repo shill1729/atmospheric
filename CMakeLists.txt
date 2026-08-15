@@ -54,6 +54,8 @@ include(CTest)
 if (BUILD_TESTING)
     add_executable(atmospheric_self_check
         tests/self_check.cpp
+        src/adjoint/AdjointSolver.cpp
+        src/adjoint/SourceEstimator.cpp
         src/core/Validation.cpp
         src/numerics/AdvectionDiffusionSolver.cpp
         src/numerics/ParticleSystem.cpp

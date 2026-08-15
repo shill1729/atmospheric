@@ -1,1733 +1,0 @@
-                   BENEATH THE KINETIC INTERPRETATION OF NOISE
-                              CARLOSESCUDEROANDHELDERROJAS
-               Abstract. Diffusion theory establishes a fundamental connection between stochastic differential
-               equations and partial differential equations. The solution of a partial differential equation known as
-               the Fokker-Planck equation describes the probability density of the stochastic process that solves
-               a corresponding stochastic differential equation. The kinetic interpretation of noise refers to a
-               prospective notion of stochastic integration that would connect a stochastic differential equation
-               with a Fokker-Planck equation consistent with the Fick law of diffusion, without introducing cor-
-               rection terms in the drift. This work is devoted to identifying the precise conditions under which
-               such a correspondence can occur. One of these conditions is a structural constraint on the diffusion
-               tensor, which severely restricts its possible form and thereby renders the kinetic interpretation of
-               noise a non-generic situation. This point is illustrated through a series of examples. Furthermore,
-               the analysis raises additional questions, including the possibility of deőning a stochastic integral
-               inspired by numerical algorithms, the behavior of stochastic transport equations in heterogeneous
-               media, and the development of alternative models for anomalous diffusion. All these topics are
-               addressed using stochastic analytical tools similar to those employed to study the main problem:
-               the existence of the kinetic interpretation of noise.
-                                      1. Introduction
-            Diffusion is usually considered as a fundamental transport process in many sciences, including
-          physics, chemistry, biology, and even őnance. Since the seminal work of Adolf Fick [25], diffusive
-          transport has frequently been understood macroscopically through the constitutive law
-                                        J=−D∇u,
-          which postulates that the ŕux J of a conserved scalar quantity u (such as mass density) is propor-
-          tional to the gradient of that quantity, where D denotes the diffusion tensor. This law is normally
-          combined with the continuity equation to yield the well-known family of convection-diffusion equa-
-          tions. Today, this family constitutes one of the most common classes of mathematical models for
-          transport phenomena. Despite its mathematical simplicity, the Fick law embodies a deep physi-
-          cal idea: it gives a macroscopic representation of the irreversible relaxation towards equilibrium.
-          Half a century later, Einstein showed how this law emerges from the underlying stochastic dynam-
-          ics of Brownian motion [14]. That connection was further underpinned by subsequent work on the
-          ŕuctuation-dissipation relation [6, 36, 51]. But quite remarkably, the pioneering work that connected
-          microscopic ŕuctuations to macroscopic diffusion was that of Bachelier in the őeld of mathematical
-          őnance [2]. This just highlights the interdisciplinary importance of diffusive transport.
-     arXiv:2510.20552v1  [math.PR]  23 Oct 2025Microscopically, the trajectories of diffusive particles (such as point masses) are commonly rep-
-          resented by stochastic differential equations (SDEs):
-          (1)                     dX =b(X)dt+σ(X)dW,
-                                    t     t      t   t
-          where the noise amplitude σ is related to the diffusion tensor via D = σσT. For systems with
-          state-dependent diffusivity, i.e. D = D(x), that equation becomes highly nontrivial and needs to be
-          understoodwithinthetheoryofstochasticintegrationbyItô[32,33]. Althoughthistheoryisenough
-          to connect microscopic trajectories to the macroscopic appearance of diffusion [37, 40], this has not
-            Date: October 24, 2025.
-            Key words and phrases. Stochastic differential equations, stochastic integrals, diffusion processes, partial differen-
-          tial equations, interpretations of noise, Itô vs Stratonovich dilemma, Fick law.
-            2010 MSC: 35K10, 35Q84, 60H05, 60H10, 60J60, 82C31.
-                                            1
-           2                           C. ESCUDERO AND H. ROJAS
-           stopped a broad discussion in the physical literature about the convenience of substituting the
-           Itô integral by some newer notion of stochastic integration, prominently that of Stratonovich [48].
-           For some recent discussions on the topic, we refer the reader to [4, 5, 9, 13, 16, 17, 18]. This
-           interpretation of noise dilemma, consequently, becomes relevant when it comes to diffusive transport
-           in nonuniform and anisotropic media, where the diffusion tensor varies spatially. This happens, for
-           example, across diverse geophysical settings. These include sediment and bedload transport, solute
-           migration in heterogeneous and variably saturated aquifers, vertical mixing and buoyancy effects in
-           the ocean, and other geomorphological and hydrogeological systems [1, 29, 39, 43, 44, 47].
-             Not surprisingly, more interpretations of noise have been explored throughout the years. Indeed,
-           the dependence of a stochastic integral, thought of in a Riemann-sum-like fashion, on the evaluation
-           point of the integrand has been a subject of study for decades. Herein, we depart from reference [19],
-           where we carried out a comparison among three different interpretations of noise Ðnamely, the Itô,
-           Stratonovich, and HänggiśKlimontovich (HK) calculiÐ within a stochastic differential equation.
-           These interpretations are the most natural from a symmetry viewpoint, as they correspond to
-           evaluating an integrand, respectively, at the left endpoint, middle point, and right endpoint of each
-           subinterval in the partition generated by the Riemann sum approximation. That work showed how
-           each convention alters both the paths of the process and the evolution of their probability densities
-           from a rigorous mathematical perspective, highlighting the mutual comparison between them. In
-           the present work, we depart from there but focus on the connection of convection-diffusion equations
-           with stochastic processes. Precisely, we consider equations of the form
-                           ∂ u = −∇·(b(x)u)+ 1∇·(D(x)∇u), x∈Rd, t>0,
-           (2)                t               2
-                             u(x,0) = u (x),               x∈Rd,
-                                     0
-           posed in an arbitrary dimension d, and where the diffusion tensor D(x) and the velocity őeld b(x)
-           are spatially dependent. As already mentioned, such equations appear frequently in physics, where
-           u = u(x,t) commonly represents the density of a diffusive material at point x and time t. They
-           describe the spatio-temporal dispersal of particles subjected simultaneously to a convective őeld
-           and a heterogeneous diffusion that is compatible with Fick law (modeled, respectively, by the őrst
-           and second terms in the right-hand side of that equation). One of the main goals of this paper is to
-           investigate the precise connection between this type of convection-diffusion equations and associated
-           multidimensional SDEs of the form
-                                     dX =b(X)dt+σ(X)•dW,
-                                       t     t        t    t
-           where σ satisőes D = σσ⊤ and • denotes the HänggiśKlimontovich integral (as mentioned before,
-           the variant of the Stratonovich integral in which the evaluation point of the integrand is taken to
-           be the right endpoint of each subinterval in the partition). That relation Ðnamely, the former is
-           the Fokker-Planck equation of the latterÐ is classical in one dimension [19], but known to fail in
-           arbitrary dimensions [31]. Herein, we will show that under the structural condition ∇·D = 2σ∇·σ⊤,
-           the probability density of the process X does obey the partial differential equation for u, provided
-                                         t
-           enough regularity is granted. However, this does not hold when such a condition is not met, which
-           is the generic case in any dimension equal to or greater than two. Reference [31] raises the question
-           of the existence of a discretization scheme for SDEs that directly yielded equation (2) as its Fokker-
-           Planck equation. Of course, the solution to that equation corresponds to the probability density of a
-           process that can be shown to obey a family of Itô SDEs, all of which present explicit correction terms
-           in the drift. However, the existence of a notion of stochastic integration Ðthe kinetic interpretation
-           of noise from [31]Ð that is able to provide the desired connection with neither the correction terms
-           in the drift nor the fulőllment of the structural condition seems to be not possible. Showing this,
-           as well as complementary questions, is the goal of the present work.
-             The outline of this paper is as follows. In Section 2 we make precise the connection between
-           convection-diffusion equations and Itô SDEs we will employ thereafter. In Section 3 we introduce
-           the multidimensional version of the HK integral. In Section 4 we explore the relation between HK
-           and Itô SDEs. In Section 5 we establish the connection between convection-diffusion equations
-                                    BENEATH THE KINETIC INTERPRETATION OF NOISE                        3
-             and HK SDEs in the absence of drift correction, which relies on a key structure of the divergence
-             of the diffusion tensor. In that section, we also explore examples where the condition on ∇ · D
-             either holds or fails, thereby illustrating the impact of the properties of the diffusion tensor on the
-             coupling between HK SDEs and convection-diffusion equations. In Section 6 we address a number
-             of complementary questions: the ill-posedness of an alternative discretization scheme for the kinetic
-             interpretation of noise, which was motivated by a numerical algorithm; a complete derivation of
-             another discretization scheme motivated by a different numerical algorithm, to illustrate how such
-             a program can be carried out; the application of that scheme on a physically motivated problem,
-             which moreover illustrates the difficulties that arise when one of our main assumptions is removed,
-             namely, uniform ellipticity; and, lastly, the assessment of another physical model that replaces
-             degenerate ellipticity by a more tractable analytical structure. Finally, in Section 7, we draw our
-             main conclusions.
-                                                                                         m
-             Basic notations and setting. Let d and m be positive integers. We consider R   endowed with
-             the Euclidean norm | · |, and let M  (R) be the set of all d × m matrices with real coefficients,
-                                              d×m
-             endowed with the Frobenius (Hilbert-Schmidt) norm, deőned as
-                                                        d m      1/2
-                                              ||B|| :=   XXb2         .
-                                                  F              ij
-                                                         i=1 j=1
-             The spectral norm, deőned as
-                                              ||B||S :=   max     |Bx|,
-                                                       {x∈Rm:|x|=1}
-             where B = (bij) ∈ M     (R), will also be considered for matrices. Let O(d) be the set of all d × d
-                                 d×m                            ⊤
-             orthogonal matrices, i.e. O(d) := {R ∈ M    (R) : R R = I }. Furthermore, for some positive
-                                      m               d×d              d
-             real number T, let Ψ : R   ×[0,T] −→ Md×m(R) be a mapping for which the m-dimensional
-             vector Ψ   denotes the i’th row of the d × m matrix Ψ = (ψ ). Analogously, for 1 ⩽ k ⩽ m,
-                     i∗                                                ij                         
-             the d-dimensional vector ∂ Ψ    denotes the l’th column of the d × m matrix ∂ Ψ = ∂ ψ   . If
-                                       k  ∗l                                           k       k ij
-             σ =(σij) ∈ M     (R), we write ∇σ = ∂ σij     and
-                           d×m                      k   ijk
-                                                          m       
-                                                 ∇·σ= X∂σ
-                                                               j ij
-                                                           j=1
-             to denote the gradient and the divergence of σ, respectively. If A = (aijk) is a third-order tensor
-             as, for example, in the case of ∇σ, we write           
-                                                         d   m
-                                              A:B= XXa b
-                                                                ijk jk
-                                                        j=1 k=1
-             to denote the double vertical dot product. We use the abbreviation ||·||p := ||·||Lp(Rd), 1 ≤ p ≤ ∞,
-                   ∞ d                                                                                 d
-             and Cc (R ) denotes the class of smooth functions with compact support. In addition, for U ⊂ R
-             open and k ∈ N0, we write Ck(U) for the class of scalar functions f : U → R such that, for
-                                          b                    P
-                                                  d               d                                α
-             every multi-index α = (α ,...,α ) ∈ N with |α| :=       α ≤ k, the partial derivative D f :=
-                                     1      d     0               i=1 i
-              α      α
-             ∂ 1 ···∂ df exists, is continuous, and satisőes
-              1      d
-                                                  sup|Dαf(x)| < ∞,
-                                                  x∈U
-                     0         ei                                                      d               d
-             where D f = f, D f = ∂ f and e is a member of the canonical basis of R . When U = R ,
-                                       i       i
-             we write Ck(Rd). For matrix őelds A : U → Md×d(R) we use the componentwise convention:
-                        b
-             A∈Ck(U) iff each entry Aij ∈ Ck(U). From now on, we will work on a őltered probability space
-                   b                        b
-             (Ω,F,Ft,P) completed with the P-null sets and where a m-dimensional Brownian motion Wt is
-             deőned. Moreover, we assume that the right-continuous őltration F ⊇ FW, where FW is the
-                                                                              t     t           t
-             natural őltration of W .
-                                  t
-                       4                                                           C. ESCUDERO AND H. ROJAS
-                                                    2. Convection-Diffusion Equations and Itô Calculus
-                           The connection between partial differential equations of convection-diffusion type and Itô sto-
-                       chastic differential equations has been established since long ago. In this section, we start specifying
-                       some known facts, and then move to introduce the precise statements we will need in the remainder
-                       of this work.
-                           Equation (2) can be rewritten as
-                       (3)                                              ∂tu(x,t) = Lu(x,t), x ∈ Rd, t > 0,
-                                                                            u(x,0) = u0(x),                     x∈Rd,
-                       where the convection-diffusion operator L is
-                                                                                d                                   d
-                       (4)                                Lu(x) := −X∂i(bi(x)u(x))+ 1 X ∂i(Dij(x)∂ju(x)),
-                                                                              i=1                              2 i,j=1
-                       where b = (b1··· ,bd) : Rd −→ Rd and D : Rd −→ Md×d(R) are (for the time being) continuously
-                       differentiable functions. From now on, unless explicitly speciőed, we assume L to be a uniformly
-                       elliptic operator in divergence form, so the resulting equation is parabolic [20]. Moreover, under
-                       suitable assumptions on the parameters, this equation possesses a solution that is unique and
-                       classical [20]. Note that the uniform ellipticity condition is standard within mathematical analysis.
-                       It also holds in many physical cases, but it cannot be considered universal within that realm.
-                       Sometimes, a degenerate elliptic operator is needed, as illustrated in Subsection 6.3, where some of
-                       the difficulties that might arise in such a case are shown.
-                           On the other hand, consider the Itô stochastic differential equation in Rd:
-                                                                   h               1                  i
-                       (5)                              dX = b(X )+ ∇·D(X) dt+σ(X)dW,                                                      X =Z,
-                                                             t             t       2               t                    t        t            0
-                       with W a m-dimensional Brownian motion and Z a F -measurable random variable in Rd, where
-                                   t                                                                              0
-                       {F }          is the initially enlarged őltration F = FW ∨ σ(Z); moreover, assume that the law of Z is
-                            t t≥0                                                              t        t                                                                        d
-                       absolutely continuous with respect to Lebesgue measure. For the time being, we take σ : R −→
-                       Md×m(R) to be any function such that D = σσ⊤. From the diffusion theory for Itô SDEs it is
-                       known that, under adequate assumptions on the parameters and initial condition, the solution Xt
-                                                                                                                     ∗
-                       of (5) is a Markov process with inőnitesimal generator L deőned by
-                                                 d h                              i                       d
-                                ∗              X                  1                                 1 X                                                                     ∞ d
-                       (6) L ϕ(x) :=                   b(x)+ ∇·D(x) ∂ ϕ(x)+                                    D (x)∂ ∂ ϕ(x),                    for all          ϕ∈C (R ),
-                                                                  2                 i  i            2             ij        i  j                                            c
-                                                i=1                                                    i,j=1
-                       where L∗ is the adjoint operator of L [37, 40, 45].
-                           If we depart from equation (3), which we consider to be our datum, and we look for paths of
-                       a stochastic process that underlies it, in the sense that it comes as a strong solution to a precise
-                       SDE, we have already encountered our őrst trouble. Namely, that the correspondence of the partial
-                       differential equation (PDE) to the SDE is not unique. This happens in the simplest possible case:
-                       one-dimensional Brownian motion. In such a case, the heat equation (subjected to a unit Dirac
-                       mass initial condition):
-                                                                                        ∂ u(x,t) = ∆u(x,t)
-                                                                                          t
-                       corresponds to two SDEs:
-                                                                        dX =+dW                      and          dX =−dW,
-                                                                             t              t                           t              t
-                       from where we őnd two solutions X = ±W (up to an additive constant that equals the initial
-                                                                                    t             t
-                       condition). Of course, both solutions are equal in law, but they differ pathwise. As herein we
-                       are mostly interested in strong solutions to SDEs, we need to specify which solution we select. In
-                                                                                                       d
-                       order to do so, őrst of all we need to take σ : R −→ Md×d(R), that is m = d. Although m > d
-                       is perfectly possible, this only increases the number of solutions, and at the price of introducing
-                       more noises than physical dimensions, which we consider unnatural in the absence of a modeling
-                                                                BENEATH THE KINETIC INTERPRETATION OF NOISE                                                                             5
-                       justiőcation. Even in such a case, we have to extract the square root of a given D, i.e. we look
-                       for a matrix σ such that D = σσ⊤. It is well known that there exist inőnitely many solutions
-                       to this problem (except in the scalar case, which admits just two), but one can őx uniqueness by
-                       selecting the unique symmetric positive deőnite square matrix σ (more solutions are generated by
-                       multiplication of this by an orthogonal matrix). From now on we will assume this, the so-called
-                       principal square root of σ, for the sake of symmetry and due to the fact that, although different
-                       choices lead to solutions that differ pathwise, all share the same law. But note that different choices
-                       are very well possible, like for example the matrix given by the Cholesky decomposition of D, which
-                       might be even more relevant for some purposes [27].
-                       Remark 2.1. The existence of such a σ is guaranteed for any symmetric and positive deőnite
-                       matrix D, which in turn is guaranteed by the assumption of uniform ellipticity. The symmetry of
-                       the diffusion tensor reŕects the physical Onsager reciprocity and the mathematical fact that any
-                       asymmetric contribution can be absorbed by the drift term. Note, on the other hand, that if D is
-                       not symmetric, then there is no σ such that D = σσ⊤.
-                       Remark 2.2. It is interesting to note that the existence of such a square root of D is guaranteed
-                       provided it is just positive semideőnite. This could correspond, however, to a degenerate elliptic
-                       operator and therefore will not be treated here, since that presents other complications (see Sub-
-                       section 6.3). Nevertheless, in such a case it is also possible to őx uniqueness of the square root by
-                       selecting the only σ that is a symmetric positive semideőnite square matrix.
-                           Nowthatwehavemadepreciseourselectionofσ,wemoveontoestablishthepreciseassumptions
-                       we will employ to build the relationship we seek between (3) and (5). Namely, we assume the
-                       following hypotheses:
-                                                                                                 d             d                    d                                     4             5
-                          (H1) (Regularity of the parameters) b : R −→ R and D : R −→ Md×d(R) are C and C
-                                    functions respectively, and there exists a constant K > 0 such that for all x ∈ Rd, and
-                                    i, j, k, l = 1,...,d,
-                                                                      |∂ b (x)| + |∂ D (x)| +|∂ ∂ D (x)| ⩽ K.
-                                                                         k i               k    ij               k l     ij
-                          (H2) (Uniform ellipticity of the diffusion operator) There exists α > 0 such that for all x,ξ ∈ Rd,
-                                                                                          ξ⊤D(x)ξ ≥ α|ξ|2.
-                          (H3) (Compatibility of the initial conditions) Z and {W }                                              are independent, and u ∈ L1(Rd)
-                                                                                                                        t t≥0                                           0
-                                    is the probability density function (PDF) of Z, therefore u ≥ 0 and ||u || = 1.
-                                                                                                                                    0                     0 1
-                       Remark 2.3. Note that (H1) implies that the functions b and D are globally Lipschitz continuous,
-                       but they could be unbounded.
-                           The following results establish a connection between PDE (3) and SDE (5) on a őnite time
-                       interval [0,T] with T > 0 arbitrary.
-                       Lemma 2.4 (Standard Fokker-Planck form). Under (H1), the initial value problems (3) and
-                                                                       ∂ u(x,t) = L u(x,t), x ∈ Rd, t > 0,
-                       (7)                                                   t                  0
-                                                                           u(x,0) = u0(x),                       x∈Rd,
-                       where
-                                                                                         d                         d
-                                                                                       X ˜                   1 X
-                       (8)                                             L u=−                 ∂ (b u) +                  ∂ ∂ (D u)
-                                                                          0                    i   i         2            i  j     ij
-                                                                                       i=1                      i,j=1
-                                                                              P
-                              ˜                1                           1      d
-                       and b := b + (∇·D) =b +                                          ∂ D , coincide on classical solutions.
-                                i        i     2             i       i     2      j=1 j        ij
-               6                                     C. ESCUDERO AND H. ROJAS
-               Proof. From (4), we have the following string of equalities
-                                     ∂ u = −∇·(bu)+ 1∇·(D∇u)
-                                       t                 2
-                                         =−∇·(bu)+1∇· ∇·(Du)−u∇·D
-                                                        2        
-                                                   h     1      i      1              
-                                         =−∇· b+2∇·D u +2∇· ∇·(Du)
-                                               d                           d
-                                         =−X∂i b+1∇·D u +1 X∂i∂j(Diju),
-                                              i=1           2       i       2 i,j=1
-               provided u is a classical solution of either (3) or (7), i.e. u ∈ C1((0,T];C(Rd)) ∩C((0,T];C2(Rd)).
-                                                                                                                    □
-               Lemma 2.5. Let D : Rd −→ M              (R) be a symmetric matrix that satisőes the following two
-               conditions:                          d×d
-                                                                                           d
-                  (1) (Uniform ellipticity) There exists α > 0 such that for all x,ξ ∈ R ,
-                                                         ξ⊤D(x)ξ ≥ α|ξ|2.
-                  (2) (First-order regularity) There exists a constant M such that for all k ∈ {1,...,d} it holds
-                                                                           k
-                       that
-                                                    sup max |∂ Dij(x)| ⩽ M .
-                                                        1⩽i,j⩽d  k             k
-                                                   x∈Rd
-                 Let σ : Rd −→ Md×d(R) be the principal root of D, i.e., the unique symmetric positive deőnite
-               matrix satisfying D = σσ⊤. Then, for all k ∈ {1,...,d} and i,j ∈ {1,...,d}, it holds that
-                                                                         2
-                                                                        d
-                                                     sup |∂ σij(x)| ⩽   √ M .
-                                                           k           2 α k
-                                                    x∈Rd
-               Proof. We depart from the identity D = σσ⊤. Differentiating with respect to the k-th coordinate
-               of x, we obtain
-               (9)                                        σσ′ +σ′σ = D′,
-                       ′                  ′
-               where σ = ∂kσ(x) and D = ∂kD(x). Since D is positive deőnite, then σ is also positive deőnite.
-               Therefore, since the σ and −σ matrices do not have common eigenvalues, using the spectral criterion
-               for Sylvester equations, the linear Lyapunov operator
-                                      Lσ : M     (R) −→M        (R),      Lσ(X)=σX+Xσ,
-                                              d×d            d×d
-                                                                                                        ′     −1   ′
-               is invertible, which ensures that the Sylvester equation (9) admits a unique solution σ = L      (D),
-                                                                                                              σ
-               see [3, 30]. Subsequently, to obtain an explicit form of σ′, we need to obtain the spectral decompo-
-                                                                         d
-               sitions of D and σ. It is well known that for every x ∈ R there exists an orthogonal P ∈ Md×d(R)
-               such that
-                                                           ⊤                  1  ⊤
-                                                 D=PΛP         and σ=PΛ2P ,
-                                                   1         √         √                                   ⊤ ′
-               where Λ = diag(λ,...,λd) and Λ2 = diag( λ1,...,           λd). Deőning H = (hij) := P DP and
-               R=(r ) := P⊤σ′P, and multiplying equation (9) from the left by P⊤ and from the right by P,
-                      ij
-               yields
-                                                          1          1
-               (10)                                     Λ2 R+RΛ2 =H.
-               In coordinates, equation (10) becomes
-                                                      pλ r +r pλ =h ,
-                                                          i ij   ij    j    ij
-                                                                BENEATH THE KINETIC INTERPRETATION OF NOISE                                                                             7
-                                                                          √           p
-                       where 1 ⩽ i,j ⩽ d. Given that                          λi +       λj > 0, we obtain
-                                                                                                          h
-                                                                                                            ij
-                                                                                         r     =√             p .
-                                                                                           ij         λ + λ
-                                                                                                        i           j
-                       Since by hypothesis D enjoys uniform ellipticity, that is, its smallest eigenvalue λ                                                         >α≥0,the
-                                                                                                                                                              min
-                       precedent equality implies
-                                                                                                          |h |
-                                                                                                             ij
-                       (11)                                                                   |r | ⩽ √ .
-                                                                                                 ij       2 α
-                       Subsequently, from the fact that σ′ = PRP⊤, we obtain the equality
-                                                                                                  ⊤          ⊤            ⊤
-                                                                              ∂ σ (x) = e PRP e =u Rv,
-                                                                                k ij              i               j
-                                                                                                                  d                          d
-                       where e ,e are members of the canonical basis of R and u,v ∈ R are orthonormal vectors.
-                                    i    j
-                                                              d
-                       Therefore, for all x ∈ R , we have that                                                                                   
-                                                                                   ⊤
-                       (12)                                |∂ σij(x)| = |u Rv| ⩽ ||R|| ⩽ ||R||                            ⩽d max|r | ,
-                                                              k                                         S             F              a,b      ab
-                                                                                                                         ⊤ ′                            d
-                       where 1 ⩽ a,b ⩽ d. Analogously, since by deőnition H = P D P for all x ∈ R , we obtain
-                                                                                                                            
-                                                                                                                             
-                       (13)                                                   |h (x)| ⩽ d           max ∂ D (x) ,
-                                                                                 ij                  m,n       k    mn
-                       where 1 ⩽ m,n ⩽ d. Using the őrst-order regularity hypothesis on D, together with equations (11),
-                       (12), and (13), we obtain the őnal estimate
-                                                                                        2                                          2
-                                                                                      d                                            d
-                       (14)                                    |∂ σij(x)| ⩽           √         max ∂ Dmn(x)                  ⩽ √ M .
-                                                                  k                  2 α m,n k                                     2 α k
-                       Since it holds for all x ∈ Rd and all i,j,k ∈ {1,...,d}, this completes the proof.                                                                              □
-                       Remark2.6. Clearly,hypothesis(H1)impliestheőrst-orderregularityassumptioninthestatement
-                       of Lemma 2.5.
-                       Lemma 2.7 (Semigroup generation). If the domain of L0 is deőned as D(L0) := C∞(Rd) and
-                                                                                                                                                                       c
-                       assumptions (H1) and (H2) are satisőed, then the closure of the convection-diffusion operator L
-                                                                                                                                                                                        0
-                                                                                                                                  1     d
-                       generates a strongly continuous contraction semigroup T (t) on L (R ).
-                       Proof. The operator L has the standard Fokker-Planck form
-                                                            0
-                                                                 d                         d
-                                                               X ˜                   1 X                                                              ∞ d
-                       (15)                    L f =−                ∂ (b f) +                  ∂ ∂ (D f),                 for all          f ∈ C (R ).
-                                                  0                    i   i         2            i  j     ij                                         c
-                                                               i=1                      i,j=1
-                       From assumptions (H1) and (H2) along with Lemma 2.5 and Remark 2.6, and for some constant
-                       K′ >0, we have that                                                                      
-                                                                                     ˜                                   ′
-                                                                                   ∂kbi(x) + ∂kσij(x) ⩽ K ,
-                                             d
-                       for all x ∈ R and all i,j,k = 1,...,d. Therefore, applying Theorem 3.1 and Lemma 3.2 of [7]
-                       in (7), we can conclude that (L ,D(L )) generates a strongly continuous contraction semigroup on
-                                                                          0          0
-                           1     d
-                       (L (R ),||·|| ), which is denoted by T (t).                                                                                                                     □
-                                             1                                                                
-                       Deőnition 2.8. Let us denote by C [0,T];L1(Rd) the space of all functions u(x,t) such that
-                       sup             ∥u(·,t)∥ < ∞ and, for all t ∈ [0,T],∥u(·,s) − u(·,t)∥ −→ 0 as s −→ t.
-                             t∈[0,T]                1                                                                         1
-                                                                                               1     d 
-                       Deőnition 2.9. A function u ∈ C [0,T];L (R ) is called a mild solution of equation (7) if
-                                                                     Zt
-                                                       u(·,t) =          L u(·,s)ds+u                       in L1(Rd) for all 0 ≤ t ≤ T,
-                                                                            0                      0
-                                                                     0
-                                                                                1     d                                                                          1     d
-                       where L is the closure of L in L (R ) and the integral is a Bochner integral in L (R ), possibly
-                                     0                                0
-                       improper at the origin.
-               8                                     C. ESCUDERO AND H. ROJAS
-               Theorem 2.10 (Relation between PDE and SDE). Under assumptions (H1)−(H3), the SDE (5)
-               admits a unique strong solution X on [0,T] for any T > 0. Furthermore, the convection-diffusion
-                                                   t
-                                                          1            d                2  d                1   d
-               equation (3) has a unique solution u ∈ C ((0,T];C(R ))∩C((0,T];C (R ))∩C([0,T];L (R )). In
-               addition, this solution u(·,t) of equation (3) corresponds to the PDF of Xt.
-               Proof. Assumptions (H1)−(H3), by Remark 2.3 in the present work, include the assumptions for
-               the existence and uniqueness of a strong solution Xt of Itô SDE (5) as can be found in [45] (see
-               Theorem 7 in Chapter V). On the other hand, from our Lemma 2.7, we know that the closure of L
-                                                                                                                      0
-               is the generator of a strongly continuous semigroup T (t) on (L1(Rd),|| · ||1). Therefore, we deőne
-               the mapping
-                                                     u:t7−→u(·,t) := T (t)u0,
-                                                              1  d 
-               from where it follows that u ∈ C [0,T];L (R ) due to the strong continuity of T (t). Then,
-               from Proposition II.6.4 in [15], it follows that u is the unique mild solution of (7). Moreover,
-               by Remark 2.5 in [7], this solution is classical, thus u ∈ C1((0,T];C(Rd)) ∩ C((0,T];C2(Rd)) ∩
-                          1  d
-               C([0,T];L (R )). Besides, by our Lemma 2.4, it is the unique solution to initial value problem (3).
-               As a őnal step to conclude the proof, we use Theorem 2.4 in [7] to őnd that u(·,t) is the PDF of
-               X.                                                                                                    □
-                 t
-                       3. Multidimensional Definition of the Hänggi-Klimontovich Integral
-                 The Hänggi-Klimontovich integral is the name employed in part of the physical literature to
-               denote a variant of the Stratonovich integral. The difference from the latter lies in the evaluation
-               point of the integrand in each subinterval of the partition in the Riemann sum approximation:
-               instead of using the midpoint, the right endpoint is selected. Although the mathematical structure
-               of this integral was already examined in [19], this section is devoted to analyze those of its properties
-               that will be needed in the remainder of this work.
-                                       d
-               Deőnition 3.1. An R -valued Markov process {Yt, 0 ⩽ t ⩽ T} is called a diffusion process if it
-               satisőes the following three conditions for every t ∈ [0,T] and x ∈ Rd, and any δ > 0:
-                   (1) Continuity of sample paths:
-                                                    1                        
-                                               lim    P Y     −Y>δY =x =0.
-                                                 + h        t+h    t        t
-                                              h→0
-                                                      d               d
-                   (2) Existence of drift vector b : R × [0,T] −→ R such that
-                                                    1                     
-                                               lim    E Y      −YtYt = x =b(x,t).
-                                                  + h      t+h
-                                              h→0
-                   (3) Existence of diffusion matrix D : Rd × [0,T] −→ Md×d(R) such that
-                                            1                          ⊤        
-                                       lim    E (Y      −Y (Y       −Y |Y =x =D(x,t).
-                                          + h       t+h     t   t+h     t    t
-                                      h→0
-                 From now on, we will take D(x,t) to be uniformly elliptic (see the previous section) and σ(x,t) :
-               Rd×[0,T] −→Md×d(R)tobetheprincipalsquarerootofD(x,t), and we will refer to this function
-               as the amplitude of noise.
-               Deőnition 3.2. Let b : Rd×[0,T] −→ Rd and σ(x,t) : Rd×[0,T] −→ Md×d(R) be two measurable
-               functions.
-                     • (Lipschitz condition) It is said that b and σ satisfy the Lipschitzdcondition, in the őrst
-                       argument, if there exists a constant C > 0 such that for all x,y ∈ R and 0 ⩽ t ⩽ T,
-                                 |b(x,t) − b(y,t)| ⩽ C|x − y|,     ||σ(x,t) − σ(y,t)||F ⩽ C|x − y|.
-                     • (Linear growth condition). It is said that b and σ satisfy the linear growth condition, in the
-                                                                    ′                            d
-                       őrst argument, if there exists a constant C > 0 such that for all x ∈ R and 0 ⩽ t ⩽ T,
-                                        |b(x,t)| ⩽ C′(1 + |x|),     ||σ(x,t)||F ⩽ C′(1 + |x|).
-                                                      BENEATH THE KINETIC INTERPRETATION OF NOISE                                                            9
-                                                                                                                                         d
-                    Deőnition 3.3. Assume that b(x,t) and σ(x,t) = σij(x,t) are continuous on R × [0,T] and
-                    both satisfy the Lipschitz and linear growth conditions in x. Furthermore, consider a d-dimensional
-                    diffusion process (Y )             = (Y1,...,Yd)             , with drift vector b(x,t) and noise amplitude σ(x,t).
-                                       d       t t≥0          t          t   t≥0
-                    For any Ψ : R ×[0,T] −→ M                      (R), for which all its partial derivatives ∂ Ψ(x,t) are continuous,
-                                                              d×d                                                         i
-                    the Hänggi-Klimontovich integral of Ψ(Y ,t)                          = Ψ (Y ,t)              in the interval [0,T] with respect
-                                                                             t      t≥0         ij   t      t≥0
-                    to the diffusion process (Y )              is denoted by
-                                                        t ≥0
-                                                                               T
-                    (16)                                                      Z Ψ(Yt,t)•dYt
-                                                                              0
-                                                     d
-                    and deőned to be the R -valued random variable whose i-th component is given by
-                                        T
-                                       Z                                       n
-                    (17)                   Ψ (Y ,t)•Y :=              lim    XΨ (Y ,t )(Y −Y                      )   in probability,
-                                             i∗    t         t     ||∆n||→0          i∗    tj  j     tj      tj−1
-                                       0                                      j=1
-                    where ∆ ={t ,t ,...,t                  , t } is a partition of [0,T], and ||∆ || = max                        (t −t         ).
-                                n       0   1         n−1 n                                                  n            1⩽k⩽n k          k−1
-                       This integral is well-deőned and its relation with the Itô integral is expressed in the following
-                    theorem.
-                    Theorem 3.4. Under the assumptions established in Deőnition 3.3, the limit in equation (16)
-                    exists. Furthermore, for D = σσ⊤, it is connected to the Itô integral through the following identity
-                                          T                         T                             T
-                                        Z                          Z                         d   Z
-                                                                                           X                        
-                    (18)                    Ψ(Y ,t)•dY =               Ψ(Y ,t)dY +                    ∂ Ψ(Y ,t)         D (Y ,t)dt,
-                                                  t          t              t        t                  k      t     ∗l   lk    t
-                                         0                         0                      l,k=1 0
-                    which holds almost surely.
-                       The proof of Theorem 3.4 can be found in [19].
-                    Proposition 3.5. Let Xt be a d-dimensional diffusion process with drift b(x,t), noise amplitude
-                                                                    d
-                    σ(x,t), and such that X = x ∈ R ; let also W be a d-dimensional Brownian motion. Assume that
-                                                     0      0                        t
-                    b(x,t) and σ(x,t) obey the same assumptions as in Deőnition 3.3 and, moreover, that all partial
-                    derivatives ∂ σ(x,t) are continuous. Then the identity
-                                     i
-                                         T                           T                              T
-                                       Z                           Z                           d   Z
-                                                                                             X                        
-                    (19)                   σ(X ,t)•dW =                σ(X ,t)dW +                      ∂ σ(X ,t)         σ (X ,t)dt
-                                                 t            t              t         t                  k      t     ∗l  kl     t
-                                        0                          0                        k,l=1 0
-                    holds almost surely.
-                    Proof. Choose Y = (X ,W ) and Ψ(x,t) = (0,σ(x,t)), where 0 is a null matrix with dimension
-                                           t         t    t
-                    d×d, such that
-                                             T                         T                          T
-                                            Z                         Z                           Xt        Z
-                    (20)                       Ψ(Y ,t)•dY =                0,σ(X ,t) •d                   = σ(X,t)•dW.
-                                                     t           t                  t              W                   t            t
-                                                                                                      t
-                                            0                         0                                       0
-                    Under the stated assumptions, the process X can be written in the form [49]:
-                                                                                   t
-                                                                            T                     T
-                    (21)                                   X =x +Z u(X,t)dt+Z σ(X,t)dW.
-                                                              t      0              t                     t         t
-                                                                           0                     0
-                    In this case, by equations (10) and (11) in [48], the diffusion coefficient of the process Yt is
-                                                                                                D σ
-                    (22)                                          A(x,t) = a (x,t) =                          ,
-                                                                                   ij              σ⊤ I
-                10                                      C. ESCUDERO AND H. ROJAS
-                where I is the identity matrix with dimension d×d. Therefore, the transformation formula (18) of
-                Theorem 3.4 applied to equation (20) yields
-                                 T                    T                           T
-                               Z                     Z                    2d  2d Z
-                                                                         XX                        
-                (23)              σ(X ,t)•dW =          σ(X ,t)dW +                  0,∂ σ(X ,t)      a dt.
-                                       t         t           t       t                   k     t    ∗l  lk
-                                0                     0                  l=1 k=1 0
-                Note that ∂ σ(x,t) = ∂ σij is a null matrix for d + 1 ⩽ k ⩽ 2d. Furthermore, the vector
-                            k             k
-                 ∂ Ψ     = 0,∂ σ(Xt,t)        is a null vector for 1 ⩽ l ⩽ d. Finally, replace these two observations in
-                  k   ∗l         k          ∗l
-                equation (23) to őnd that the identity (19) is veriőed.                                                    □
-                                                4. Hänggi-Klimontovich Calculus
-                  As one of our present goals is to connect the integral introduced in the previous section with
-                PDEs, herein we perform an intermediate step: we connect it with the Itô integral in the context
-                of stochastic differential equations. We start introducing the concept of solution.
-                Deőnition 4.1. We say that a d-dimensional diffusion process X that satisőes a stochastic integral
-                                                                                       t
-                equation of the form
-                                                         Zt                Zt
-                (24)                          X =Z+ b(X ,s)ds+ σ(X ,s)•dW ,
-                                                t               s                 s          s
-                                                         0                 0
-                for 0 ≤ t ≤ T, some positive real number T, some F -measurable random variable Z whose dis-
-                                                                            0
-                tribution is absolutely continuous with respect to Lebesgue measure, and some functions b and σ
-                such that all the expressions are well deőned, is a solution to the Hänggi-Klimontovich stochastic
-                differential equation (HK SDE)
-                (25)                        dX =b(X,t)dt+σ(X ,t)•dW ,                  X =Z.
-                                               t        t             t         t        0
-                Remark4.2. AsinSection2,wetake{F }                 to be the initially enlarged őltration F = FW∨σ(Z)
-                and Z to be independent of {W }         .    t t≥0                                           t     t
-                                                   t t≥0
-                                                                             d                 d             d
-                Theorem 4.3 (Conversion rule for SDEs). Let b : R × [0,T] −→ R and σ : R × [0,T] −→
-                Md×d(R) be functions as those speciőed in Proposition 3.5. Furthermore, assume that the function
-                h := ∇·D−σ∇·σ⊤ satisőes the Lipschitz and linear growth conditions in x. Then, the unique
-                solution to the Itô SDE       h                   i
-                (26)                  dX = b(X ,t)+h(X ,t) dt+σ(X ,t)dW ,                    X =Z,
-                                         t         t           t              t       t         0
-                solves equation (25) almost surely. Correspondingly, there almost surely exists a unique solution
-                to (25) that is given by the solution to (26).
-                Proof. Under the stated assumptions, the Itô SDE (26) has a unique solution [45]. Now, to prove the
-                equivalence between SDEs (25) and (26), we write the identity (19) using the stochastic differential
-                notation
-                                                                     " d                              #
-                                                                        X                
-                (27)              σ(X ,t)•dW =σ(X ,t)dW +                     ∂ σ(X ,t)     σ (X ,t) dt.
-                                      t         t        t       t             k     t    ∗l kl   t
-                                                                       k,l=1
-                If we denote by h the factor inside the square brackets on the right hand side of (27), then its i-th
-                component is given by
-                                                                   d   d
-                                                       [h]   = XX ∂σ σ
-                                                          i                 k il   kl
-                                                                  l=1 k=1
-                                                                          ⊤
-                                                             = ∇σ:σ i,
-                                                                    BENEATH THE KINETIC INTERPRETATION OF NOISE                                                                                   11
-                        from where we obtain the following equality
-                        (28)                                                                   h(x,t) = ∇σ : σ⊤.
-                        Onthe other hand, we have
-                                                                [∇·D]i = ∇· σσ⊤
-                                                                                                             i                !
-                                                                                          d            d                
-                                                                                 = X ∂ Xσ σ
-                                                                                                    k            il   kl
-                                                                                        k=1              l=1               ik
-                                                                                          d      d                            d          d                !
-                                                                                 = XX ∂σ σ +Xσ X∂σ
-                                                                                                         k il       kl              il             k kl
-                                                                                         l=1 k=1                            l=1           k=1
-                                                                                                    ⊤                     ⊤
-                                                                                 = ∇σ:σ i+ σ∇·σ i,
-                        so we have another equality
-                        (29)                                                          ∇·D=∇σ:σ⊤+σ∇·σ⊤.
-                        Equation (26) is easily deduced from identities (27), (28), and (29). Therefore, we conclude that
-                        the unique solution of (26) solves (25) almost surely. To check uniqueness assume there exist
-                        two solutions; by the same formula this enters in contradiction with the uniqueness of solution to
-                        equation (26).                                                                                                                                                            □
-                        Corollary 4.4. Under the hypotheses established in Theorem 4.3 and the additional assumption
-                        σ∇·σ⊤= 1∇·D, there exists a unique solution to the Itô SDE
-                                             2                                                                
-                        (30)                           dX = b(X,t)+ 1∇·D(X ,t) dt+σ(X ,t)dW ,                                                            X =Z
-                                                            t               t          2                t                        t            t              0
-                        that moreover solves equation (25) almost surely. Correspondingly, there almost surely exists a
-                        unique solution to (25) that is given by the solution to (30).
-                                                         5. Convection-diffusion equations and HK calculus
-                             Nowwestate one of our main results, which connects HK SDEs with convection-diffusion PDEs.
-                        However, that connection is not general and relies on a very particular structure of the diffusion
-                        coefficient, as the following statement shows.
-                        Theorem 5.1. Let X be a d-dimensional diffusion process described by the autonomous HK SDE
-                                                               t
-                        (31)                                            dX =b(X)dt+σ(X)•dW,                                            X =Z,
-                                                                              t            t                   t            t             0
-                        where the drift b, the diffusion coefficient D = σσ⊤, and the initial condition Z obey the hypotheses
-                        (H1)−(H3). Furthermore, assume that σ is the principal square root of D and the identity ∇·D =
-                        2σ∇·σ⊤ holds. Then, the equation
-                                                                                                                    1                        
-                        (32)                                                 ∂ u = −∇· b(x)u + ∇· D(x)∇u ,
-                                                                               t                                     2
-                                                                                                1     d
-                        with initial condition u(x,0) = u (x) ∈ L (R ) such that Z ∼ u (·), possesses a unique mild solution
-                                                                                 0                                                    0
-                        u(x,t), which is in turn classical and corresponds to the probability density function of Xt.
-                        Proof. Hypotheses (H1) − (H3) imply, by Lemma 2.5, the regularity assumptions in Theorem 4.3.
-                        This, together with the structural condition ∇·D = 2σ∇·σ⊤, implies the result of Corollary 4.4.
-                        Thestatementthenfollows as an immediate consequence of this Corollary along with Theorem 2.10.
-                                                                                                                                                                                                  □
-                             Of course, the equality ∇ · D = 2σ∇ · σ⊤ holds trivially in one dimension but does not hold
-                        generically in any higher dimension due to the non-commutative character of the matrix algebra.
-                        Therefore, in the following, we illustrate this structural condition with a series of examples in which
-               12                                    C. ESCUDERO AND H. ROJAS
-               it either does or does not hold. We anticipate that such a condition is rather restrictive and then
-               fails in general. We can only expect it to hold for highly structured matrices.
-               5.1. Positive examples. In this subsection we list a number of cases in which the matrix σ does
-               satisfy the identity
-               (33)                                      ∇·D=2σ∇·σ⊤,
-               which is the structural condition assumed in Theorem 5.1.
-                                                                            d
-               Case 1: Constant diffusion tensor. Assume D : R → Md×d(R) is constant and positive
-                                                     d                  1/2
-               deőnite, D(x) = D0 for all x ∈ R . Let σ(x) = D0             denote its principal square root, so that
-               D=σσ⊤. Then, for all indices i,j,k and all x ∈ Rd, we obtain
-                                                  ∂kDij(x) = 0,       ∂kσij(x) = 0,
-               which meets the boundedness requirements in (H1). Furthermore, hypothesis (H2) is satisőed since
-               Dis positive deőnite. Hence,
-                                               d                                       d
-                               (∇·D) (x) = X∂ D (x)=0,                (∇·σ⊤) (x) = X∂ σ (x) = 0,
-                                       i           j  ij                      i            j ji
-                                              j=1                                    j=1
-               and therefore, for all x ∈ Rd, the identity (33) is veriőed.
-                                                                        d
-               Case 2: Isotropic diffusion tensor. Let D : R → Md×d(R) be an isotropic tensor such
-               that D(x) = g(x)I , where g ∈ C5(Rd) and inf             d g(x) ≥ α > 0. Furthermore, let σ(x) =
-               p                    d                 b              x∈R
-                 g(x)I be its principal square root. Since g belongs to C5, the smoothness and derivative bounds
-                       d                                                     b
-               required in (H1) hold. Since g is bounded away from zero, the uniform ellipticity (H2) follows from
-                ⊤                  2       2                 d
-               ξ D(x)ξ =g(x)|ξ| ≥ α|ξ| for every ξ ∈ R . Given the diagonal structure of D(x), we obtain
-                                   d                                           d
-                                 X                                  ⊤         X                 p          ∂ig(x)
-                   (∇·D) (x) =       ∂ D (x) = ∂ g(x),         (∇·σ ) (x) =       ∂ σ (x) = ∂     g(x) = p         ,
-                          i            j  ij       i                   i           j  ji       i          2 g(x)
-                                  j=1                                         j=1
-               which ensures that the structural condition (33) is fulőlled uniformly.
-               Case 3: Diagonal anisotropic diffusion tensor. Let g ∈ C5(Rd) be such that inf                 d g (x) ≥
-                                                                             k     b                      x∈R   k
-               α >0for each k = 1,...,d. Deőne
-                k
-                                                                                  
-                                                   D(x)=diag g (x),...,g (x) .
-                                                                  1          d
-               Let σ denote its principal square root; then,
-                                                              p             p       
-                                                 σ(x) = diag     g (x),...,   g (x) .
-                                                                  1            d
-               Analogously to Case 2, the assumptions on g imply that all required derivatives of D up to order
-                                                               k
-               5 are bounded, and uniform ellipticity holds with α := min           α >0. Similarly to the previous
-               case, we obtain                                                1≤k≤d k
-                                  d                                            d
-                                X                                             X                 p           ∂ g (x)
-                                                                    ⊤                                        i i
-                  (∇·D) (x) =       ∂ D (x) = ∂ g (x),        (∇·σ ) (x) =        ∂ σ (x) = ∂     g (x) = p         .
-                         i            j  ij       i i                  i           j ji        i   i       2 g(x)
-                                 j=1                                          j=1                               i
-               Consequently,
-                                                        p        ∂ g (x)
-                                            ⊤                      i i
-                                   2σ(∇·σ ) (x)=2 g(x) p                   =∂g(x)=(∇·D)(x),
-                                                i            i   2 g(x)        i i              i
-                                                                      i
-               which ensures that the structural condition (33) is met.
-                                         BENEATH THE KINETIC INTERPRETATION OF NOISE                                 13
-                                                                                           d
-               Case 4: Orthogonally diagonalizable diffusion tensor. Let D : R → M                     (R) be positive
-                                          5   d                                                    d×d
-               deőnite such that D ∈ Cb(R ). Suppose that there exist R ∈ O(d) constant and functions gk ∈
-               C5(Rd) where inf      d g (x) ≥ α > 0 such that
-                 b               x∈R   k         k
-                                                                                   ⊤
-                                               D(x)=Rdiag g (x),...,g (x) R .
-                                                                 1          d
-               Let                                           p             p       
-                                              σ(x) = Rdiag      g (x),...,   g (x) R⊤
-                                                                 1            d
-               be its principal square root, so that D = σσ⊤. Since R is constant and g ∈ C5(Rd) with g ≥
-                                                                                               k     b             k
-               α >0, the smoothness requirements in (H1) hold and the uniform ellipticity in (H2) follows with
-                k
-               α:=min1≤k≤dαk. Let rk denote the k-th column of R; then we obtain
-                                            d                                  d
-                                           X             ⊤              ⊤   X   √ ⊤ 
-                                  ∇·D=         r  (∇g ) r ,         ∇·σ =        r   (∇ g ) r ,
-                                                k      k    k                     k        k    k
-                                           k=1                               k=1
-               and
-                                             d                             d
-                                       ⊤    X√   √ ⊤  X                                ⊤ 
-                               2σ∇·σ =          2 g r (∇ g ) r =              r   (∇g ) r     =∇·D,
-                                                    k k         k    k         k      k    k
-                                            k=1                           k=1
-               which veriőes identity (33). Note that this case reduces to Case 3 when R = I and that any matrix
-                                                                                                d
-               is orthogonally diagonalizable if and only if it is symmetric (by the spectral theorem).
-               Remark 5.2. The structural condition might hold even if we considered a non-symmetric noise
-               amplitude. This can be shown by applying a constant orthogonal rotation in Case 4: consider a
-               constant matrix Q ∈ O(d) and deőne
-                                                         σ(x) = D1/2(x)Q,
-               which is generally non-symmetric and satisőes D = σσ⊤. In this case, using the symmetry of D1/2
-               and the constancy of Q, we obtain
-                                                ⊤       1/2        ⊤ 1/2        1/2     1/2
-                                         σ(∇·σ )=D Q∇· Q D                  =D ∇·D ,
-               which, together with the result obtained in Case 4, veriőes identity (33).
-               Remark 5.3. It is even possible to go beyond constant rotations upon the inclusion of suitable
-               assumptions on the rotation matrix. So, in contrast to what was presented in Remark 5.2, if we set
-                                     σ(x) = D1/2(x)Q(x),         Q:Rd→O(d), Q∈C5(Rd);
-                                                                                          b
-               then, the identity (33) holds if and only if
-                                               1/2         ⊤    1/2                    d
-                                             D Q(∇·Q )D =0 forallx∈R .
-               Two immediate sufficient conditions are: Q constant, which reproduces the case presented in Re-
-                                  ⊤            d
-               mark 5.2, or ∇· Q     =0on R , which means that the rows of Q are divergence-free, that is, the
-               rows of Q are solenoidal vector őelds. Outside these classes, the equality above typically fails, and
-               identity (33) does not hold.
-               Case 5: Diffusion in the presence of a privileged orientation. Consider now the case in
-               which diffusion takes place in an anisotropic medium in which a single privileged direction exists,
-               such as a őber-aligned diffusion.    Let v ∈ Rd with ∥v∥ = 1 be the privileged orientation and
-               f,g ∈ C5(Rd) with inf f(x) ≥ α > 0 and inf g(x) ≥ α > 0. Let us consider
-                       b              x          1             x          2
-                                                ⊤                 ⊤                               ⊤
-                                D(x)=f(x)vv +g(x)(I −vv )=g(x)I + f(x)−g(x) vv .
-                                                            d                 d
-               Since v is constant and f,g ∈ C5, all spatial derivatives of D up to order őve are continuous and
-                                                 b
-               bounded, hence (H1) holds. For uniform ellipticity, we use the existence and uniqueness of the
-                                                                                   d
-               orthogonal decomposition relative to span{v}: for every ξ ∈ R there exist unique vectors ξ ,ξ
-                                                                                                                  1   2
-               with
-                                                          ⊤                         2       2      2
-                                 ξ = ξ +ξ ,       ξ =(v ξ)v,         ξ ⊥v,       |ξ|  =|ξ | +|ξ | .
-                                      1    2       1                  2                   1      2
-              14                                   C. ESCUDERO AND H. ROJAS
-              Since vv⊤ and Id −vv⊤ are complementary orthogonal projectors (as ∥v∥ = 1), we obtain
-                   ⊤                  2           2          2         2         2
-                 ξ D(x)ξ =f(x)|ξ | +g(x)|ξ | ≥ α |ξ | +α |ξ | ≥ α|ξ| ,                  α:=min{α ,α }>0,
-                                    1           2        1  1      2  2                            1   2
-              so D(x) is positive deőnite for every x and (H2) holds with ellipticity constant α. Subsequently, we
-              diagonalize D. Since                                          
-                                              D(x)=g(x)Id+ f(x)−g(x) vv⊤,
-              we have D(x)v = f(x)v, and for any w ⊥ v, D(x)w = g(x)w. Thus, the spectrum is
-                                 {f(x) (with multiplicity 1), g(x) (with multiplicity d − 1)}.
-              Choose an orthonormal basis {v,e ,...,e } with e ⊥ v, j = 2,··· ,d, and let R ∈ O(d) be the
-                                                 2      d         j
-              constant orthogonal matrix whose columns are v,e ,...,e . Then
-                                                                 2      d      
-                                           D(x)=Rdiag f(x), g(x),...,g(x) R⊤.
-              The principal square root is
-                                                p       p           p  ⊤                    ⊤
-                                 σ(x) = Rdiag     f(x),   g(x),...,   g(x) R ,       D=σσ .
-                                                                                      p       p           p
-              Proceeding analogously to Case 4, since R is constant and Λ(x) := diag(   f(x),   g(x),...,   g(x))
-                                                        2            ⊤
-              is diagonal, we have componentwise ∇·Λ = 2Λ(∇·Λ ). Therefore,
-                                                      ∇·D=2σ∇·σ⊤,
-              and the structural identity (33) holds pointwise.
-              Case 6: Scalar-modulated constant anisotropic diffusion. Let B ∈ M                 (R) be constant,
-                                                          5   d                              d×d   d
-              symmetric, and positive deőnite. Let g ∈ C (R ) with g(x) ≥ α > 0 for every x ∈ R . Consider
-                                                          b
-                                                        D(x)=g(x)B.
-              Since B is constant and g belongs to C5, all spatial derivatives of D up to order őve are continuous
-                                                     b
-              and bounded, which meets the requirement in (H1). Since B is positive deőnite, there exists a
-              constant c   >0such that
-                        B
-                                              ξ⊤Bξ ≥cB|ξ|2        for all ξ ∈ Rd.
-              Additionally, since g(x) ≥ α, we obtain
-                                           ξ⊤D(x)ξ ≥αc |ξ|2         for every x ∈ Rd.
-                                                          B
-              Then D(x) is positive deőnite for all x and the uniform ellipticity assumption (H2) holds with
-              constant αc . Take the principal square root σ(x) = pg(x)B1/2, so that D = σσ⊤. Since B is
-                          B
-              constant,                                                            p
-                                     ∇·D(x)=B∇g(x),           (∇·σ⊤)(x) = B1/2∇ g(x).
-              Hence,                              p                  p
-                            2σ(x)(∇·σ⊤)(x) = 2      g(x)B1/2B1/2∇ g(x)=B∇g(x)=∇·D(x),
-              and the structural identity (33) holds pointwise.    One might also use a non-symmetric matrix
-              σ˜(x) := σ(x)Q with Q ∈ O(d) constant, and the identity remains valid.
-              Remark 5.4. As a speciőc example, we consider radial-modulated diffusion. Radial modulation is
-              ubiquitous in rotationally symmetric models, for instance around point sources, and its assessment
-              follows immediately from Case 6. To see this, let B be constant, symmetric, and positive deőnite
-              as in that case. Let g(x) = h(r) and r = |x|, where h ∈ C5([0,∞)), h(r) ≥ α > 0, and
-                                                                        b
-                                                  ′       (3)       (5)
-                                                 h(0) = h    (0) = h  (0) = 0.
-              OnRd\{0},
-                                               ′                                   ′
-                                    ∇g(x) = h(r) x,       ∇·D(x)=B∇g(x)= h(r)Bx.
-                                                r                                  r
-              The null-odd-derivative conditions ensure that g is C5 at the origin, in particular, ∇g(0) = 0, and
-              that all derivatives of g up to order őve extend continuously to Rd. For σ(x) = pg(x)B1/2, the
-                                       BENEATH THE KINETIC INTERPRETATION OF NOISE                              15
-              chain rule implies that the structural identity (33) holds for x ̸= 0, and by continuity it also holds
-              at x = 0. This case would arise whenever diffusivity depended only on the distance to the origin, for
-              example, in a material whose properties depended on temperature and in the presence of a localized
-              heat source. Note also that this remark covers anisotropic situations, given the generality of B.
-              5.2. Negative examples. In the following, we summarize a couple of cases in which the identity
-              ∇·D = 2σ∇·σ⊤ does not hold. As already mentioned, this is the generic situation, even in
-              dimension two.
-              Case 1: Bidimensional cross-coupled diffusion tensor. Let α, β > 0 be constants and let
-              τ ∈ C5(R2) satisfy sup |τ(x)| ≤ τ      <√αβ. Consider
-                    b                x           max
-                                                      2         2               
-                                            D(x)=      α +τ(x)       (α+β)τ(x) ,
-                                                      (α+β)τ(x)       β2 +τ(x)2
-                        2             5
-              for x ∈ R . Since τ ∈ Cb, all spatial derivatives of D up to order őve are continuous and bounded,
-              hence (H1) holds. Also, let
-                                                     σ(x) =  α      τ(x)
-                                                               τ(x)    β
-                                                       ⊤                                                 2
-              denote its principal square root, D = σσ . By the Rayleigh-Ritz theorem, for every ξ ∈ R we have
-                                                ⊤              2            2   2
-                                               ξ D(x)ξ = |σξ|    ≥ λmin(σ) |ξ| ,
-              where λmin(σ) denotes the smallest eigenvalue of σ. Since σ is a symmetric 2×2 matrix, it follows
-                                                                 2          2
-              that λ    (σ) ≥ detσ/trσ. Here detσ = αβ−τ(x) ≥ αβ−τ              =: δ > 0 and trσ = α+β; hence
-                     min                                                    max     1
-                                                                      
-                                                                   δ     2
-                                                   ⊤                1        2
-                                                  ξ D(x)ξ ≥      α+β |ξ| .
-              Therefore, D is positive deőnite for every x and the uniform ellipticity hypothesis (H2) holds with
-              constant [δ /(α +β)]2. Subsequently, since in D only τ depends on x, we obtain
-                         1
-                                                                   !                  !
-                                              2τ ∂1τ +(α+β)∂2τ                  ⊤     ∂2τ
-                                    ∇·D= (α+β)∂ τ+2τ∂ τ ,                  ∇·σ = ∂ τ .
-                                                       1         2                     1
-              Hence,                                                                 !
-                                                                         (β −α)∂ τ
-                                         Λ(x) := ∇·D−2σ(∇·σ⊤)=                     2   .
-                                                                         (α−β)∂ τ
-                                                                                   1
-                                                                                ∗          ∗
-              Thus, if α ̸= β and ∇τ is not identically zero, there exists x with Λ(x ) ̸= 0; therefore, the
-                                                                                               1/2
-              structural identity (33) is not fulőlled, despite D satisőes (H1)ś(H2) and σ = D    has been chosen
-              as its principal square root.
-              Remark5.5. Thefunctionτ(x)controlstheoffśdiagonal part of D and σ. Therefore, intuitively, it
-              measures how much the diffusive ŕuxes correlate between the x and x directions. If τ is coordinate
-                                                                             1      2
-              dependent, that means the correlation also varies in space. Some admissible forms of τ that can be
-              expressed in terms of elementary functions are:
-                    • Periodic: τ(x) = ε sin(k⊤x) with k ∈ R2 \{0}, ε ∈ R;
-                                                          2  2             2
-                    • Gaussian: τ(x) = ε exp −|x−x | /ℓ         with x ∈ R , ℓ > 0, ε ∈ R;
-                                                        0            0
-                    • Front-like: τ(x) = ε tanh (x −c)/ℓ with c ∈ R, ℓ > 0, ε ∈ R, and x = (x ,x ).
-                                                   1                                              1  2
-              All these examples give rise to regions where ∇τ(x) does not cancel out. There, the function Λ(x)
-              does not vanish and the identity (33) fails as shown in Case 1.
-               16                                   C. ESCUDERO AND H. ROJAS
-               Case 2: Separable cross-coupled diffusion tensor. Let ε ̸= 0 be a constant, and let a,b ∈
-               C5(R). Assume
-                b
-                 a(x ) ≥ a > 0,       b(x ) ≥ b > 0,       a(x )b(x )−ε2 ≥ δ > 0         for all x = (x ,x ) ∈ R2.
-                    1      0             2      0             1     2          2                       1  2
-               Let us consider                                                        
-                                                           2    2                     
-                                                      a(x ) +ε        ε a(x )+b(x )
-                                         D(x)=            1                1       2     .
-                                                                               2    2
-                                                   ε a(x )+b(x )         b(x ) +ε
-                                                         1       2           2
-               Since a,b ∈ C5, all spatial derivatives of D up to order őve are continuous and bounded, hence (H1)
-                             b
-               holds. Moreover,
-                                                         22    2                          2     2
-                             detD(x) = a(x )b(x )−ε          ≥δ >0,         D (x)=a(x ) +ε >0.
-                                              1    2            2             11          1
-               Therefore, by the Sylvester criterion, D(x) is positive deőnite for every x, and (H2) holds. Also, let
-               us denote by
-                                                             a(x )      ε 
-                                                      σ(x) =       1
-                                                                 ε     b(x )
-                                                                          2
-               its principal square root; then D = σσ⊤ and detσ(x) = a(x )b(x ) − ε2 ≥ δ > 0. Subsequently,
-                                                                              1    2           2
-               by separability (that is, in D only a depends on x and only b on x ) we obtain
-                                                                  1                  2
-                                                                 !                     
-                                                   2a∂ a+ε∂ b                       ∂ a
-                                         ∇·D=          1       2   ,     ∇·σ⊤=        1   .
-                                                   ε∂ a+2b∂ b                        ∂2b
-                                                      1        2
-               Hence,
-                                                                             ∂ b(x )
-                                          Λ(x) := ∇·D−2σ(∇·σ⊤)=−ε               2    2   .
-                                                                               ∂ a(x )
-                                                                                1    1
-                                                                                        ∗          ∗
-               Thus, if ε ̸= 0 and either ∂ a or ∂ b is not identically zero, there exists x with Λ(x ) ̸= 0; therefore,
-                                          1      2
-                                                                                                            1/2
-               the structural identity (33) is not fulőlled, despite D again satisőes (H1)ś(H2) and σ = D       is its
-               principal square root.
-               Remark 5.6. The functions a(x ) and b(x ) regulate this cross-coupled diffusion in the directions
-                                                 1         2
-               x and x respectively. Assume ε ̸= 0; then the structural identity (33) fails precisely in those
-                1       2
-               regions in which either ∂ a(x ) or ∂ b(x ) does not vanish. Some admissible choices for a and b
-                                         1   1       2   2
-               that can be written in terms of elementary functions are:
-                    • Periodic: a(x ) = a +η sin(k x +θ ), b(x ) = b +η cos(k x +θ ), with k ,k > 0,
-                                    1      0    a      a 1    a       2      0    b      b 2    b          a   b
-                                                                                                                 2
-                      θ ,θ ∈ R, and amplitudes chosen so that |η | < a , |η | < b , and (a −|η |)(b −|η |)−ε ≥
-                        a  b                                       a     0    b    0        0     a   0    b
-                      δ .
-                        2
-                                                           0 2 2                           0 2 2
-                                                    −(x −x ) /ℓ                      −(x −x ) /ℓ           0  0
-                    • Gaussian: a(x ) = a + η e        1   1   1,  b(x ) = b + η e      2  2   2,   with x ,x ∈ R,
-                                     1      0    a                    2      0    b                        1  2
-                      ℓ ,ℓ > 0, and amplitudes satisfying |η | < a , |η | < b , and (a −|η |)(b −|η |)−ε2 ≥ δ .
-                       1   2                                  a      0   b     0        0    a    0     b          2
-                                                                                                           
-                    • Front-like: a(x ) = a + η tanh (x −c )/ℓ ,          b(x ) = b +η tanh (x −c )/ℓ , with
-                                      1     0     a        1    1   1        2     0    b         2    2   2
-                      c ,c ∈ R, ℓ ,ℓ > 0, and amplitudes chosen so that |η | < a , |η | < b , and (a −|η |)(b −
-                        1  2       1  2                                       a     0    b    0         0    a    0
-                      |η |) − ε2 ≥ δ .
-                        b           2
-                                     6. Beyond the kinetic interpretation of noise
-                 Our developments so far have left a number of side questions open. The goal of this section is
-               to address them. We start with an attempt of deőnition of stochastic integral which was aimed to
-               constitute a direct discretization of the kinetic interpretation of noise.
-                                         BENEATH THE KINETIC INTERPRETATION OF NOISE                                 17
-               6.1. The Hütter-Öttinger discretization. In reference [31], the authors propose a new dis-
-               cretization of the stochastic integral that would presumably give rise to the desired calculus. In-
-               stead of focusing on the general deőnition, we will examine a particular case that can be considered
-               paradigmatic:
-                             Z T                                n         2           !
-                                                              X1 W                                    
-                                     £         2                          tj
-                                 W W :=L (Ω)− lim                            +W          W −W           ,
-                                   t    t             ||∆ ||→0     2   W          tj−1      tj     tj−1
-                              0                          n     j=1       tj−1
-                                                                                                               £
-               where ∆ ={t ,t ,...,t        , t } is a partition of [0,T], ||∆ || = max      (t −t     ), and ł W ž is
-                        n     0  1       n−1 n                               n         1⩽k⩽n k     k−1            t
-               our notation for the new attempt of stochastic integration as described in [31]. This discretization
-               presents the obvious drawback of being nonlinear for a linear integrand; but, moreover, it is almost
-               surely ill-posed due to the fact that W      −W        ∼ N(0,t − t        ) along with W = 0 with
-                                                          tj     tj−1           j    j−1                  0
-               probability one (thus causing a divergence). In addition, in the interval [0,T], for any T > 0, the
-               Hausdorff dimension of the set of all zeros of Brownian motion is 1/2 almost surely, as follows from
-               Theorem 4.24 in [38] and the scale invariance of Brownian motion. In particular, the Brownian
-               motion does not only vanish at the initial time t = 0, but also in an uncountable set of times
-               within each őnite interval starting from it. Just for comparison, consider the Riemann-Stieltjes-
-               type discretization:
-                                   Z T                                   n
-                                            λ           2               X ∗                     
-                                        W ⊙dW :=L (Ω)− lim                 W       W −W          ,
-                                          t       t                           t      t      t
-                                     0                         ||∆n||→0       j−1     j      j−1
-                                                                        j=1
-                      ∗                                                      ∗
-               where t     ∈[t    , t ], and therefore it can be expressed as t  =λt +(1−λ)t         for any λ ∈ [0,1].
-                      j−1     j−1 j                                          j−1      j          j−1
-               It is well-known that this is a well-deőned stochastic integral for any λ within this interval and yields
-               the result:                      Z                               
-                                                  T     λ         W2            1
-                                                    W ⊙dW = T + λ−                 T,
-                                                      t       t     2           2
-                                                 0
-               see Chapter 4 in [21] for the derivation. So, in contrast with the őrst discretization, the second
-               choice (which is, in fact, a one-parameter family of discretizations) preserves the linearity of the
-               integrand and gives rise to a well-posed integral.
-                 This attempt of stochastic integral was inspired by a numerical algorithm [26]. Although our
-               result in this section is negative, that does not mean that an algorithm cannot be reinterpreted as
-               a stochastic integration scheme. Showing this is the goal of the next subsection.
-               6.2. The Fehlberg 255/512-interpretation. Inasense, asmentionedintheprevioussubsection,
-               one can think of noise interpretations as suitable limits of some numerical algorithms. In fact, the
-               classical interpretations may be seen as certain limits of Runge-Kutta methods [28]. Precisely,
-               the Itô interpretation would correspond to the forward Euler method, the HK interpretation to
-               the backward Euler method, and the Stratonovich interpretation to the midpoint method. The
-               last method differs in general to the Heun or trapezoidal method, but they coincide in the limit
-               provided enough regularity is granted [45]; that can also be deduced, in a particular case, from
-               the Riemann-Stieltjes-type discretization in the previous subsection. Moreover, most Runge-Kutta
-               methods would reduce to one of these three integration schemes (with a clear preference towards the
-               Stratonovich interpretation) in a suitable limit and if enough regularity is assumed. Interestingly,
-               this is not the case for the őrst-order Runge-Kutta method introduced by Fehlberg in Section IV
-               of [23]. Assuming enough regularity, this scheme would correspond to the choice λ = 255/512 in
-               the Riemann-Stieltjes scheme introduced in Subsection 6.1; obviously, the interpretations of Itô,
-               Stratonovich, and HK correspond, respectively, to λ = 0,1/2,1. Since 255/512 = 1/2−1/512, this
-               interpretation could be considered as a perturbation of that of Stratonovich. We can introduce it
-               in more generality as follows (from now on we assume 0 ≤ a < b < ∞).
-               18                                    C. ESCUDERO AND H. ROJAS
-               Deőnition 6.1. For any Φ ∈ C1(R,R) the Fehlberg 255/512−integral of (Φ(W ))               in the interval
-               [a,b] with respect to the Brownian motion {W }         is deőned as                t  t≥0
-                                                                t t≥0
-                               Zb                           n
-               (34)               Φ(W)⋆dW := lim XΦ(W∗)(W −W                         )  in probability,
-                                       t       t   ∥∆ ∥→0           tj    tj     tj−1
-                                                      n    j=1
-                               a
-               where ∆ ={t ,t ,...,t        , t } is a partition of [a,b], ∥∆ ∥ := max       (t −t    ) is its diameter,
-                     ∗  n     0  1       n−1 n                              n          1⩽j⩽n j     j−1
-               and t     =λt +(1−λ)t          with λ = 255/512.
-                     j−1     j            j−1
-                  As happens with the Stratonovich and HK integrals, Deőnition 6.1 poses a limit that exists and
-               is connected to the Itô integral.
-               Theorem 6.2. For any Φ ∈ C1(R,R) the limit (34) exists and we have that the equality
-                            Zb                  Zb                    Zb
-               (35)            Φ(W)⋆ dW =          Φ(W)dW +255           Φ′(W )dt holds almost surely.
-                                    t       t           t     t   512          t
-                            a                   a                     a
-               Proof. Following [19], the right-hand side of equation (35) is almost surely well deőned. Because
-               Φ∈C1(R,R), the Itô integral is deőned as the limit in probability
-                                        Zb                         n
-               (36)                        Φ(W)dW = lim XΦ(W                  )(W −W         )
-                                                t     t                    t       t      t
-                                                          ∥∆ ∥→0           j−1     j      j−1
-                                                            n     j=1
-                                        a
-               for any family of partitions ∆    such that ∥∆ ∥ → 0 as n → ∞. For one such family ∆ take the
-                                               n               n                                             n
-               difference between the limits on the right-hand sides of (34) and (36) to get
-                                         n h                      i
-                                D =X Φ(W∗)−Φ(Wt ) (Wt −Wt )
-                                  ∆n              tj         j−1       j      j−1
-                                        j=1
-                                         n
-                                        X ′                           ∗     ∗          2
-               (37)                  =      Φ((1−θ )W         +θ W )(W −W             )
-                                                      j   tj−1    j  tj    tj     tj−1
-                                        j=1
-                                           n
-                                        +XΦ′((1−θj)Wt           +θjW∗)(Wt −W∗)(W∗−Wt ),
-                                                             j−1       t      j     t     t       j−1
-                                                                        j            j     j
-                                          j=1
-               where we have used the continuous differentiability of Φ together with the mean value theorem;
-               0 < θ < 1, j = 1,...,n are őxed parameters. Now, by Lemmata 7.2.1 and 7.2.3 in [37], we őnd
-                     j
-                                       n                                                   Zb
-                                      X ′                                ∗          2          ′
-               (38)             lim       Φ (1−θ )W         +θ W (W −W ) =λ Φ(W)dt
-                              ∥∆ ∥→0                j   tj−1    j  tj    tj     tj−1                t
-                                 n    j=1
-                                                                                           a
-               in probability.
-                                                                 BENEATH THE KINETIC INTERPRETATION OF NOISE                                                                              19
-                            To analyze the last line of equation (37), note that if Φ′ were a bounded function (additionally
-                       to continuous), then
-                                                                                                                                                       
-                                                          n                                                                                             
-                                                         X ′                                                                                            
-                                                                                                       ∗                    ∗        ∗                 
-                                                   E             Φ((1−θ )W                   +θ W )(W −W )(W −W                                        )
-                                                                                j      t           j    t         t          t        t          t
-                                                                                       j−1              j         j          j        j          j−1 
-                                                     j=1                                                                                                           
-                                                        n                                                                          h                          i
-                                                    X ′                                              ∗        ∗                                     ∗      ∗ 
-                                             ≤E               Φ((1−θ )W                    +θ W ) W −W                              E W −W F
-                                                       j=1                  j      tj−1         j    tj       tj         tj−1            tj         tj     tj
-                                                 r                                n                                                                        
-                                                     2(1−λ)∥∆n∥                  X ′                                              ∗        ∗               
-                                             ≤                               E             Φ((1−θ )W                    +θ W ) W −W
-                       (39)                                    π                   j=1                   j      tj−1        j    tj        tj         tj−1
-                                                 r                                           n                            1/2
-                                             ≤ 2(1−λ)∥∆n∥∥Φ′∥ EXW∗−W                                                     2
-                                                               π                     ∞         j=1 tj               tj−1
-                                                 r                                          n                       1/2
-                                                     2λ(1−λ)∥∆n∥                    ′      X                        
-                                             =                                 ∥Φ∥                  (t −t           )
-                                                                π                      ∞              j       j−1
-                                                                                              j=1
-                                                 r2λ(1−λ)∥∆n∥                       ′     √
-                                             =                  π              ∥Φ∥∞ b−a−→0, as n→∞,
-                       by the triangle inequality, the tower property, the independence of the increments of Brownian
-                       motion, the value of the őrst absolute moment of Brownian motion, the Jensen inequality, and the
-                       variance of the Brownian increments. Thus, the last line of equation (37) converges to zero in L1(Ω),
-                       and hence in probability (provided ∥Φ′∥                                 is well deőned).
-                                               ′                                           ∞
-                            However, Φ is continuous but not globally bounded in general; nevertheless, its continuity implies
-                       it is bounded on any closed interval, so the maximum
-                                                                                              ′                                     ∗
-                                                                                max Φ((1−θ )W                           +θ W )
-                                                                              W∈[−l,l]                    j      tj−1        j     tj
-                                                                                t
-                       is well deőned, where the full trajectory of the Brownian motion, for a ≤ t ≤ b, is assumed to be
-                       constrained in [−l,l], with l > 0 large enough. In consequence, by the almost sure continuity of
-                       Brownian motion and (39),
-                                                                                                                                                                         
-                                            n                                                                                                     
-                                           X ′                                                                                                    
-                                                                                          ∗                   ∗         ∗                                                
-                              lim P                Φ((1−θ )W                    +θ W )(W −W )(W −W                                        ) >ϵ max |W |≤l =0,
-                                                                  j      t           j     t        t          t         t          t                               t
-                             n→∞                                         j−1               j        j          j         j          j−1           a≤t≤b
-                                           j=1                                                                                                    
-               20                                    C. ESCUDERO AND H. ROJAS
-               for all ϵ > 0. Now, by the law of total probability,
-                                                                                              
-                                n                                                          
-                               X ′                                                         
-                            P     Φ((1−θ )W                 ∗            ∗     ∗              
-                                             j   tj−1 + θjWtj)(Wtj −Wtj)(Wtj −Wtj−1) > ϵ
-                            j=1                                                                           
-                               n                                                              
-                              X ′                                                             
-                                                           ∗           ∗     ∗                              
-                        =P         Φ((1−θj)Wtj−1 +θjWt )(Wtj −Wt )(Wt −Wtj−1) > ϵ max |Wt| ≤ l
-                                                            j           j     j                a≤t≤b
-                              j=1                                                             
-                          ×Pmax|W|≤l
-                                a≤t≤b    t
-                                                                                                              
-                                 n                                                              
-                                X ′                                                             
-                                                             ∗            ∗     ∗                             
-                          +P         Φ((1−θ )W         +θ W )(W −W )(W −W                   ) >ϵ max |W |̸≤l
-                                              j   tj−1    j  t     tj     t     t      tj−1              t
-                                                              j            j     j              a≤t≤b
-                                 j=1
-                          ×Pmax|W|̸≤l
-                                a≤t≤b    t
-                                                                                                            
-                               n                                                              
-               (40)           X ′                                                             
-                                                           ∗           ∗     ∗                              
-                        ≤P         Φ((1−θj)Wtj−1 +θjWt )(Wtj −Wt )(Wt −Wtj−1) > ϵ max |Wt| ≤ l
-                                                            j           j     j                a≤t≤b
-                              j=1                                                             
-                          +Pmax|W|̸≤l
-                                a≤t≤b    t
-                                                                                                            
-                               n                                                              
-                              X ′                                                             
-                                                           ∗           ∗     ∗                              
-                        ≤P         Φ((1−θ )W         +θ W )(W −W )(W −W                   ) >ϵ max |W |≤l
-                                           j    tj−1    j  t     tj     t     t      tj−1              t
-                                                            j           j     j                a≤t≤b
-                               j=1
-                          +1E(|W |)
-                             l       b
-                                                                                                            
-                               n                                                              
-                              X ′                                                             
-                                                           ∗           ∗     ∗                              
-                        =P         Φ((1−θj)Wtj−1 +θjWt )(Wtj −Wt )(Wt −Wtj−1) > ϵ max |Wt| ≤ l
-                                                            j           j     j                a≤t≤b
-                              j=1                                                             
-                          +1r2b−→0, as l,n→∞,
-                             l    π
-               where we have used the Doob submartingale inequality in the previous-to-last step, see Theo-
-               rem 4.5.1 in [37], and the value of the őrst absolute moment of Brownian motion in the őnal one.
-                  Expressions (36), (37), (38), and (40) prove the existence of the left-hand side of equation (34).
-               Lastly, by taking a subsequence if necessary, we deduce
-                               Zb                  Zb                    Zb
-                                  Φ(W)⋆ dW =          Φ(W)dW +255           Φ′(W )dt almost surely,
-                                       t       t           t     t   512          t
-                               a                   a                     a
-               since λ = 255/512 by hypothesis.                                                                       □
-                  Now, we will illustrate the use of these developments in an example. Let us assume that a given
-               physical object moves with a velocity that can be assimilated to a constant multiple of Brownian
-               motion; the constant will henceforth be denoted as k. If its mass were unitary, what can be assumed
-               without loss of generality, its kinetic energy Q = k2W2/2 would fulőll:
-                                                                t        t
-                                                                           k2
-                                                      dQ =k2W dW +            dt,
-                                                         t        t    t   2
-               as a consequence of the Itô lemma; so it obeys the stochastic differential equation
-                                                            k2        p
-                                                    dQ =       dt+k 2Q dW.
-                                                        t    2              t   t
-                                           BENEATH THE KINETIC INTERPRETATION OF NOISE                                     21
-                Wewill suppose that the particle is initially at rest, so the initial condition is Q0 = 0. This equation
-                possesses a unique solution, as guaranteed by the Watanabe-Yamada theorem, see Theorem 1 in [50].
-                However, if we employed Stratonovich calculus, we would őnd
-                                                           dQ =k2W ◦dW.
-                                                               t        t      t
-                This equation is solved by Q = k2W2/2, by Q = 0, and by the uncountable family of solutions
-                                               t         t          t
-                                                                   2        2
-                                                                  k    ←→
-                                                           Qt = 2      Wt−τ     ,
-                       ←→                         ←→
-                where W := W if t > 0 and W := 0 if t ≤ 0, with τ being any almost surely positive random
-                          t       t                  t
-                variable independent of Wt. Note that, unlike Qt = k2W2/2 and Qt = 0 that are strong solutions,
-                                                                               t
-                all solutions in this family are weak, see Section 5.3 in [40]. We emphasize that this is not a problem
-                since, őrst, weak solutions are those that matter in physics (where it is common to focus on the
-                probability density function of the solution rather than on its paths), and also because inőnitely
-                many strong solutions can be built for this model following the procedures in [16] and [17]. The
-                reason for this inőnite multiplicity of solutions is the transformation of the origin from being an
-                instantaneously reŕecting boundary to being an absorbing one as we shift the interpretation from
-                Itô to Stratonovich, see [9]. On the other hand, we could őnd the stochastic differential equation in
-                Fehlberg form
-                                                              k2         p
-                                                    dQ =          dt+k 2Q ⋆dW,
-                                                        t   1024               t      t
-                whichisadirectconsequenceofTheorem6.2. ThisequationapproximatesinasensetheStratonovich
-                interpretation, but preserves the reŕecting character of the boundary at zero, so it is free from the
-                inőnite multiplicity of solutions. Of course, the same result follows from any other λ = 1/2 − ϵ
-                with 0 < ϵ < 1/2. Even one can take the limit ϵ ↘ 0 to recover the unique Stratonovich solution
-                that owns physical meaning. The advantage of the choice λ = 255/512 is simply the preexistence
-                of the Runge-Kutta rule introduced by Fehlberg in [23]. So, in a sense, the choice ϵ = 1/512 could
-                be considered as a rule of thumb to select a noise interpretation close to that of Stratonovich but
-                free from the multiplicity of solutions generated by a square-root diffusion term (a type of diffusion
-                term that is not rare in physical modeling [9]).
-                  As a őnal note to this subsection, let us mention that modeling the velocity of a physical object
-                with a Brownian motion is not as common as describing it like an Ornstein-Uhlenbeck process;
-                the latter choice is known as the Langevin model for the random dispersal of a particle. However,
-                two things should be said in this regard. First, the Brownian motion approximates the Langevin
-                dispersal in the limit of vanishing friction, so our Brownian model can be considered as an effective
-                description of the object velocity in such a limit. Moreover, all the developments presented here for
-                a particle moving with a Brownian speed can be immediately translated to the case of a Langevin
-                particle.  To this end, one just needs to repeat the arguments set forth in [16, 17, 19] mutatis
-                mutandis.
-                  The next subsection shows some possible consequences of removing one of our key assumptions:
-                uniform ellipticity. This will be illustrated with the three classical interpretations of noise together
-                with the one just introduced in this subsection.
-                6.3. Application to heterogeneous diffusions in the absence of uniform ellipticity. In this
-                subsection we follow reference [8], where the following model (except for the different notation) for
-                diffusion in heterogeneous media is studied:
-                                                            dXt           α
-                                                                 =k|X| ξ(t),
-                                                             dt          t
-                where k > 0, α ∈ R, ξ(t) is white noise, and the interpretation is that of Stratonovich. Clearly, its
-                diffusion term is degenerated. While the physical consequences of such a model were investigated
-                in [8], herein we will focus on its stochastic analytical properties. Our arguments will be akin to
-                those employed in [9, 16, 17, 19].
-              22                                   C. ESCUDERO AND H. ROJAS
-                 As a őrst step, we translate the model into the precise stochastic differential equation
-                                                       αk2
-                                                dX =       X2α−1dt+kXαdW,
-                                                   t    2    t             t    t
-              which should be a reasonable proposal while the position of the particle that diffuses in the het-
-              erogeneous medium, Xt, stays nonnegative (since the absolute value in the original model has been
-              removed). Of course, this means that we need to assume an initial condition X = x ≥ 0. It
-                                                                                                   0     0
-              turns out that this stochastic differential equation presents a rich phenomenology in terms of its
-              solvability as the parameter α is varied. This is shown with particular cases in what follows. They
-              illustrate how the lack of uniform ellipticity can be more or less problematic, depending on the
-              speciőc value of α.
-                 Westart with the value α = 1, for which the equation possesses a unique solution that is strong
-              and global, and given by the explicit formula
-                                                      X =x exp(kW).
-                                                        t     0         t
-              This is a consequence of the classical existence theory (see, for instance, Theorem 10.3.5 in [37] and
-              Theorem 5.2.1 in [40]). Moreover, the solution remains positive (null) for all times if the initial
-              condition is positive (null), so removing the absolute value is appropriate in this case. Also, the
-              Stratonovic formulation dX = kX ◦dW is perfectly valid in this case too.
-                                           t      t      t
-                 If α = 2, we can use Itô calculus to őnd
-                                                        X =        1     ,
-                                                         t     −1
-                                                              x   −kWt
-                                                               0
-              whenever x > 0 and X = 0 for x = 0. So in the latter case we have global-in-time existence of
-                          0            t          0
-              the solution, while in the former it blows up at the stopping time
-                                                 τ =inf{t > 0|W =1/(x k)},
-                                                  2                t       0
-              which is almost surely positive and almost surely őnite. In other words, the solution ceases to exist
-              at a random time that is őnite with probability one; but in the mean time it is positive, so the
-              removal of the absolute value from the original model is legitimate. Additionally, during the lapse
-              of existence of the solution, the equation might be converted to Stratonovich form without altering
-              any of these results.
-                 For α = 1/2, the model reads
-                                                          k2        p
-                                                   dX =      dt+k X dW.
-                                                      t    4            t    t
-              The change X = Q /2 reduces this model to exactly that of the previous subsection, so all said
-                             t     t
-              there about Itô, Stratonovich, and Fehlberg applies here identically whenever x = 0. For x > 0,
-                                                                                                0            0
-              we have the strong solution                               
-                                                             k      √     2
-                                                     X =       W + x        ,
-                                                       t     2   t      0
-              which is nonnegative for all times (thus justifying the removal of the absolute value in the equation)
-              and positive for 0 ≤ t < τ   , where
-                                        1/2
-                                                                          √
-                                               τ    =inf{t > 0|W =−2 x /k},
-                                                1/2                t         0
-              which is an almost surely őnite and positive stopping time. Therefore, the solution gets to zero in
-              őnite time almost surely, and the same situation described in the previous subsection is reproduced
-              again after the time lapse τ   .
-                                          1/2
-                 For α = 3/4 we have
-                                        3k2 p           q                           q
-                                 dX =          X dt+k 4 X3dW         and dX =k 4 X3◦dW.
-                                    t    8      t            t    t           t         t      t
-                                         BENEATH THE KINETIC INTERPRETATION OF NOISE                                23
-               For x = 0 we have as solution X = 0 and for x ≥ 0 we obtain
-                    0                             t              0
-                                                            k         √ 4
-                                                       X =       W + 4x
-                                                        t      4   t      0
-               both for Itô and Stratonovich. So the same arguments of the previous subsection and the previous
-               paragraph can be reproduced in this case to prove that the inőnite multiplicity of solutions happens
-               in this case in őnite time almost surely for both interpretations of noise.
-                 Finally, consider α = 1/4 to arrive at the model
-                                          k2   1          p                          p
-                                  dX =       √ dt+k 4 X dW and dX =k 4 X ◦dW.
-                                      t    8   X              t    t            t         t      t
-                                                 t
-               While the Stratonovich version can be posed for x ≥ 0, the Itô one can only be posed for x > 0;
-                                                                   0                                           0
-               in this latter case the solution reads      s
-                                                           3 3k        q 4
-                                                                         4  3
-               (41)                                 X =           W + x
-                                                      t         4   t       0
-               for both interpretations. Moreover, the Stratonovich interpretation admits the solution X = 0 for
-                                                                                                             t
-               x =0. Then, arguing as before, the Stratonovich interpretation produces an inőnite multiplicity of
-                0
-               solutions in őnite time almost surely. This can be rectiőed by imposing an instantaneously reŕecting
-               boundary at the origin, which selects one solution out of the inőnitely many; precisely, the one given
-               by (41). The situation gets worse in the case of Itô, in which the solution ceases to exist in őnite
-               time almost surely due to the divergence in the drift.
-                 All in all, we have shown the enormous consequences that changing the noise interpretation might
-               have regarding existence and uniqueness of solution with a single model provided with a tunable
-               parameter(andintheabsenceofuniformellipticity). Forsomevaluesofthisparameter, theoutcome
-               is independent of the noise interpretation, while for others Itô is better, and even Stratonovich can
-               be better for some. One can easily check that, in all the cases analyzed, the Fehlberg interpretation
-               behaves as the Itô one, while the HK interpretation can only worsen things or leave them the same;
-               this latter claim follows easily from the arguments set forth in [19]. Also, in all these cases, the
-               removal of the absolute value from the original stochastic differential equation is justiőed by the
-               nonnegativity of the solutions. As a őnal note, let us mention that these conclusions affect only the
-               cases characterized by the explicitly examined values of α. Due to the complexity of the model,
-               each value of α leads to an equation that deserves its own study.
-                 One of the advantages of these models is that they are able to produce anomalously diffusing
-               random motions [8]. The next subsection will show that the same is accessible for other models
-               that are free from the mathematical pathologies exposed here.
-               6.4. The case of scaled Brownian motion. The previous subsection focused on heterogeneous
-               diffusion processes, which were introduced in the physical literature as capable of producing anoma-
-               lously diffusing paths [8]. Yet another process that enjoys the same property is the scaled Brownian
-               motion, which is the solution of
-                                                          dX
-                                                             t = F(t)ξ(t),
-                                                           dt
-               where ξ(t) is white noise and F : [0,T] −→ R is deterministic, and has also been introduced in the
-               physical literature [34]. The use of power laws, which are not necessarily continuously differentiable
-               at the origin, as nonlinearities in the previous subsection created some technical difficulties. This
-               raises the question of possible mathematical difficulties when power laws are used for F(t), as is
-               done in [34]. In this subsection we show that, contrary to what happened in the two previous
-               subsections, the change in interpretation does not alter the results at all. Moreover, these are free
-               from pathologies and reduce to the classical results one obtains for deterministic integrals under a
-               mild regularity assumption. Since the equation for the scaled Brownian motion is just a stochastic
-               integral, we start introducing what we mean by this sort of integration.
-               24                                    C. ESCUDERO AND H. ROJAS
-               Deőnition 6.3. For any 0 ≤ a < b < ∞ and any F : [a,b] −→ R continuous and of bounded
-               variation, its λ−integral with respect to the Brownian motion {W }          is deőned as
-                                                                                     t t≥0
-                                 Zb                          n
-                                         λ                  X ∗
-               (42)                F(t) ⊙ dW :=       lim       F(t )(W −W         )   in probability,
-                                               t    ∥∆ ∥→0         j     tj     tj−1
-                                                      n     j=1
-                                 a
-               where ∆ ={t ,t ,...,t        , t } is a partition of [a,b], ∥∆ ∥ := max       (t −t    ) is its diameter,
-                     ∗  n     0  1       n−1 n                              n          1⩽j⩽n j     j−1
-               and t     =λt +(1−λ)t          with 0 ≤ λ ≤ 1.
-                     j−1     j            j−1
-                  Themainresultofthissection proves that the limit exists and is uniform in λ. In other words, the
-               equation is independent of the interpretation. Note that the result is obvious from the established
-               literature for continuously differentiable functions, but here we assume much less regularity. In
-               particular, F(·) is not necessarily absolutely continuous, so its Radon-Nikodym derivative does not
-               need to be well deőned.
-               Lemma 6.4. The limit (42) exists and moreover
-                                           Zb                 Zb
-                                                    λ
-                                              F(t) ⊙ dW =        F(t)dW      almost surely.
-                                                          t              t
-                                           a                  a
-               Proof. The integral on the right-hand side is a well-deőned Itô integral that admits the Riemann
-               sum approximation in Deőnition 6.3 with λ = 0, see Theorem 21 of Section 5 in Chapter II of [45];
-               hence the case λ = 0 is a tautology. For λ ̸= 0 compute
-                                         Zb                 Zb
-                                                  λ
-                                            F(t) ⊙ dW −       F(t)dW =P− lim D ,
-                                                        t              t        ∥∆ ∥→0 ∆n
-                                                                                  n
-                                          a                 a
-               where                                 n h                  i
-                                                    X ∗
-                                            D =          F(t )−F(tj−1) (Wt −Wt           ).
-                                              ∆
-                                               n             j                 j      j−1
-                                                    j=1
-               Therefore                                                    
-                                                                             
-                                        n h                 i               
-                                       X       ∗                            
-                                                                            
-                      E[|D    |] = E        F(t )−F(tj−1) (Wt −Wt           ) 
-                            ∆n                 j                 j      j−1 
-                                    n j=1                                   
-                                   X                                    
-                                            ∗                              
-                                                                        
-                                ≤       F(tj)−F(tj−1) E Wtj −Wtj−1
-                                   j=1
-                                   r           n
-                                      2∥∆n∥ X        ∗            
-                                                                  
-                                ≤                  F(t )−F(tj−1)
-                                        π             j
-                                   r          j=1
-                                               n
-                                      2∥∆n∥ X                 ∗       ∗            
-                                                                                    
-                                ≤                   F(t )−F(t ) + F(t )−F(t           )   −→0, as n→∞,
-                                        π              j        j         j        j−1
-                                              j=1
-               by the triangle inequality, the value of the őrst absolute moment of the Brownian increments, and
-               the bounded variation of the integrand. Then,
-                                         1
-                                        L (Ω)− lim D          =0 =⇒ P− lim D              =0,
-                                                           ∆                           ∆
-                                                 ∥∆ ∥→0      n               ∥∆ ∥→0     n
-                                                    n                          n
-               and, hence, the limit (42) exists. Now, by passing to a subsequence if necessary, the equality in the
-               statement is established almost surely.                                                                □
-               Remark 6.5. Note that the hypothesis on the bounded variation of the integrands covers the case
-               of simple power laws studied in [34]. In fact, it covers the case of any function that is monotonic
-               on the integration interval, assumed compact.
-                                         BENEATH THE KINETIC INTERPRETATION OF NOISE                                  25
-               Corollary 6.6. For any 0 ≤ a < b < ∞ and any F : [a,b] −→ R continuous and of bounded
-               variation, its λ−integral
-                                        Zb                                       Z b
-                                                λ
-                                          F(t) ⊙ dW =F(b)W −F(a)W −                  W dF(t)
-                                                      t           b          a          t
-                                                                                   a
-                                        a
-               almost surely for every 0 ≤ λ ≤ 1.
-               Proof. First note that the integral on the right-hand side is almost surely well deőned as a Rie-
-               mannśStieltjes integral because the integrator is of bounded variation and the integrand is continu-
-               ous with probability one. Moreover, the integral on the left-hand side is well deőned by Lemma 6.4.
-               Again by this lemma, we have that
-                                     Zb                 Zb
-                                              λ
-                                        F(t) ⊙ dW =        F(t)dW
-                                                    t              t
-                                     a                  a
-                                                                     n
-                                                     =P− lim XF(t ) W −W .
-                                                                            j−1     t      t
-                                                            ||∆n||→0                 j      j−1
-                                                                    j=1
-               Onthe other hand, the integral
-                                         Z b                      n
-                                            W dF(t)= lim XW                 [F(t ) −F(t     )]
-                                               t         ||∆ ||→0      tj−1     j        j−1
-                                          a                 n    j=1
-                                                                  n
-                                                       = lim XW [F(t )−F(t                )]
-                                                         ||∆ ||→0      tj     j        j−1
-                                                            n    j=1
-               almostsurelybythepropertiesofRiemannśStieltjesintegration. Now, sincealmostsureconvergence
-               implies convergence in probability, we őnd
-                             Zb                Z b
-                                      λ
-                                F(t) ⊙ dW +        W dF(t)
-                                            t        t
-                                                 a
-                             a
-                                           n                                          n
-                         = P− lim XF(t ) W −W +P− lim XW [F(t)−F(t )]
-                                  ||∆n||→0       j−1     tj     tj−1         ||∆n||→0      tj     j       j−1
-                                          j=1                                        j=1
-                         = F(b)W −F(a)Wa,
-                                     b
-               because the cancellation of the mixed terms leads to a telescopic sum. By passing to a subsequence
-               if necessary, the equality is the statement becomes established.                                       □
-               Remark 6.7. This corollary shows that the classical integration by parts formula of the Rie-
-               mannśStieltjes integral is still valid in this case.
-                  Note that the two results introduced in this subsection extend, for the particular case of a
-               deterministic integrand, Theorem 8.3.4 in [37] and Theorem 30 in Section 5 of Chapter V in [45]
-               (with, obviously, many more simplifying assumptions in the case of this second statement). Note
-               also that they directly imply existence and uniqueness of solution to the scaled Brownian motion
-               equation. Some types of singular functions that can be integrated within the present framework,
-               but not in the classical one, are devil staircases [22], the Minkowski question mark function [42],
-               the Lebesgue function [35], and their extensions [24].
-                  Overall, models for anomalously diffusing particles have been introduced in [8] and [34]. While
-               both types of models rely on the presence of power laws, this type of functional dependence is intro-
-               duced in different manners. This implies that the őrst sort of models presents technical difficulties
-               that are absent in the second, as we have proven in this and the previous subsection.
-         26                   C. ESCUDERO AND H. ROJAS
-                                 7. Conclusions
-          The notion of kinetic interpretation of noise was introduced in [31], although it might have been
-         introduced under another format elsewhere, due to the natural character of this idea. Indeed, it
-         could seem appealing to consider the diffusion tensor as more fundamental than the noise amplitude
-         (which is its square root), given its appearance in the ŕuctuation-dissipation relation. As such, it
-         can be considered a reasonable datum to provide as input for a mathematical model. If this model
-         were a Fokker-Planck equation, we would have only two possibilities: the Itô form (7) and the
-         Fick form (3). Any other form of the Fokker-Planck equation relies on a fractional power of the
-         diffusion tensor rather than on the tensor itself (this can be seen, for instance, in equation (9)
-         of [41]). Since there is a clear connection between the Itô form of the Fokker-Planck equation and
-         SDEs (see Section 2), one could be tempted to conjecture some similar relation starred by the Fick
-         form. However, this relation only exists under a very restrictive structural condition on the diffusion
-         tensor (at least, if one wants to remove the extra drift term), precisely ∇ · D = 2σ∇ · σ⊤, what
-         makes it highly non-generic (except in one dimension) due to the non-commutativity of the matrix
-         algebra. Section 5 was devoted to state this condition as well as to give examples of diffusion tensors
-         that either fulőll it or not. Still, some of the very structured tensors that fulőll it are of physical
-         relevance.
-          Section 6 addresses a number of problems that arise from the analysis of the kinetic interpretation
-         of noise. The őrst is the notion of stochastic integration introduced in [31], which we have seen to
-         be ill-posed. This notion was motivated by the classical Fixman algorithm [26]. To show that it is
-         possible to introduce notions of stochastic integration from numerical algorithms, we illustrated so
-         with the Fehlberg 255/512−interpretation in that section. Subsequently, we used it, along with the
-         other three more classical interpretations, to model stochastic transport in heterogeneous media.
-         Moreover, we employed the resulting models to illustrate what happens when one of our main
-         hypotheses, the uniform ellipticity assumption, is removed. Finally, we analyzed a family of models
-         that are capable of producing anomalously diffusing paths, as the previous ones, but, in contrast to
-         those, enjoy much more mathematical tractability.
-          Although our work is primarily methodological and aims to establish a mathematical framework
-         for the rigorous analysis of physical models, it may also have practical implications. As already
-         mentioned, the attempt of stochastic integration in [31] was motivated by the Fixman algorithm [26].
-         More recent numerical schemes depart from this [10, 11, 12]. Our work suggests reconsidering
-         numerical analytical methods that arise from the kinetic interpretation of noise. In particular, it
-         points to a direct numerical approach: determining the Itô SDE corresponding to a given convection-
-         diffusion equation as shown in Section 2, and subsequently employing the numerical method in [7].
-         However, given the complexity of ŕuctuating hydrodynamics, it is possible that a different approach
-         is required in that őeld.
-          We also believe that our developments may help lay the groundwork for a theoretical frame-
-         work for designing and analyzing media capable of manipulating diffusive trajectories. Speciőcally,
-         spatially engineered diffusion tensors, coupled with an appropriate choice of stochastic interpreta-
-         tion, can give rise to the phenomenon of stochastic cloaking, in which certain regions of space are
-         effectively hidden from particles undergoing random diffusive motion. Stochastic cloaking thus rep-
-         resents a potential application of the principles of stochastic calculus introduced here to problems
-         involving the control of random transport processes. In this sense, our framework may provide
-         part of the mathematical foundation for the design of metamaterials capable of concealing regions
-         of space from diffusing particles. In [46], it is shown how the properties of the diffusion tensor,
-         together with the choice of stochastic interpretation, can be combined to controllably modify dif-
-         fusion in space. In particular, that work suggests that the choice of the Itô interpretation is key to
-         achieving this effect, despite the seemingly more natural character of the Fick law in that context.
-          Reference [46] provides yet another example, along with [4, 5, 9, 13, 16, 17, 18, 19], of the greater
-         ŕexibility of the Itô interpretation in a wide range of physical applications. In part, our present
-         workpoints in the same direction, but, simultaneously, highlights a speciőc structure of the diffusion
-                                  BENEATH THE KINETIC INTERPRETATION OF NOISE                     27
-             tensor that permits giving a precise meaning to the kinetic interpretation of noise. Perhaps that
-             interpretation is not as ŕexible as that of Itô, but the highlighted structure could be of relevance in
-             some physical problems.
-                                              Acknowledgements
-               This work has been partially supported by the Government of Spain (Ministerio de Ciencia,
-             Innovación y Universidades) and the European Union through Projects PID2024-158823NB-I00
-             and CPP2024-011557.
-                                                  References
-              [1] C. Ancey, P. Bohorquez, and J. Heyman. Stochastic interpretation of the advection-diffusion
-                 equation and its relevance to bed load transport. Journal of Geophysical Research: Earth Surface,
-                 120:2529ś2551, 2015.
-              [2] L. Bachelier. Théorie de la spéculation. Annales Scientiőques de l’École Normale Supérieure,
-                 3:21ś86, 1900.
-              [3] Rajendra Bhatia. Positive Deőnite Matrices. Princeton University Press, Princeton, 2009.
-              [4] A. Bhattacharyay. Generalization of Stokes-Einstein relation to coordinate dependent damping
-                 and diffusivity: an apparent conŕict. Journal of Physics A: Mathematical and Theoretical,
-                 53:075002, 2020.
-              [5] A. Bhattacharyay. Brownian motion near a wall: the dilemma of Itô or Stratonovich. Journal
-                 of Physics A: Mathematical and Theoretical, 58:213001, 2025.
-              [6] H. B. Callen and T. A. Welton. Irreversibility and generalized noise. Physical Review, 83:34ś40,
-                 1951.
-              [7] L. Chen, E. R. Jakobsen, and A. Naess. On numerical density approximations of solutions of
-                 SDEswith unbounded coefficients. Advances in Computational Mathematics, 44:693ś721, 2018.
-              [8] A. G. Cherstvy, A. V. Chechkin, and R. Metzler. Anomalous diffusion and ergodicity breaking
-                 in heterogeneous diffusion processes. New Journal of Physics, 15:083039, 2013.
-              [9] Á. Correales and C. Escudero. Itô vs Stratonovich in the presence of absorbing states. Journal
-                 of Mathematical Physics, 60:123301, 2019.
-             [10] S. Delong, F. Balboa Usabiaga, R. Delgado-Buscalioni, B. E. Griffith, and A. Donev. Brownian
-                 dynamics without Green’s functions. The Journal of Chemical Physics, 140:134110, 2014.
-             [11] S. Delong, B. E. Griffith, E. Vanden-Eijnden, and A. Donev. Temporal integrators for ŕuctu-
-                 ating hydrodynamics. Physical Review E, 87:033302, 2013.
-             [12] S. Delong, Y. Sun, B. E. Griffith, E. Vanden-Eijnden, and A. Donev. Multiscale temporal
-                 integrators for ŕuctuating hydrodynamics. Physical Review E, 90:063312, 2014.
-             [13] A. Dhawan and A. Bhattacharyay. Itô-distribution from Gibbs measure and a comparison with
-                 experiment. Physica A: Statistical Mechanics and its Applications, 637:129599, 2024.
-             [14] A. Einstein. Über die von der molekularkinetischen theorie der wärme geforderte bewegung von
-                 in ruhenden ŕüssigkeiten suspendierten teilchen. Annalen der Physik, 17:549ś560, 1905.
-             [15] K.-J. Engel and R. Nagel. One-Parameter Semigroups for Linear Evolution Equations.
-                 Springer-Verlag, New York, 2000.
-             [16] C. Escudero. Kinetic energy of the Langevin particle. Studies in Applied Mathematics, 145:719ś
-                 738, 2020.
-             [17] C. Escudero. Fluctuation-dissipation relation, Maxwell-Boltzmann statistics, equipartition the-
-                 orem, and stochastic calculus. Physica Scripta, 98:055214, 2023.
-             [18] C. Escudero and C. Manada. Itô versus Stratonovich in a stochastic cosmological model. Letters
-                 in Mathematical Physics, 112:12, 2022.
-             [19] C. Escudero and H. Rojas. Itô versus Hänggi-Klimontovich. arXiv preprint arXiv:2309.03654,
-                 2023.
-             [20] L. C. Evans. Partial Differential Equations. American Mathematical Society, Providence, 1998.
-             28                                C. ESCUDERO AND H. ROJAS
-             [21] L. C. Evans. An Introduction to Stochastic Differential Equations. American Mathematical
-                 Society, Providence, 2013.
-             [22] K. J. Falconer. One-sided multifractal analysis and points of non-differentiability of devil’s
-                 staircases. Mathematical Proceedings of the Cambridge Philosophical Society, 136:167ś174,
-                 2004.
-             [23] E. Fehlberg. Low-order classical Runge-Kutta formulas with stepsize control and their applica-
-                 tion to some heat transfer problems. Technical Report R-315, NASA, 1969.
-             [24] J. Fernández Sánchez, P. Viader, J. Paradís, and M. Díaz Carrillo. A singular function with a
-                 non-zero őnite derivative. Nonlinear Analysis: Theory, Methods & Applications, 75:5010ś5014,
-                 2012.
-             [25] A. Fick. Ueber diffusion. Annalen der Physik, 94:59ś86, 1855.
-             [26] M. Fixman. Simulation of polymer dynamics. I. General theory. The Journal of Chemical
-                 Physics, 69:1527ś1537, 1978.
-             [27] G. H. Golub and C. F. Van Loan. Matrix Computations. Johns Hopkins University Press,
-                 Baltimore, 2013.
-             [28] E. Hairer, S. P. Nùrsett, and G. Wanner. Solving Ordinary Differential Equations I: Nonstiff
-                 Problems. Springer-Verlag, Berlin, 1993.
-             [29] C. V. Henri and E. Diamantopoulos.       Unsaturated transport modeling:   Random-walk
-                 particle-tracking as a numerical-dispersion free and efficient alternative to Eulerian methods.
-                 J. Adv. Model. Earth Syst., 14:e2021MS002812, 2022.
-             [30] Roger A. Horn and Charles R. Johnson. Topics in Matrix Analysis. Cambridge University
-                 Press, Cambridge, 1994.
-             [31] M. Hütter and H. C. Öttinger. Fluctuation-dissipation theorem, kinetic stochastic integral and
-                 efficient simulations. Journal of the Chemical Society, Faraday Transactions, 94:1403ś1406,
-                 1998.
-             [32] K. Itô. Stochastic integral. Proceedings of the Imperial Academy, Tokyo, 20:519ś524, 1944.
-             [33] K. Itô. On a stochastic integral equation. Proceedings of the Imperial Academy, Tokyo, 22:32ś
-                 35, 1946.
-             [34] J.-H. Jeon, A. V. Chechkin, and R. Metzler. Scaled Brownian motion: a paradoxical process
-                 with a time dependent diffusivity for the description of anomalous diffusion. Phys. Chem. Chem.
-                 Phys., 16:15811ś15817, 2014.
-             [35] K. Kawamura. On the set of points where Lebesgue’s singular function has the derivative zero.
-                 Proc. Japan Acad., Ser. A, Math. Sci., 87:162ś166, 2011.
-             [36] R. Kubo. The ŕuctuation-dissipation theorem. Reports on Progress in Physics, 29:255ś284,
-                 1966.
-             [37] H. H. Kuo. Introduction to Stochastic Integration. Springer, New York, 2006.
-             [38] P. Mörters and Y. Peres. Brownian Motion. Cambridge University Press, Cambridge, 2010.
-             [39] T. Nordam, R. Kristiansen, R. Nepstad, E. van Sebille, and A. M. Booth.     A compari-
-                 son of Eulerian and Lagrangian methods for vertical particle transport in the water column.
-                 Geosci. Model Dev., 16:5339ś5363, 2023.
-             [40] B. Øksendal. Stochastic Differential Equations: An Introduction with Applications. Springer,
-                 Berlin, 2003.
-             [41] A. Pacheco-Pozo, I. M. Sokolov, R. Metzler, and D. Krapf. Heterogeneous diffusion in a
-                 harmonic potential: the role of the interpretation. New J. Phys., 27:064602, 2025.
-             [42] J. Paradís, P. Viader, and L. Bibiloni. The derivative of Minkowski’s ?(x) function. Journal of
-                 Mathematical Analysis and Applications, 253:107ś125, 2001.
-             [43] L. Perez, J. J. Hidalgo, and M. Dentz. Reactive random walk particle tracking and its equivalence
-                 with the advection-diffusion-reaction equation. Water Resources Research, 55:847ś855, 2019.
-             [44] G. Pérez-Illanes and D. Fernández-García. MODPATH-RW: A random walk particle tracking
-                 code for solute transport in heterogeneous aquifers. Groundwater, 62:617ś634, 2024.
-             [45] P. E. Protter. Stochastic Integration and Differential Equations. Springer-Verlag, Berlin, 2005.
-                                  BENEATH THE KINETIC INTERPRETATION OF NOISE                     29
-             [46] C. Roberts, Z. Zhang, H. Rojas, S. Bo, C. Escudero, S. Guenneau, and G. Pruessner. Stochastic
-                 cloaking: concealing a region from diffusive particles. Physical Review Research, 7:L032025,
-                 2025.
-             [47] D. Spivakovskaya, J. M. Redondo, and J. Chernich. Lagrangian modelling of multi-dimensional
-                 advection-diffusion with space-varying diffusivities: theory and idealized test cases. Ocean Dy-
-                 namics, 57:189ś203, 2007.
-             [48] R. L. Stratonovich. A new representation for stochastic integrals and equations. SIAM Journal
-                 on Control, 4:362ś371, 1966.
-             [49] D. W. Stroock and S. R. S. Varadhan. Multidimensional Diffusion Processes. Springer-Verlag,
-                 New York, 1979.
-             [50] S. Watanabe and T. Yamada. On the uniqueness of solutions of stochastic differential equations.
-                 Journal of Mathematics of Kyoto University, 11:155ś167, 1971.
-             [51] R. Zwanzig. Nonequilibrium Statistical Mechanics. Oxford University Press, New York, 2001.
-             Carlos Escudero
-             Departamento de Matemáticas Fundamentales
-             Universidad Nacional de Educación a Distancia
-             cescudero@mat.uned.es
-             Helder Rojas
-             Departamento de Matemáticas Fundamentales
-             Universidad Nacional de Educación a Distancia
-             hrojas36@alumno.uned.es

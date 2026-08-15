@@ -52,10 +52,10 @@ void Application::update(float frame_dt) {
         const auto& sensors = sensor_manager_.sensors();
         for (const auto& report : sensor_manager_.pending_reports()) {
             if (report.sensor_index < sensors.size()) {
-                const Vec2& pos = sensors[report.sensor_index].position;
-                const Vec2 wind = sim().wind_at_time(report.time_s, pos);
+                const auto& sensor = sensors[report.sensor_index];
+                const Vec2 wind = sim().wind_at_time(report.time_s, sensor.position);
                 data_recorder_.add_reading(
-                    report.sensor_index, pos, report.time_s,
+                    report.sensor_index, sensor.position, sensor.label, report.time_s,
                     report.noisy_concentration,
                     concentration_scale_ug_per_m2_, mixing_height_m_, wind);
             }

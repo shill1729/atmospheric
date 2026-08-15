@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <random>
+#include <string>
 #include <vector>
 
 namespace atm {
@@ -20,6 +21,7 @@ public:
 
     struct Sensor {
         Vec2 position = Vec2::Zero();
+        std::string label;
         float next_physical_sample_time_s = 0.0f;
         float next_report_time_s = 0.0f;
         float window_sum = 0.0f;
@@ -50,7 +52,7 @@ public:
         float noisy_concentration;
     };
 
-    void add_sensor(const Vec2& position, float current_time_s);
+    void add_sensor(const Vec2& position, float current_time_s, const std::string& label = "");
     void clear();
     void step(float current_time_s, const AdvectionDiffusionSolver& pde, const DomainConfig& domain);
     float sample_concentration(

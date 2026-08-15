@@ -417,7 +417,7 @@ void Application::draw_control_strip() {
 
     sf::Text control_text(
         font_,
-        "Toolbar: File | Source | Numerics | Sensors | Display | PDE | E estimate | L load NY sites | N NY preset | F1 help",
+        "Toolbar: File | Source | Numerics | Sensors | Display | PDE | E estimate | M cycle method | L load NY sites | N NY preset | F1 help",
         13);
     control_text.setPosition({34.0f, 230.0f});
     control_text.setFillColor(sf::Color(168, 192, 210));

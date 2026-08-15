@@ -90,10 +90,19 @@ void AdvectionDiffusionSolver::step(
             const float cym = c_at(i, j - 1);
             const float cyp = c_at(i, j + 1);
 
-            const Vec2 w = w_at(i, j);
-            const float dc_dx = w.x() >= 0.0f ? (c - cxm) / dx_ : (cxp - c) / dx_;
-            const float dc_dy = w.y() >= 0.0f ? (c - cym) / dy_ : (cyp - c) / dy_;
-            const float adv = -(w.x() * dc_dx + w.y() * dc_dy);
+            // Conservative first-order upwind discretization of -div(w c).
+            // This matters for the Fokker--Planck correspondence: the particle
+            // drift is w + div(D), so its density evolves with -div(w c), not
+            // merely -w.grad(c), whenever the configured wind has divergence.
+            const float ue = 0.5f * (w_at(i, j).x() + w_at(i + 1, j).x());
+            const float uw = 0.5f * (w_at(i - 1, j).x() + w_at(i, j).x());
+            const float vn = 0.5f * (w_at(i, j).y() + w_at(i, j + 1).y());
+            const float vs = 0.5f * (w_at(i, j - 1).y() + w_at(i, j).y());
+            const float flux_e = ue * (ue >= 0.0f ? c : cxp);
+            const float flux_w = uw * (uw >= 0.0f ? cxm : c);
+            const float flux_n = vn * (vn >= 0.0f ? c : cyp);
+            const float flux_s = vs * (vs >= 0.0f ? cym : c);
+            const float adv = -(flux_e - flux_w) / dx_ - (flux_n - flux_s) / dy_;
 
             float diff = 0.0f;
             if (diffusion_mode_ == DiffusionMode::ScalarizedTrace) {

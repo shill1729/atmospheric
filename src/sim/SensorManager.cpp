@@ -62,9 +62,10 @@ std::size_t SensorManager::history_capacity() const {
     return history_capacity_;
 }
 
-void SensorManager::add_sensor(const Vec2& position, float current_time_s) {
+void SensorManager::add_sensor(const Vec2& position, float current_time_s, const std::string& label) {
     Sensor sensor;
     sensor.position = position;
+    sensor.label = label.empty() ? ("Sensor_" + std::to_string(sensors_.size())) : label;
     sensor.next_physical_sample_time_s = current_time_s + physical_sample_period_s_;
     sensor.next_report_time_s = current_time_s + sample_period_s_;
     sensor.window_sum = 0.0f;

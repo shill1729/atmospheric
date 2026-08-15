@@ -127,8 +127,10 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
                     cfg.domain.y_min + static_cast<float>(j) * out.dy);
                 const Vec2 w = wind_fn(t, p);
 
-                const float dphi_dx = w.x() >= 0.0f ? (c - cxm) / out.dx : (cxp - c) / out.dx;
-                const float dphi_dy = w.y() >= 0.0f ? (c - cym) / out.dy : (cyp - c) / out.dy;
+                // In reverse-time tau = T-t the adjoint advection equation is
+                // phi_tau + (-w).grad(phi) = ..., so upwind against -w.
+                const float dphi_dx = w.x() >= 0.0f ? (cxp - c) / out.dx : (c - cxm) / out.dx;
+                const float dphi_dy = w.y() >= 0.0f ? (cyp - c) / out.dy : (c - cym) / out.dy;
                 const float adv = w.x() * dphi_dx + w.y() * dphi_dy;
 
                 auto c_at = [&](int ii, int jj) { return sample_clamped(phi, ii, jj, out.nx, out.ny); };
