@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adjoint/SourceEstimator.hpp"
 #include "core/Types.hpp"
 
 #include <ctime>
@@ -70,7 +71,8 @@ public:
         const std::string& pde_mode,
         float dt,
         float time_scale,
-        float sensor_sample_period_s) const;
+        float sensor_sample_period_s,
+        const std::vector<SourceEstimateResult>& estimation_results = {}) const;
 
     void set_geo_projection(const GeoProjection& p);
     void clear_geo_projection();

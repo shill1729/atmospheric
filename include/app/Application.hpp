@@ -23,6 +23,13 @@ enum class MassDisplayUnit {
     MicrogramsPerSquareMeter = 1
 };
 
+struct EstimateButtonLayout {
+    sf::FloatRect card;
+    sf::FloatRect run_button;
+    sf::FloatRect prev_button;
+    sf::FloatRect next_button;
+};
+
 class Application {
 public:
     explicit Application(const Config& config);
@@ -38,6 +45,7 @@ private:
     void draw_adjoint_overlay();
     void draw_sensor_overlay();
     void draw_hud_cards();
+    EstimateButtonLayout estimate_button_layout() const;
     void draw_control_strip();
     void draw_menu_overlay();
     void draw_help_overlay();

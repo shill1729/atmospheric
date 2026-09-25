@@ -178,12 +178,29 @@ void Application::process_events() {
                             std::string(sim().pde_diffusion_mode_name()),
                             sim().config().numerics.dt,
                             sim().time_scale(),
-                            sensor_manager_.sample_period());
+                            sensor_manager_.sample_period(),
+                            estimation_results_);
                         recording_status_ = path.empty() ? "Export failed (IO error)." : "Saved: " + path;
                     }
                 }
                 if (toolbar_click.consumed) {
                     sync_ecs_ui_state();
+                    continue;
+                }
+
+                const sf::Vector2f click_pos(
+                    static_cast<float>(click->position.x), static_cast<float>(click->position.y));
+                const EstimateButtonLayout est = estimate_button_layout();
+                if (est.run_button.contains(click_pos)) {
+                    run_source_estimation();
+                    continue;
+                }
+                if (est.prev_button.contains(click_pos)) {
+                    cycle_estimation_method(-1);
+                    continue;
+                }
+                if (est.next_button.contains(click_pos)) {
+                    cycle_estimation_method(1);
                     continue;
                 }
             }

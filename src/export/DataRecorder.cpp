@@ -114,7 +114,8 @@ std::string DataRecorder::export_csv(
     const std::string& pde_mode,
     float dt,
     float time_scale,
-    float sensor_sample_period_s) const
+    float sensor_sample_period_s,
+    const std::vector<SourceEstimateResult>& estimation_results) const
 {
     const auto now = std::chrono::system_clock::now();
     const std::time_t t_now = std::chrono::system_clock::to_time_t(now);
@@ -212,6 +213,31 @@ std::string DataRecorder::export_csv(
         out << " born=" << se.birth_time_s << "s"
             << " lifespan=" << se.lifespan_s << "s"
             << " died=" << se.death_time_s << "s\n";
+    }
+
+    out << "# Source term estimates (from the last 'E' run before export): " << estimation_results.size() << "\n";
+    for (std::size_t i = 0; i < estimation_results.size(); ++i) {
+        const auto& r = estimation_results[i];
+        out << "# Estimate " << (i + 1) << " (" << source_estimation_method_name(r.method) << "): ";
+        if (!r.success || r.insufficient_signal) {
+            out << "no result - " << r.message << "\n";
+            continue;
+        }
+        if (has_geo_projection_) {
+            float slat, slon;
+            domain_to_latlon(r.x_star.x(), r.x_star.y(), slat, slon);
+            out << "lat*=" << slat << " lon*=" << slon;
+        } else {
+            out << "x*=" << r.x_star.x() << " y*=" << r.x_star.y();
+        }
+        out << " t*=" << r.t_star_s << "s";
+        if (r.method != SourceEstimationMethod::AdjointBacktracking) {
+            out << " q0=" << r.q0 << " q0_std=" << r.q0_std << " x_std_m=" << r.x_std_m << " y_std_m=" << r.y_std_m
+                << " t_std_s=" << r.t_std_s << " weighted_rmse=" << r.weighted_rmse
+                << " weakly_identified=" << (r.weakly_identified ? "true" : "false")
+                << " sensors_used=" << r.sensors_used << " observations_used=" << r.observations_used;
+        }
+        out << "\n";
     }
 
     if (has_geo_projection_) {

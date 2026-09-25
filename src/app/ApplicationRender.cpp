@@ -345,6 +345,24 @@ void Application::draw_wind_field() {
     window_.draw(arrows);
 }
 
+EstimateButtonLayout Application::estimate_button_layout() const {
+    const float top = 38.0f;
+    const float left = 24.0f;
+    const float gap = 12.0f;
+    const float card_w = 250.0f;
+    const float card_h = 180.0f;
+
+    EstimateButtonLayout layout;
+    layout.card = sf::FloatRect({left + 2.0f * (card_w + gap), top}, {card_w + 30.0f, card_h});
+    layout.prev_button
+        = sf::FloatRect({layout.card.position.x + 10.0f, layout.card.position.y + 52.0f}, {36.0f, 26.0f});
+    layout.next_button
+        = sf::FloatRect({layout.card.position.x + layout.card.size.x - 46.0f, layout.card.position.y + 52.0f}, {36.0f, 26.0f});
+    layout.run_button = sf::FloatRect(
+        {layout.card.position.x + 10.0f, layout.card.position.y + 86.0f}, {layout.card.size.x - 20.0f, 38.0f});
+    return layout;
+}
+
 void Application::draw_hud_cards() {
     const auto& source = sim().source();
     const auto& particles = sim().particles();
@@ -405,6 +423,78 @@ void Application::draw_hud_cards() {
     const float card_h = 180.0f;
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
+
+    // --- Estimate card: a first-class button, not just a File-menu entry
+    // or a keyboard shortcut, since running a source estimate is the whole
+    // point of placing sensors.
+    const EstimateButtonLayout est = estimate_button_layout();
+    {
+        sf::RectangleShape card({est.card.size.x, est.card.size.y});
+        card.setPosition(est.card.position);
+        card.setFillColor(sf::Color(12, 18, 28, 190));
+        card.setOutlineThickness(1.0f);
+        card.setOutlineColor(sf::Color(72, 112, 150, 190));
+        window_.draw(card);
+
+        sf::Text title(font_, "Estimate", 14);
+        title.setPosition({est.card.position.x + 10.0f, est.card.position.y + 8.0f});
+        title.setFillColor(sf::Color(186, 220, 238));
+        window_.draw(title);
+
+        const bool has_methods = !estimation_results_.empty();
+        std::ostringstream method_line;
+        if (has_methods) {
+            const auto& r = estimation_results_[static_cast<std::size_t>(selected_estimation_method_)];
+            method_line << "[" << (selected_estimation_method_ + 1) << "/" << estimation_results_.size() << "] "
+                        << source_estimation_method_name(r.method);
+        } else {
+            method_line << "No estimate run yet";
+        }
+        sf::Text method_text(font_, method_line.str(), 12);
+        method_text.setPosition({est.card.position.x + 10.0f, est.card.position.y + 30.0f});
+        method_text.setFillColor(sf::Color(216, 228, 238));
+        window_.draw(method_text);
+
+        auto draw_button = [&](const sf::FloatRect& rect, const std::string& text, bool emphasized) {
+            sf::RectangleShape b(rect.size);
+            b.setPosition(rect.position);
+            b.setFillColor(emphasized ? sf::Color(52, 116, 78, 245) : sf::Color(52, 76, 102, 240));
+            b.setOutlineThickness(1.0f);
+            b.setOutlineColor(emphasized ? sf::Color(108, 170, 126, 235) : sf::Color(112, 148, 184, 235));
+            window_.draw(b);
+
+            sf::Text label(font_, text, 13);
+            const auto bounds = label.getLocalBounds();
+            label.setPosition(
+                {rect.position.x + 0.5f * (rect.size.x - bounds.size.x) - bounds.position.x,
+                    rect.position.y + 0.5f * (rect.size.y - bounds.size.y) - bounds.position.y});
+            label.setFillColor(sf::Color(230, 241, 252));
+            window_.draw(label);
+        };
+
+        draw_button(est.prev_button, "<", false);
+        draw_button(est.next_button, ">", false);
+        draw_button(est.run_button, sim().paused() ? "RUN ESTIMATE (E)" : "PAUSE FIRST", sim().paused());
+
+        std::ostringstream result_line;
+        if (has_methods) {
+            const auto& r = estimation_results_[static_cast<std::size_t>(selected_estimation_method_)];
+            if (r.success && !r.insufficient_signal) {
+                result_line << std::fixed << std::setprecision(0) << "x*=(" << r.x_star.x() << ", " << r.x_star.y()
+                            << ")\nt*=" << r.t_star_s << " s";
+                if (r.method != SourceEstimationMethod::AdjointBacktracking) {
+                    result_line << std::setprecision(2) << "  q0=" << r.q0;
+                }
+            } else {
+                result_line << r.message;
+            }
+        }
+        sf::Text result_text(font_, result_line.str(), 12);
+        result_text.setPosition({est.card.position.x + 10.0f, est.card.position.y + 132.0f});
+        result_text.setLineSpacing(0.95f);
+        result_text.setFillColor(sf::Color(216, 228, 238));
+        window_.draw(result_text);
+    }
 }
 
 void Application::draw_control_strip() {
