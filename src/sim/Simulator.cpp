@@ -144,6 +144,14 @@ std::size_t Simulator::trail_length() const {
     return particles_.trail_length();
 }
 
+void Simulator::set_wind_scale(float scale) {
+    fields_.set_wind_scale(scale);
+}
+
+float Simulator::wind_scale() const {
+    return fields_.wind_scale();
+}
+
 void Simulator::cycle_wind_model(int direction) {
     fields_.cycle_wind_preset(direction);
 }

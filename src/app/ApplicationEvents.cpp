@@ -179,6 +179,7 @@ void Application::process_events() {
                             sim().config().numerics.dt,
                             sim().time_scale(),
                             sensor_manager_.sample_period(),
+                            sim().wind_scale(),
                             estimation_results_);
                         recording_status_ = path.empty() ? "Export failed (IO error)." : "Saved: " + path;
                     }

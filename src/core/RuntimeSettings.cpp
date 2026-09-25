@@ -8,6 +8,7 @@ RuntimeSettings make_runtime_settings(const Config& config, AdvectionDiffusionSo
     out.max_particles = static_cast<int>(config.numerics.max_particles);
     out.deposition_rate = config.physics.deposition_rate;
     out.constant_scalar_diffusivity = config.physics.constant_scalar_diffusivity;
+    out.wind_scale = config.physics.wind_scale;
     out.source_base_emission = config.source.base_emission;
     out.source_decay_rate = config.source.decay_rate;
     out.source_lifespan = config.source.lifespan;
@@ -27,6 +28,7 @@ RuntimeSettings make_runtime_settings(const Config& config, AdvectionDiffusionSo
 bool same_runtime_settings(const RuntimeSettings& a, const RuntimeSettings& b) {
     return a.time_scale == b.time_scale && a.max_particles == b.max_particles
         && a.deposition_rate == b.deposition_rate && a.constant_scalar_diffusivity == b.constant_scalar_diffusivity
+        && a.wind_scale == b.wind_scale
         && a.source_base_emission == b.source_base_emission
         && a.source_decay_rate == b.source_decay_rate && a.source_lifespan == b.source_lifespan
         && a.source_sigma == b.source_sigma && a.source_max_sources == b.source_max_sources

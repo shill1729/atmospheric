@@ -34,6 +34,8 @@ public:
     Vec2 div_diffusivity(float time_s, const Vec2& x) const;
     float scalar_diffusivity(float time_s, const Vec2& x) const;
     Vec2 grad_scalar_diffusivity(float time_s, const Vec2& x) const;
+    void set_wind_scale(float scale);
+    float wind_scale() const;
     void cycle_wind_preset(int direction);
     WindPreset wind_preset() const;
     void set_wind_preset(WindPreset preset);
@@ -44,6 +46,7 @@ public:
     std::string_view diffusivity_preset_name() const;
 
 private:
+    Vec2 preset_wind(float time_s, const Vec2& x) const;
     Vec2 wind_jet_shear(float time_s, const Vec2& x) const;
     Vec2 wind_vortex_pair(float time_s, const Vec2& x) const;
     Vec2 wind_shear_vortex_blend(float time_s, const Vec2& x) const;
@@ -53,6 +56,7 @@ private:
 
     const DomainConfig& domain_;
     float constant_scalar_diffusivity_ = 22.0f;
+    float wind_scale_ = 1.0f;
     WindPreset wind_preset_ = WindPreset::JetShear;
     DiffusivityPreset diffusivity_preset_ = DiffusivityPreset::ConstantScalar;
 };

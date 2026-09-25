@@ -11,7 +11,7 @@ The two models share the same wind field, diffusivity model, source emission sch
 - Click-to-add continuous sources with finite lifetime and exponential decay (multi-source, capped by `--source-max`)
 - SDE particle transport with drift, matrix diffusion, deposition/killing, and trails
 - PDE concentration transport with source and deposition, in either scalarized or full-tensor diffusion mode
-- 7 wind presets and 6 diffusivity presets (scalar and SPD tensor), cycled at runtime; see [Wind and diffusivity models](#wind-and-diffusivity-models)
+- 7 wind presets and 6 diffusivity presets (scalar and SPD tensor), cycled at runtime, plus a global wind scale factor; see [Wind and diffusivity models](#wind-and-diffusivity-models)
 - Brownian/heat-equation special case (zero wind, $D=\tfrac12 I$) for checking the SDE against the PDE
 - Shared runtime boundary mode: periodic, reflecting, or absorbing
 - HUD with the SDE-to-PDE total mass ratio $M_{\text{sde}}/M_{\text{pde}}$ as a consistency check
@@ -64,7 +64,7 @@ $$
 
 where $\mu = w+\nabla\cdot D$, $LL^\top = D$ (Cholesky, with an eigen-decomposition fallback), and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle. $\nabla\cdot D$ is evaluated by central differences.
 
-Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot\texttt{particle\_scale}\cdot\Delta t$ particles in expectation (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=0.02$ births particles almost at a point, so the SDE cloud starts narrower than the PDE's Gaussian source; $f=1$ samples births from exactly $s(t,x)$. Each particle carries mass $1/\texttt{particle\_scale}$, which is how the HUD compares SDE and PDE total mass.
+Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot\texttt{particle\_scale}\cdot\Delta t$ particles in expectation (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from exactly $s(t,x)$. That is the particle representation of the same source term the PDE uses: by Duhamel's principle the PDE solution is a superposition of transition densities started at birth points drawn from $s$. A value below 1 (the original code used 0.02) makes the SDE solve the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/\texttt{particle\_scale}$, which is how the HUD compares SDE and PDE total mass.
 
 Deposition is simulated with Bernoulli survival over each step (hazard $\lambda$): remove particle with probability
 
@@ -165,6 +165,8 @@ Estimation therefore refuses ("Insufficient signal") once no report in the obser
 ## Wind and diffusivity models
 
 Wind presets (`W` cycles them in this order; default Jet Shear). Magnitudes are calibrated to the real wind-speed distribution (median ≈ 1.9 m/s, p90 ≈ 4.4 m/s); see [Calibration](#calibration).
+
+Every preset is multiplied by a global **wind scale** (`--wind-scale`, **Numerics → Wind Scale**; default 1, which keeps the calibration). It changes the physics, not just playback: the advection/diffusion balance (Péclet number) shifts, and the stable `dt` shrinks roughly as 1/scale. Changes apply live, without resetting the simulation. The estimators use the same scaled wind, the HUD shows it next to the wind model, and exports record it as `# Wind scale:`.
 
 | Preset | Description |
 |---|---|
@@ -311,6 +313,7 @@ Run from the repository root: the font (`fonts/arial.ttf`) and the NY dataset (`
 --time-scale X
 --max-particles N
 --deposition X
+--wind-scale X
 --source-emission X
 --source-decay X
 --source-lifespan X
@@ -327,7 +330,7 @@ Defaults live in `include/core/Config.hpp`. The combined configuration is valida
 
 ### Speeding up simulations
 
-One fixed step costs roughly 2–3 ms on the default $200\times200$ grid, whatever $\Delta t$ is. At most about four steps fit in each frame's 12 ms budget, so the achieved speed is roughly $200\times\Delta t$ simulated seconds per wall second. At the default `--dt 0.01` that is only ~2–3×, whatever time scale you request. The requested time scale (`[`/`]`, **Numerics → Time Scale**, up to 100,000) only helps once the achieved speed shown on the HUD keeps up with it.
+One fixed step costs roughly 2–3 ms on the default $200\times200$ grid, whatever $\Delta t$ is. At most about four steps fit in each frame's 12 ms budget, so the achieved speed is roughly $200\times\Delta t$ simulated seconds per wall second. At the default `--dt 0.01` that is only ~2–3×, whatever time scale you request. The time scale is the *requested* playback speed (simulated seconds per wall second; `[`/`]` change it immediately, **Numerics → Time Scale** after **File → Apply Queued Changes**, up to 100,000). The simulation delivers $\min(\text{requested}, \sim 200\,\Delta t)$. At `dt 0.01` any time scale above ~3 therefore looks the same, and the HUD's `speed: xR (actual xA)` shows the gap. Once `dt` is large enough, the time scale is what sets the pace.
 
 The main lever is therefore **`dt`** (`--dt` or **PDE → dt**). The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind/diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) or `--dt 2` (~400×) is stable, and even the 49 h faithful-event run takes minutes rather than hours. Keep `dt` at most the sensor physical sample period if you want every physical sample to see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
 
@@ -404,15 +407,15 @@ Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
   - `Export CSV`: write captured sensor time series to a CSV file in the current working directory
 - Editable fields:
   - `Source`: Base Emission, Decay Rate, Lifespan (s), Sigma, Max Sources
-  - `Numerics`: Time Scale, Max Particles, Deposition, Const Diffusivity
+  - `Numerics`: Time Scale, Max Particles, Deposition, Const Diffusivity, Wind Scale
   - `Sensors`: Sample Period (s), Noise Std, History Capacity
   - `Display`: PDE Fixed Color Scale
   - `PDE`: Grid Nx, Grid Ny, dt, Diffusion Mode
 - Edits are queued ("Queued changes pending" appears in the toolbar) and applied from `File`.
   - Changing grid size, dt, max particles, deposition, constant diffusivity, or any `Source` field **recreates the simulator**: particles, concentration, sensors, and estimates are cleared.
-  - Time scale, color scale, sensor settings, and PDE diffusion mode apply in place.
+  - Time scale, wind scale, color scale, sensor settings, and PDE diffusion mode apply in place.
 - Numeric edit UX in top menus:
-  - `-` / `+` buttons for stepped adjustments. Time Scale, Noise Std and PDE Fixed Color Scale step proportionally (×1.25 / ÷1.25) and display in scientific notation, since they span decades.
+  - `-` / `+` buttons for stepped adjustments. Time Scale, Wind Scale, Noise Std and PDE Fixed Color Scale step proportionally (×1.25 / ÷1.25) and display in scientific notation, since they span decades.
   - click value field to type
   - `Enter` commit, `Backspace` delete, `Esc` cancel
 
@@ -485,7 +488,7 @@ Regenerate the report after either dataset changes (with a virtualenv at `.venv`
 
 Several defaults were set from this report's output, and each has a comment citing the real-data quantity it matches:
 - in `include/core/Config.hpp`: `mixing_height_m`, `concentration_scale_ug_per_m2`, `source.sigma`, `app.sensor_noise_std`
-- in `src/science/Fields.cpp`: the wind preset magnitudes
+- in `src/science/Fields.cpp`: the wind preset magnitudes (at wind scale 1)
 
 The "Faithful NY wildfire event export" example above uses the report's `faithful_source_decay_rate_per_s`/`faithful_source_lifespan_s` recommendations.
 
@@ -525,6 +528,7 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 ```
 # Atmospheric Tool - Forward Simulation Export
 # Wind model: Jet Shear
+# Wind scale: 1.000000
 # Diffusion model: Constant Scalar
 # PDE diffusion mode: Full Tensor Flux
 # dt (s): 0.010000

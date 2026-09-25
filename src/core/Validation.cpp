@@ -45,6 +45,9 @@ std::vector<std::string> validate_config(const Config& config) {
     if (!is_finite_non_negative(config.physics.deposition_rate)) {
         errors.emplace_back("deposition rate must be a finite number >= 0");
     }
+    if (!is_finite_non_negative(config.physics.wind_scale)) {
+        errors.emplace_back("wind scale must be a finite number >= 0");
+    }
     if (!is_finite_positive(config.physics.constant_scalar_diffusivity)) {
         errors.emplace_back("constant scalar diffusivity must be a finite number > 0");
     }

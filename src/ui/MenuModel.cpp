@@ -7,6 +7,7 @@ namespace atm {
 namespace {
 constexpr int kMaxParticles = 10000000;
 constexpr float kLogStepFactor = 1.25f;
+constexpr float kMaxWindScale = 100.0f;
 
 // Multiplies a positive quantity by kLogStepFactor^direction, so +/- steps
 // stay proportionate whether the value is 1e-6 or 1e3. A zero value steps
@@ -98,6 +99,10 @@ void MenuModel::step_pde_fixed_color_scale(int direction) {
 
 void MenuModel::step_time_scale(int direction) {
     pending_.time_scale = std::clamp(log_step(pending_.time_scale, direction, kMinTimeScale), kMinTimeScale, kMaxTimeScale);
+}
+
+void MenuModel::step_wind_scale(int direction) {
+    pending_.wind_scale = std::clamp(log_step(pending_.wind_scale, direction, 0.05f), 0.0f, kMaxWindScale);
 }
 
 void MenuModel::step_sensor_noise_std(int direction) {
@@ -206,6 +211,9 @@ bool MenuModel::commit_edit() {
             break;
         case EditableField::ConstantScalarDiffusivity:
             pending_.constant_scalar_diffusivity = clampf(std::stof(edit_buffer_), 0.001f, 5000.0f);
+            break;
+        case EditableField::WindScale:
+            pending_.wind_scale = clampf(std::stof(edit_buffer_), 0.0f, kMaxWindScale);
             break;
         case EditableField::SourceBaseEmission:
             pending_.source_base_emission = clampf(std::stof(edit_buffer_), 0.0f, 100.0f);

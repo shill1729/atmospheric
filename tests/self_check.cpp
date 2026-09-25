@@ -274,6 +274,27 @@ int main() {
             std::cerr << "SDE burst emission produced too few particles for a stable variance check\n";
             ++failures;
         } else {
+            // Births are spread N(0, (particle_spread_fraction * sigma)^2), so
+            // measure variance growth from the post-emission variance rather
+            // than assuming a point release.
+            auto variance_xy = [&]() {
+                double mx = 0.0, my = 0.0;
+                for (const auto& p : particles.particles()) {
+                    mx += p.x();
+                    my += p.y();
+                }
+                const double n = static_cast<double>(particles.particles().size());
+                mx /= n;
+                my /= n;
+                double vx = 0.0, vy = 0.0;
+                for (const auto& p : particles.particles()) {
+                    vx += (p.x() - mx) * (p.x() - mx);
+                    vy += (p.y() - my) * (p.y() - my);
+                }
+                return std::make_pair(vx / n, vy / n);
+            };
+            const auto [vx0, vy0] = variance_xy();
+
             const float dt = 2.0f;
             const int steps = 50;
             float t = 0.0f;
@@ -281,23 +302,9 @@ int main() {
                 particles.step(t, dt, fields, 0.0f);
                 t += dt;
             }
-
-            double mx = 0.0, my = 0.0;
-            for (const auto& p : particles.particles()) {
-                mx += p.x();
-                my += p.y();
-            }
-            const double n = static_cast<double>(particles.particles().size());
-            mx /= n;
-            my /= n;
-
-            double vx = 0.0, vy = 0.0;
-            for (const auto& p : particles.particles()) {
-                vx += (p.x() - mx) * (p.x() - mx);
-                vy += (p.y() - my) * (p.y() - my);
-            }
-            vx /= n;
-            vy /= n;
+            const auto [vx1, vy1] = variance_xy();
+            const double vx = vx1 - vx0;
+            const double vy = vy1 - vy0;
 
             const float expected = 2.0f * kKappa;
             const float rate_x = static_cast<float>(vx) / t;

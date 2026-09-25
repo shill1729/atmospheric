@@ -64,7 +64,7 @@ sf::FloatRect menu_panel_rect(MenuModel::TopMenu menu) {
     case MenuModel::TopMenu::Source:
         return sf::FloatRect({x, y}, {430.0f, 214.0f});
     case MenuModel::TopMenu::Numerics:
-        return sf::FloatRect({x, y}, {430.0f, 184.0f});
+        return sf::FloatRect({x, y}, {430.0f, 214.0f});
     case MenuModel::TopMenu::Sensors:
         return sf::FloatRect({x, y}, {430.0f, 154.0f});
     case MenuModel::TopMenu::Display:
@@ -133,6 +133,8 @@ std::string editable_field_string(const RuntimeSettings& pending, MenuModel::Edi
         return format_fixed(pending.deposition_rate, 4);
     case MenuModel::EditableField::ConstantScalarDiffusivity:
         return format_fixed(pending.constant_scalar_diffusivity, 3);
+    case MenuModel::EditableField::WindScale:
+        return format_fixed(pending.wind_scale, 3);
     case MenuModel::EditableField::SourceBaseEmission:
         return format_fixed(pending.source_base_emission, 3);
     case MenuModel::EditableField::SourceDecayRate:
@@ -255,6 +257,9 @@ void adjust_field(MenuModel& menu_model, MenuModel::EditableField field, int dir
         break;
     case MenuModel::EditableField::ConstantScalarDiffusivity:
         menu_model.adjust_constant_scalar_diffusivity(direction * 1.0f);
+        break;
+    case MenuModel::EditableField::WindScale:
+        menu_model.step_wind_scale(direction);
         break;
     case MenuModel::EditableField::SourceBaseEmission:
         menu_model.adjust_source_base_emission(direction * 0.05f);
@@ -439,6 +444,11 @@ void TopToolbar::draw_active_menu(sf::RenderWindow& window, const sf::Font& font
                                                                                                    MenuModel::EditableField::
                                                                                                        ConstantScalarDiffusivity),
             "-", "+", editing && active_field == MenuModel::EditableField::ConstantScalarDiffusivity);
+        draw_setting_row(
+            window, font, panel, 4, "Wind Scale", editing && active_field == MenuModel::EditableField::WindScale
+                ? menu_model.edit_buffer() + "_"
+                : display_field_string(pending, MenuModel::EditableField::WindScale),
+            "-", "+", editing && active_field == MenuModel::EditableField::WindScale);
         return;
     }
 
@@ -599,7 +609,8 @@ TopToolbarClickResult TopToolbar::handle_click(
         if (handle_setting_row_click(p, panel, 0, MenuModel::EditableField::TimeScale, menu_model)
             || handle_setting_row_click(p, panel, 1, MenuModel::EditableField::MaxParticles, menu_model)
             || handle_setting_row_click(p, panel, 2, MenuModel::EditableField::DepositionRate, menu_model)
-            || handle_setting_row_click(p, panel, 3, MenuModel::EditableField::ConstantScalarDiffusivity, menu_model)) {
+            || handle_setting_row_click(p, panel, 3, MenuModel::EditableField::ConstantScalarDiffusivity, menu_model)
+            || handle_setting_row_click(p, panel, 4, MenuModel::EditableField::WindScale, menu_model)) {
             out.consumed = true;
             return out;
         }

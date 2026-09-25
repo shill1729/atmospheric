@@ -72,6 +72,7 @@ public:
         float dt,
         float time_scale,
         float sensor_sample_period_s,
+        float wind_scale,
         const std::vector<SourceEstimateResult>& estimation_results = {}) const;
 
     void set_geo_projection(const GeoProjection& p);

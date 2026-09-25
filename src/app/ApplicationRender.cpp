@@ -397,7 +397,7 @@ void Application::draw_hud_cards() {
            << "\ndt: " << std::setprecision(3) << sim().config().numerics.dt << " s (stable <~"
            << std::setprecision(2) << sim().pde().max_stable_dt() << " s)" << std::setprecision(2)
            << "\nstate: " << (sim().paused() ? "paused" : "running")
-           << "\nwind: " << sim().wind_model_name()
+           << "\nwind: " << sim().wind_model_name() << " x" << sim().wind_scale()
            << "\ndiff: " << sim().diffusion_model_name()
            << "\nPDE diff: " << sim().pde_diffusion_mode_name()
            << "\nBC: " << boundary_mode_label(sim().boundary_mode())

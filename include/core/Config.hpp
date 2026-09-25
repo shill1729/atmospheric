@@ -37,13 +37,19 @@ struct SourceConfig {
     // Gaussian s(t,x) the PDE injects; the original 0.02 births particles
     // almost at a point (a visually tight plume origin), so the SDE cloud
     // starts narrower than the PDE plume.
-    float particle_spread_fraction = 0.02f;
+    // Was originally 0.02
+    float particle_spread_fraction = 1.0f;
     float particle_scale = 5.0f;
     int max_sources = 10;
 };
 struct PhysicsConfig {
     float deposition_rate = 0.01f;
     float constant_scalar_diffusivity = 6.0f;
+    // Multiplies every wind preset. 1.0 keeps the magnitudes calibrated to
+    // the real wind-speed distribution (see calibration_report.md); other
+    // values change the advection/diffusion balance (Peclet number), and the
+    // explicit stability limit on dt shrinks roughly as 1/wind_scale.
+    float wind_scale = 1.0f;
 };
 struct NumericsConfig {
     float dt = 0.01f;

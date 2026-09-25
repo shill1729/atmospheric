@@ -25,6 +25,7 @@ void print_help(const char* exe) {
         << "  --time-scale X            Simulated seconds per wall-second\n"
         << "  --max-particles N         Maximum SDE particles\n"
         << "  --deposition X            Deposition/killing rate lambda\n"
+        << "  --wind-scale X            Multiplier on every wind preset (default 1)\n"
         << "  --source-emission X       Initial source emission rate\n"
         << "  --source-decay X          Source emission decay rate\n"
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
@@ -134,6 +135,10 @@ int main(int argc, char** argv) {
             }
             if (arg == "--deposition") {
                 config.physics.deposition_rate = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--wind-scale") {
+                config.physics.wind_scale = parse_float(need_value(arg), arg);
                 continue;
             }
             if (arg == "--source-emission") {

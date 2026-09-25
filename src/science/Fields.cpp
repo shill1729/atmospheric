@@ -66,10 +66,23 @@ Mat2 tensor_full_anisotropic_spd(const DomainConfig& d, float time_s, const Vec2
 
 Fields::Fields(const DomainConfig& domain, const PhysicsConfig& physics)
     : domain_(domain)
-    , constant_scalar_diffusivity_(std::max(1.0e-6f, physics.constant_scalar_diffusivity)) {
+    , constant_scalar_diffusivity_(std::max(1.0e-6f, physics.constant_scalar_diffusivity))
+    , wind_scale_(std::max(0.0f, physics.wind_scale)) {
+}
+
+void Fields::set_wind_scale(float scale) {
+    wind_scale_ = std::max(0.0f, scale);
+}
+
+float Fields::wind_scale() const {
+    return wind_scale_;
 }
 
 Vec2 Fields::wind(float time_s, const Vec2& x) const {
+    return wind_scale_ * preset_wind(time_s, x);
+}
+
+Vec2 Fields::preset_wind(float time_s, const Vec2& x) const {
     switch (wind_preset_) {
     case WindPreset::JetShear:
         return wind_jet_shear(time_s, x);

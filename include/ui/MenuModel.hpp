@@ -24,6 +24,7 @@ public:
         MaxParticles,
         DepositionRate,
         ConstantScalarDiffusivity,
+        WindScale,
         SourceBaseEmission,
         SourceDecayRate,
         SourceLifespan,
@@ -66,6 +67,7 @@ public:
     void step_time_scale(int direction);
     void step_pde_fixed_color_scale(int direction);
     void step_sensor_noise_std(int direction);
+    void step_wind_scale(int direction);
 
     void adjust_pde_grid_nx(int delta);
     void adjust_pde_grid_ny(int delta);

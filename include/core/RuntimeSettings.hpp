@@ -9,6 +9,7 @@ struct RuntimeSettings {
     float time_scale = 0.0f;
     float deposition_rate = 0.0f;
     float constant_scalar_diffusivity = 0.0f;
+    float wind_scale = 1.0f;
     float source_base_emission = 0.0f;
     float source_decay_rate = 0.0f;
     float source_lifespan = 0.0f;

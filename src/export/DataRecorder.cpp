@@ -115,6 +115,7 @@ std::string DataRecorder::export_csv(
     float dt,
     float time_scale,
     float sensor_sample_period_s,
+    float wind_scale,
     const std::vector<SourceEstimateResult>& estimation_results) const
 {
     const auto now = std::chrono::system_clock::now();
@@ -188,6 +189,7 @@ std::string DataRecorder::export_csv(
     out << std::fixed << std::setprecision(6);
     out << "# Atmospheric Tool - Forward Simulation Export\n"
         << "# Wind model: " << wind_model << "\n"
+        << "# Wind scale: " << wind_scale << "\n"
         << "# Diffusion model: " << diffusion_model << "\n"
         << "# PDE diffusion mode: " << pde_mode << "\n"
         << "# dt (s): " << dt << "\n"

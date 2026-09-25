@@ -40,6 +40,8 @@ public:
     float achieved_time_scale() const;
     void adjust_trail_length(int delta);
     std::size_t trail_length() const;
+    void set_wind_scale(float scale);
+    float wind_scale() const;
     void cycle_wind_model(int direction);
     Fields::WindPreset wind_preset() const;
     std::string_view wind_model_name() const;
