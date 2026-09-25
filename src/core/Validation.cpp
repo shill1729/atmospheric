@@ -38,6 +38,9 @@ std::vector<std::string> validate_config(const Config& config) {
     if (config.numerics.max_substeps_per_frame < 1) {
         errors.emplace_back("max_substeps_per_frame must be >= 1");
     }
+    if (!is_finite_non_negative(config.numerics.frame_step_budget_ms)) {
+        errors.emplace_back("frame_step_budget_ms must be a finite number >= 0");
+    }
 
     if (!is_finite_non_negative(config.physics.deposition_rate)) {
         errors.emplace_back("deposition rate must be a finite number >= 0");

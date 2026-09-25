@@ -33,6 +33,10 @@ public:
     const std::vector<float>& concentration() const;
     float max_concentration() const;
     float total_mass() const;
+    // Approximate explicit-Euler stability limit on dt for the fields seen
+    // in the most recent step (advective CFL + diffusive + deposition rates,
+    // maximized over the grid). Infinity before the first step.
+    float max_stable_dt() const;
 
 private:
     int idx(int i, int j) const;
@@ -52,6 +56,7 @@ private:
     std::vector<Vec2> wind_cache_;
     std::vector<Mat2> diff_cache_;
     std::vector<float> source_cache_;
+    float max_rate_ = 0.0f;
     DiffusionMode diffusion_mode_ = DiffusionMode::FullTensorFlux;
 };
 

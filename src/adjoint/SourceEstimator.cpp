@@ -156,11 +156,16 @@ CellFit fit_cell(
 } // namespace
 
 SourceEstimator::SourceEstimator(SourceEstimationConfig cfg)
-    : cfg_(cfg) {
+    : cfg_(cfg)
+    , base_detection_threshold_(cfg.detection_threshold) {
 }
 
 const SourceEstimationConfig& SourceEstimator::config() const {
     return cfg_;
+}
+
+void SourceEstimator::set_noise_floor(float floor) {
+    cfg_.detection_threshold = std::max(base_detection_threshold_, floor);
 }
 
 std::string_view source_estimation_method_name(SourceEstimationMethod method) {
@@ -194,7 +199,7 @@ SeriesBuildResult build_series(
     const float inv_2s2 = 1.0f / (2.0f * sigma * sigma);
     const std::size_t n = static_cast<std::size_t>(nx * ny);
 
-    out.t_start = t_end;
+    float earliest_obs = t_end;
 
     for (const auto& sensor : sensors) {
         if (sensor.history.empty()) {
@@ -211,7 +216,7 @@ SeriesBuildResult build_series(
                 continue;
             }
             s.obs.push_back(obs);
-            out.t_start = std::min(out.t_start, obs.time_s);
+            earliest_obs = std::min(earliest_obs, obs.time_s);
             if (obs.noisy_concentration > cfg.detection_threshold) {
                 out.has_gated_signal = true;
                 s.gated_sum += obs.noisy_concentration;
@@ -243,7 +248,26 @@ SeriesBuildResult build_series(
         out.series.push_back(std::move(s));
     }
 
+    // The adjoint (and hence the candidate release times) starts before the
+    // first observation: a release precedes its first detection.
+    out.t_start = std::max(0.0f, earliest_obs - std::max(0.0f, cfg.release_search_margin_s));
     return out;
+}
+
+// Shared preconditions for every method; returns false (with `out` filled
+// in) when there is nothing to invert.
+bool check_signal(const SeriesBuildResult& build, SourceEstimateResult& out) {
+    if (build.series.empty()) {
+        out.insufficient_signal = true;
+        out.message = "No sensor history available in lookback window.";
+        return false;
+    }
+    if (!build.has_gated_signal) {
+        out.insufficient_signal = true;
+        out.message = "Insufficient signal: no report in the lookback window exceeds the detection threshold.";
+        return false;
+    }
+    return true;
 }
 
 // Runs one backward adjoint solve per sensor (unit-weighted, threshold-gated
@@ -340,6 +364,11 @@ CandidateField build_candidate_field(
     return cf;
 }
 
+SourceEstimateResult regularized_least_squares_from(
+    const SeriesBuildResult& build, const CandidateField& cf, const Simulator& sim, const SourceEstimationConfig& cfg);
+SourceEstimateResult bayesian_grid_from(
+    const SeriesBuildResult& build, const CandidateField& cf, const Simulator& sim, const SourceEstimationConfig& cfg);
+
 } // namespace
 
 SourceEstimateResult SourceEstimator::estimate(
@@ -362,11 +391,32 @@ SourceEstimateResult SourceEstimator::estimate(
 
 std::vector<SourceEstimateResult> SourceEstimator::estimate_all(
     const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const {
-    return {
+    std::vector<SourceEstimateResult> results{
         estimate_adjoint_backtracking(sensors, sim),
-        estimate_regularized_least_squares(sensors, sim),
-        estimate_bayesian_grid(sensors, sim),
     };
+
+    // RegularizedLeastSquares and BayesianGrid invert the same per-sensor
+    // sensitivity fields; build them once (the dominant cost) for both.
+    const auto build = build_series(sensors, sim, cfg_);
+    SourceEstimateResult rls;
+    rls.method = SourceEstimationMethod::RegularizedLeastSquares;
+    SourceEstimateResult bayes;
+    bayes.method = SourceEstimationMethod::BayesianGrid;
+    const bool rls_ok = check_signal(build, rls);
+    const bool bayes_ok = check_signal(build, bayes);
+    if (rls_ok && bayes_ok) {
+        const auto cf = build_candidate_field(build.series, sim, cfg_, solver_, build.t_start, sim.time_s(),
+            cfg_.search_grid_nx, cfg_.search_grid_ny, cfg_.search_time_count);
+        rls = regularized_least_squares_from(build, cf, sim, cfg_);
+        bayes = bayesian_grid_from(build, cf, sim, cfg_);
+    }
+    results.push_back(std::move(rls));
+    results.push_back(std::move(bayes));
+    return results;
+}
+
+float SourceEstimator::observation_window_start(const Simulator& sim) const {
+    return std::max(0.0f, sim.time_s() - std::max(1.0f, cfg_.max_lookback_s));
 }
 
 SourceEstimateResult SourceEstimator::estimate_adjoint_backtracking(
@@ -375,14 +425,7 @@ SourceEstimateResult SourceEstimator::estimate_adjoint_backtracking(
     out.method = SourceEstimationMethod::AdjointBacktracking;
 
     const auto build = build_series(sensors, sim, cfg_);
-    if (build.series.empty()) {
-        out.insufficient_signal = true;
-        out.message = "No sensor history available in lookback window.";
-        return out;
-    }
-    if (!build.has_gated_signal) {
-        out.insufficient_signal = true;
-        out.message = "Insufficient signal: no sensor exceeds detection threshold.";
+    if (!check_signal(build, out)) {
         return out;
     }
 
@@ -542,26 +585,40 @@ SourceEstimateResult SourceEstimator::estimate_regularized_least_squares(
     const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const {
     SourceEstimateResult out;
     out.method = SourceEstimationMethod::RegularizedLeastSquares;
-
     const auto build = build_series(sensors, sim, cfg_);
-    if (build.series.empty()) {
-        out.insufficient_signal = true;
-        out.message = "No sensor history available in lookback window.";
+    if (!check_signal(build, out)) {
         return out;
     }
-    if (!build.has_gated_signal) {
-        out.insufficient_signal = true;
-        out.message = "Insufficient signal: no sensor exceeds detection threshold.";
+    const auto cf = build_candidate_field(build.series, sim, cfg_, solver_, build.t_start, sim.time_s(),
+        cfg_.search_grid_nx, cfg_.search_grid_ny, cfg_.search_time_count);
+    return regularized_least_squares_from(build, cf, sim, cfg_);
+}
+
+SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
+    const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const {
+    SourceEstimateResult out;
+    out.method = SourceEstimationMethod::BayesianGrid;
+    const auto build = build_series(sensors, sim, cfg_);
+    if (!check_signal(build, out)) {
         return out;
     }
+    const auto cf = build_candidate_field(build.series, sim, cfg_, solver_, build.t_start, sim.time_s(),
+        cfg_.search_grid_nx, cfg_.search_grid_ny, cfg_.search_time_count);
+    return bayesian_grid_from(build, cf, sim, cfg_);
+}
+
+namespace {
+
+SourceEstimateResult regularized_least_squares_from(
+    const SeriesBuildResult& build, const CandidateField& cf, const Simulator& sim, const SourceEstimationConfig& cfg) {
+    SourceEstimateResult out;
+    out.method = SourceEstimationMethod::RegularizedLeastSquares;
 
     const float t_end = sim.time_s();
-    const int nt = std::max(2, cfg_.search_time_count);
-    const int nx0 = std::max(2, cfg_.search_grid_nx);
-    const int ny0 = std::max(2, cfg_.search_grid_ny);
+    const int nt = cf.nt;
+    const int nx0 = cf.nx;
+    const int ny0 = cf.ny;
     const auto& domain = sim.config().domain;
-
-    const auto cf = build_candidate_field(build.series, sim, cfg_, solver_, build.t_start, t_end, nx0, ny0, nt);
 
     struct Cell {
         float x = 0.0f, y = 0.0f, t = 0.0f;
@@ -571,7 +628,7 @@ SourceEstimateResult SourceEstimator::estimate_regularized_least_squares(
     };
 
     auto eval = [&](float x, float y, float t) {
-        const auto fit = fit_cell(cf, build.series, x, y, t, cfg_.relative_model_error, cfg_.amplitude_ridge);
+        const auto fit = fit_cell(cf, build.series, x, y, t, cfg.relative_model_error, cfg.amplitude_ridge);
         return Cell{x, y, t, fit.weighted_rss, fit.q0, fit.q0_variance};
     };
 
@@ -590,15 +647,45 @@ SourceEstimateResult SourceEstimator::estimate_regularized_least_squares(
         }
     }
 
+    // Posterior heatmap: profile likelihood over (x,y) with the release time
+    // profiled out, exp(-0.5 * min_t weighted_RSS) under a flat prior,
+    // normalized to a density on the coarse search grid (same convention
+    // as the other methods' p_star).
+    {
+        const std::size_t ncell = static_cast<std::size_t>(nx0 * ny0);
+        std::vector<float> min_rss(ncell, std::numeric_limits<float>::infinity());
+        for (std::size_t c = 0; c < cells.size(); ++c) {
+            min_rss[c % ncell] = std::min(min_rss[c % ncell], cells[c].rss);
+        }
+        const float global_min = *std::min_element(min_rss.begin(), min_rss.end());
+        const float dxg = (domain.x_max - domain.x_min) / static_cast<float>(nx0 - 1);
+        const float dyg = (domain.y_max - domain.y_min) / static_cast<float>(ny0 - 1);
+        out.nx = nx0;
+        out.ny = ny0;
+        out.p_star.assign(ncell, 0.0f);
+        float z = 0.0f;
+        for (std::size_t c = 0; c < ncell; ++c) {
+            if (std::isfinite(min_rss[c])) {
+                out.p_star[c] = std::exp(-0.5f * (min_rss[c] - global_min));
+                z += out.p_star[c] * dxg * dyg;
+            }
+        }
+        if (z > 0.0f) {
+            for (float& v : out.p_star) {
+                v /= z;
+            }
+        }
+    }
+
     std::sort(cells.begin(), cells.end(), [](const Cell& a, const Cell& b) { return a.rss < b.rss; });
-    const int keep = std::clamp(cfg_.candidate_count, 1, static_cast<int>(cells.size()));
+    const int keep = std::clamp(cfg.candidate_count, 1, static_cast<int>(cells.size()));
     std::vector<Cell> top(cells.begin(), cells.begin() + keep);
 
     float window_x = (domain.x_max - domain.x_min) / static_cast<float>(std::max(1, nx0 - 1));
     float window_y = (domain.y_max - domain.y_min) / static_cast<float>(std::max(1, ny0 - 1));
     float window_t = nt > 1 ? (cf.times.back() - cf.times.front()) / static_cast<float>(nt - 1) : 1.0f;
 
-    for (int level = 0; level < std::max(0, cfg_.refinement_levels); ++level) {
+    for (int level = 0; level < std::max(0, cfg.refinement_levels); ++level) {
         for (auto& cell : top) {
             Cell best = cell;
             constexpr int kSub = 4;
@@ -674,7 +761,7 @@ SourceEstimateResult SourceEstimator::estimate_regularized_least_squares(
         fit.predicted_concentration
             = s.gated_count > 0 ? best.q0 * sample_candidate(cf, static_cast<std::size_t>(fit.sensor_index), best.x, best.y, best.t) : 0.0f;
         fit.residual = fit.measured_concentration - fit.predicted_concentration;
-        fit.assumed_std = std::max(1.0e-9f, cfg_.relative_model_error * std::max(std::abs(fit.measured_concentration), 1.0e-9f));
+        fit.assumed_std = std::max(1.0e-9f, cfg.relative_model_error * std::max(std::abs(fit.measured_concentration), 1.0e-9f));
     }
     out.weighted_rmse = dof > 0 ? std::sqrt(best.rss / static_cast<float>(dof)) : 0.0f;
 
@@ -686,34 +773,20 @@ SourceEstimateResult SourceEstimator::estimate_regularized_least_squares(
     return out;
 }
 
-SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
-    const std::vector<SensorManager::Sensor>& sensors, const Simulator& sim) const {
+SourceEstimateResult bayesian_grid_from(
+    const SeriesBuildResult& build, const CandidateField& cf, const Simulator& sim, const SourceEstimationConfig& cfg) {
     SourceEstimateResult out;
     out.method = SourceEstimationMethod::BayesianGrid;
 
-    const auto build = build_series(sensors, sim, cfg_);
-    if (build.series.empty()) {
-        out.insufficient_signal = true;
-        out.message = "No sensor history available in lookback window.";
-        return out;
-    }
-    if (!build.has_gated_signal) {
-        out.insufficient_signal = true;
-        out.message = "Insufficient signal: no sensor exceeds detection threshold.";
-        return out;
-    }
-
     const float t_end = sim.time_s();
-    const int nt = std::max(2, cfg_.search_time_count);
-    const int nx = std::max(2, cfg_.search_grid_nx);
-    const int ny = std::max(2, cfg_.search_grid_ny);
+    const int nt = cf.nt;
+    const int nx = cf.nx;
+    const int ny = cf.ny;
     const auto& domain = sim.config().domain;
     const float dxg = (domain.x_max - domain.x_min) / static_cast<float>(std::max(1, nx - 1));
     const float dyg = (domain.y_max - domain.y_min) / static_cast<float>(std::max(1, ny - 1));
     const float cell_area = dxg * dyg;
     const std::size_t ncell = static_cast<std::size_t>(nx * ny);
-
-    const auto cf = build_candidate_field(build.series, sim, cfg_, solver_, build.t_start, t_end, nx, ny, nt);
 
     // Scan the ridge point-estimate first: with a tight relative_model_error
     // (e.g. 5%), the likelihood in q0 is sharply peaked, so a single global
@@ -733,13 +806,13 @@ SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
             for (int i = 0; i < nx; ++i) {
                 const float xfrac = nx > 1 ? static_cast<float>(i) / static_cast<float>(nx - 1) : 0.0f;
                 const float x = domain.x_min + xfrac * (domain.x_max - domain.x_min);
-                const auto fit = fit_cell(cf, build.series, x, y, t, cfg_.relative_model_error, cfg_.amplitude_ridge);
+                const auto fit = fit_cell(cf, build.series, x, y, t, cfg.relative_model_error, cfg.amplitude_ridge);
                 q0_scan_max = std::max(q0_scan_max, fit.q0);
             }
         }
     }
     const float q0_fallback_max = std::max(1.0e-9f, 3.0f * q0_scan_max);
-    const int nq = std::max(3, cfg_.response_quadrature_points);
+    const int nq = std::max(3, cfg.response_quadrature_points);
 
     // Marginal likelihood (evidence) per (time, cell), found by trapezoidal
     // quadrature over a non-negative q0 prior support centered on each
@@ -773,7 +846,7 @@ SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
                 const float x = domain.x_min + xfrac * (domain.x_max - domain.x_min);
                 const std::size_t cell = static_cast<std::size_t>(idx(i, j, nx));
 
-                const auto fit = fit_cell(cf, build.series, x, y, t, cfg_.relative_model_error, cfg_.amplitude_ridge);
+                const auto fit = fit_cell(cf, build.series, x, y, t, cfg.relative_model_error, cfg.amplitude_ridge);
                 const float raw_std = std::isfinite(fit.q0_variance) ? std::sqrt(std::max(0.0f, fit.q0_variance)) : (q0_fallback_max / 6.0f);
                 const float std_q0 = std::max(raw_std, 1.0e-6f * std::max(1.0f, q0_fallback_max));
                 constexpr float kSpanStd = 6.0f;
@@ -791,7 +864,7 @@ SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
                         }
                         const float hi = sample_candidate(cf, static_cast<std::size_t>(&s - &build.series[0]), x, y, t);
                         const float yi = s.gated_sum;
-                        const float sigma_i = std::max(1.0e-9f, cfg_.relative_model_error * std::max(std::abs(yi), 1.0e-9f));
+                        const float sigma_i = std::max(1.0e-9f, cfg.relative_model_error * std::max(std::abs(yi), 1.0e-9f));
                         const float resid = yi - q0 * hi;
                         neg_half_chi2 -= 0.5 * (static_cast<double>(resid) * resid) / (static_cast<double>(sigma_i) * sigma_i);
                     }
@@ -1009,7 +1082,7 @@ SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
         fit.measured_concentration = s.gated_sum;
         fit.predicted_concentration = out.q0 * sample_candidate(cf, si, best_x, best_y, out.t_star_s);
         fit.residual = fit.measured_concentration - fit.predicted_concentration;
-        fit.assumed_std = std::max(1.0e-9f, cfg_.relative_model_error * std::max(std::abs(fit.measured_concentration), 1.0e-9f));
+        fit.assumed_std = std::max(1.0e-9f, cfg.relative_model_error * std::max(std::abs(fit.measured_concentration), 1.0e-9f));
         rss += (static_cast<double>(fit.residual) * fit.residual) / (static_cast<double>(fit.assumed_std) * fit.assumed_std);
         out.observation_fit.push_back(fit);
         out.observations_used += s.gated_count;
@@ -1024,5 +1097,7 @@ SourceEstimateResult SourceEstimator::estimate_bayesian_grid(
     out.message = msg.str();
     return out;
 }
+
+} // namespace
 
 } // namespace atm

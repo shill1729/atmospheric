@@ -33,6 +33,14 @@ Application::Application(const Config& config)
     mixing_height_m_ = std::max(1.0e-6f, config.app.mixing_height_m);
     ecs_theme_ = ui::make_default_retro_theme();
     build_ecs_ui();
+
+    // Georeference the domain to the NY network from the start (when the
+    // dataset is present), so hand-placed and L-loaded sensors export in the
+    // same lat/lon frame and Datetime_UTC always anchors to the real event.
+    std::string georef_err;
+    sites_status_ = load_ny_georeference(nullptr, nullptr, georef_err)
+        ? "Georeferenced to NY network: exports use lat/lon"
+        : "No NY georeference (" + georef_err + "): exports use x/y";
 }
 
 void Application::run() {
@@ -45,8 +53,9 @@ void Application::run() {
 }
 
 void Application::update(float frame_dt) {
-    sim().step(frame_dt);
-    sensor_manager_.step(sim().time_s(), sim().pde(), sim().config().domain);
+    // Sensors sample after every fixed step, so at large speed-ups each
+    // physical sample still sees the field at (within dt of) its own time.
+    sim().step(frame_dt, [this] { sensor_manager_.step(sim().time_s(), sim().pde(), sim().config().domain); });
 
     if (data_recorder_.is_recording()) {
         const auto& sensors = sensor_manager_.sensors();

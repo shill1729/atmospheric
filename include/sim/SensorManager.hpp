@@ -42,6 +42,13 @@ public:
     float physical_sample_period() const;
     void set_spatial_average_radius(float radius_m);
     float spatial_average_radius() const;
+    // Report level that noise alone exceeds, anywhere among `reports_tested`
+    // reports, with probability ~family_false_alarm (a Bonferroni bound, so
+    // a longer history or more sensors raise the bar accordingly). Each
+    // physical sample is max(0, c + N(0, noise_std^2)), so pure noise has
+    // mean 0.40*noise_std and std 0.58*noise_std per sample, averaged over
+    // the samples in one report window. 0 when noise is off.
+    float noise_detection_floor(std::size_t reports_tested, float family_false_alarm = 0.05f) const;
     void set_history_capacity(std::size_t capacity);
     std::size_t history_capacity() const;
 

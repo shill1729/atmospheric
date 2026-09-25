@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace atm {
 namespace {
@@ -79,6 +80,35 @@ void apply_adjoint_bc(
 }
 } // namespace
 
+float AdjointSolver::stable_dt(
+    float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn) {
+    const int nx = std::max(2, cfg.nx);
+    const int ny = std::max(2, cfg.ny);
+    const float inv_dx = static_cast<float>(nx - 1) / std::max(1.0e-6f, cfg.domain.x_max - cfg.domain.x_min);
+    const float inv_dy = static_cast<float>(ny - 1) / std::max(1.0e-6f, cfg.domain.y_max - cfg.domain.y_min);
+
+    // The presets vary smoothly in time, so sampling the start, middle and
+    // end of the window on a strided grid bounds the rate well enough.
+    float max_rate = std::max(0.0f, cfg.deposition_rate);
+    const int stride = std::max(1, std::min(nx, ny) / 24);
+    for (const float t : {t_start_s, 0.5f * (t_start_s + t_end_s), t_end_s}) {
+        for (int j = 0; j < ny; j += stride) {
+            for (int i = 0; i < nx; i += stride) {
+                const Vec2 p(
+                    cfg.domain.x_min + static_cast<float>(i) / inv_dx, cfg.domain.y_min + static_cast<float>(j) / inv_dy);
+                const Vec2 w = wind_fn(t, p);
+                const Mat2 d = diffusivity_fn(t, p);
+                const float rate = std::abs(w.x()) * inv_dx + std::abs(w.y()) * inv_dy
+                    + 2.0f * (d(0, 0) * inv_dx * inv_dx + d(1, 1) * inv_dy * inv_dy + std::abs(d(0, 1)) * inv_dx * inv_dy)
+                    + std::max(0.0f, cfg.deposition_rate);
+                max_rate = std::max(max_rate, rate);
+            }
+        }
+    }
+    // 0.8 leaves headroom for field extrema between the sampled nodes/times.
+    return max_rate > 0.0f ? 0.8f / max_rate : std::numeric_limits<float>::infinity();
+}
+
 AdjointSolver::Solution AdjointSolver::solve_backward(
     float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn,
     const ForcingFn& forcing_fn,
@@ -90,7 +120,8 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
     out.dy = (cfg.domain.y_max - cfg.domain.y_min) / static_cast<float>(out.ny - 1);
 
     const float span = std::max(0.0f, t_end_s - t_start_s);
-    const int steps = std::max(1, static_cast<int>(std::ceil(span / std::max(1.0e-3f, cfg.dt_s))));
+    const float dt_limit = std::min(std::max(1.0e-3f, cfg.dt_s), stable_dt(t_start_s, t_end_s, cfg, wind_fn, diffusivity_fn));
+    const int steps = std::max(1, static_cast<int>(std::ceil(span / dt_limit)));
     const float dt = span / static_cast<float>(steps);
 
     const std::size_t n = static_cast<std::size_t>(out.nx * out.ny);
@@ -100,6 +131,11 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
     }
     std::vector<float> next(n, 0.0f);
     std::vector<float> forcing(n, 0.0f);
+    // Fields are evaluated once per node per step; the stencils below read
+    // neighbors from these caches instead of re-evaluating the (sin/cos-heavy)
+    // wind/diffusivity presets up to five times per node.
+    std::vector<Vec2> w_cache(n, Vec2::Zero());
+    std::vector<Mat2> d_cache(n, Mat2::Zero());
 
     out.snapshots.reserve(static_cast<std::size_t>(steps + 1));
     out.snapshots.push_back(Snapshot{t_end_s, phi});
@@ -112,6 +148,15 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
         const float t = t_end_s - static_cast<float>(k) * dt;
         apply_adjoint_bc(phi, t, local_cfg, wind_fn, diffusivity_fn, out.dx, out.dy);
         forcing_fn(t, forcing);
+        for (int j = 0; j < out.ny; ++j) {
+            for (int i = 0; i < out.nx; ++i) {
+                const Vec2 p(
+                    cfg.domain.x_min + static_cast<float>(i) * out.dx, cfg.domain.y_min + static_cast<float>(j) * out.dy);
+                const std::size_t c = static_cast<std::size_t>(idx(i, j, out.nx));
+                w_cache[c] = wind_fn(t, p);
+                d_cache[c] = diffusivity_fn(t, p);
+            }
+        }
 
         for (int j = 1; j < out.ny - 1; ++j) {
             for (int i = 1; i < out.nx - 1; ++i) {
@@ -122,10 +167,7 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
                 const float cym = sample_clamped(phi, i, j - 1, out.nx, out.ny);
                 const float cyp = sample_clamped(phi, i, j + 1, out.nx, out.ny);
 
-                const Vec2 p(
-                    cfg.domain.x_min + static_cast<float>(i) * out.dx,
-                    cfg.domain.y_min + static_cast<float>(j) * out.dy);
-                const Vec2 w = wind_fn(t, p);
+                const Vec2& w = w_cache[cidx];
 
                 // In reverse-time tau = T-t the adjoint advection equation is
                 // phi_tau + (-w).grad(phi) = ..., so upwind against -w.
@@ -134,13 +176,10 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
                 const float adv = w.x() * dphi_dx + w.y() * dphi_dy;
 
                 auto c_at = [&](int ii, int jj) { return sample_clamped(phi, ii, jj, out.nx, out.ny); };
-                auto d_at = [&](int ii, int jj) {
+                auto d_at = [&](int ii, int jj) -> const Mat2& {
                     const int ci = std::clamp(ii, 0, out.nx - 1);
                     const int cj = std::clamp(jj, 0, out.ny - 1);
-                    const Vec2 pp(
-                        cfg.domain.x_min + static_cast<float>(ci) * out.dx,
-                        cfg.domain.y_min + static_cast<float>(cj) * out.dy);
-                    return diffusivity_fn(t, pp);
+                    return d_cache[static_cast<std::size_t>(idx(ci, cj, out.nx))];
                 };
 
                 float diff = 0.0f;

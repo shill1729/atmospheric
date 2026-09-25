@@ -23,6 +23,13 @@ enum class MassDisplayUnit {
     MicrogramsPerSquareMeter = 1
 };
 
+// What the right panel's adjoint overlay shows (J cycles).
+enum class AdjointOverlayMode {
+    Posterior = 0,     // selected method's p_star heatmap
+    BackwardFlow = 1,  // looping backward-adjoint animation seeded from sensor readings
+    Off = 2
+};
+
 struct EstimateButtonLayout {
     sf::FloatRect card;
     sf::FloatRect run_button;
@@ -65,6 +72,7 @@ private:
     void sync_source_estimation_view();
     void cycle_estimation_method(int direction);
     void load_ny_sites();
+    bool load_ny_georeference(std::vector<SiteRecord>* sites_out, std::vector<Vec2>* positions_out, std::string& err);
     void apply_ny_sensor_preset();
     void build_ecs_ui();
     void sync_ecs_ui_state();
@@ -117,7 +125,7 @@ private:
     bool menu_open_ = false;
     bool help_open_ = false;
     bool show_wind_ = true;
-    bool show_adjoint_overlay_ = true;
+    AdjointOverlayMode adjoint_overlay_mode_ = AdjointOverlayMode::Posterior;
     bool show_ecs_quick_panel_ = false;
     bool pde_auto_color_scale_ = true;
     float concentration_scale_ug_per_m2_ = 1.923e8f;

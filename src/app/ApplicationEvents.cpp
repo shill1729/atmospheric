@@ -93,7 +93,7 @@ void Application::process_events() {
                 run_source_estimation();
             }
             if (key->code == sf::Keyboard::Key::J) {
-                show_adjoint_overlay_ = !show_adjoint_overlay_;
+                adjoint_overlay_mode_ = static_cast<AdjointOverlayMode>((static_cast<int>(adjoint_overlay_mode_) + 1) % 3);
             }
             if (key->code == sf::Keyboard::Key::M) {
                 cycle_estimation_method(1);
@@ -285,10 +285,19 @@ void Application::run_source_estimation() {
         return;
     }
 
-    
-
     const float t_now = sim().time_s();
     const auto& domain = sim().config().domain;
+    const float t_window = source_estimator_.observation_window_start(sim());
+
+    // Detection threshold: at least the configured minimum, raised so that
+    // noise alone is unlikely to exceed it anywhere in the reports tested.
+    std::size_t reports_in_window = 0;
+    for (const auto& sensor : sensors) {
+        for (const auto& obs : sensor.history) {
+            reports_in_window += obs.time_s >= t_window ? 1 : 0;
+        }
+    }
+    source_estimator_.set_noise_floor(sensor_manager_.noise_detection_floor(reports_in_window));
     const auto& ecfg = source_estimator_.config();
 
     const int nx = std::max(2, ecfg.adjoint_grid_nx);
@@ -300,15 +309,23 @@ void Application::run_source_estimation() {
     const float inv_2s2 = 1.0f / (2.0f * sigma * sigma);
     const std::size_t n = static_cast<std::size_t>(nx * ny);
 
+    // Seed the backward-flow animation from each sensor's most recent
+    // above-threshold report inside the estimators' observation window, so
+    // a plume that has just moved off a sensor still counts. Whether there
+    // is enough signal to estimate at all is decided by the estimators
+    // themselves, over that same window.
     std::vector<float> initial_phi(n, 0.0f);
     bool any_signal = false;
 
     for (const auto& sensor : sensors) {
-        if (sensor.history.empty()) {
-            continue;
+        float w = 0.0f;
+        for (auto it = sensor.history.rbegin(); it != sensor.history.rend() && it->time_s >= t_window; ++it) {
+            if (it->noisy_concentration > ecfg.detection_threshold) {
+                w = it->noisy_concentration;
+                break;
+            }
         }
-        const float w = std::max(0.0f, sensor.history.back().noisy_concentration);
-        if (w < ecfg.detection_threshold) {
+        if (w <= 0.0f) {
             continue;
         }
         any_signal = true;
@@ -325,9 +342,15 @@ void Application::run_source_estimation() {
         }
     }
 
+    estimation_results_ = source_estimator_.estimate_all(sensors, sim());
+    if (!estimation_results_.empty()) {
+        selected_estimation_method_ = std::clamp(
+            selected_estimation_method_, 0, static_cast<int>(estimation_results_.size()) - 1);
+    }
+    sync_source_estimation_view();
+
     if (!any_signal) {
-        source_estimation_.status = "No sensor above detection threshold.";
-        feynman_kac_anim_.active = false;
+        feynman_kac_anim_ = FeynmanKacAnimation{};
         return;
     }
 
@@ -356,7 +379,7 @@ void Application::run_source_estimation() {
     auto diffusivity_fn = [&](float time_s, const Vec2& p) { return sim().diffusivity_at_time(time_s, p); };
     auto no_forcing = [](float, std::vector<float>&) {};
 
-    const float t_start = std::max(0.0f, t_now - std::max(1.0f, ecfg.max_lookback_s));
+    const float t_start = t_window;
 
     AdjointSolver solver;
     feynman_kac_anim_.solution
@@ -364,16 +387,6 @@ void Application::run_source_estimation() {
     feynman_kac_anim_.frame = 0;
     feynman_kac_anim_.wall_accum_s = 0.0f;
     feynman_kac_anim_.active = true;
-
-    // The animation above is a diagnostic view of backward probability flow
-    // seeded from the latest readings; the actual (x*, t*) estimate and
-    // posterior heatmap come from running all configured estimation methods.
-    estimation_results_ = source_estimator_.estimate_all(sensors, sim());
-    if (!estimation_results_.empty()) {
-        selected_estimation_method_ = std::clamp(
-            selected_estimation_method_, 0, static_cast<int>(estimation_results_.size()) - 1);
-    }
-    sync_source_estimation_view();
 }
 
 void Application::sync_source_estimation_view() {
@@ -436,15 +449,14 @@ void Application::clear_source_estimation() {
     selected_estimation_method_ = 0;
 }
 
-void Application::load_ny_sites() {
-    std::string err;
+bool Application::load_ny_georeference(
+    std::vector<SiteRecord>* sites_out, std::vector<Vec2>* positions_out, std::string& err) {
     const auto sites = load_unique_sites(ny_sites_csv_path_, err);
     if (sites.empty()) {
-        sites_status_ = "L: " + err;
-        return;
+        return false;
     }
     ProjectionParams pp;
-    const auto positions = project_sites_to_domain(sites, sim().config().domain, 0.08f, &pp);
+    auto positions = project_sites_to_domain(sites, sim().config().domain, 0.08f, &pp);
     DataRecorder::GeoProjection gp;
     gp.lat0_deg  = pp.lat0_deg;
     gp.lon0_deg  = pp.lon0_deg;
@@ -455,6 +467,23 @@ void Application::load_ny_sites() {
     gp.cx_data   = pp.cx_data;
     gp.cy_data   = pp.cy_data;
     data_recorder_.set_geo_projection(gp);
+    if (sites_out) {
+        *sites_out = sites;
+    }
+    if (positions_out) {
+        *positions_out = std::move(positions);
+    }
+    return true;
+}
+
+void Application::load_ny_sites() {
+    std::string err;
+    std::vector<SiteRecord> sites;
+    std::vector<Vec2> positions;
+    if (!load_ny_georeference(&sites, &positions, err)) {
+        sites_status_ = "L: " + err;
+        return;
+    }
     sensor_manager_.clear();
     for (std::size_t i = 0; i < positions.size(); ++i) {
         sensor_manager_.add_sensor(positions[i], sim().time_s(), i < sites.size() ? sites[i].name : "");

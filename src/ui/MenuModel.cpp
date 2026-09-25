@@ -4,6 +4,20 @@
 #include <cctype>
 
 namespace atm {
+namespace {
+constexpr int kMaxParticles = 10000000;
+constexpr float kLogStepFactor = 1.25f;
+
+// Multiplies a positive quantity by kLogStepFactor^direction, so +/- steps
+// stay proportionate whether the value is 1e-6 or 1e3. A zero value steps
+// up to `floor_when_zero`.
+float log_step(float value, int direction, float floor_when_zero) {
+    if (value <= 0.0f) {
+        return direction > 0 ? floor_when_zero : 0.0f;
+    }
+    return direction > 0 ? value * kLogStepFactor : value / kLogStepFactor;
+}
+} // namespace
 
 MenuModel::MenuModel(const RuntimeSettings& initial)
     : current_(initial)
@@ -39,11 +53,11 @@ bool MenuModel::dirty() const {
 }
 
 void MenuModel::adjust_time_scale(float delta) {
-    pending_.time_scale = std::clamp(pending_.time_scale + delta, 0.25f, 120.0f);
+    pending_.time_scale = std::clamp(pending_.time_scale + delta, kMinTimeScale, kMaxTimeScale);
 }
 
 void MenuModel::adjust_max_particles(int delta) {
-    pending_.max_particles = std::clamp(pending_.max_particles + delta, 1, 500000);
+    pending_.max_particles = std::clamp(pending_.max_particles + delta, 1, kMaxParticles);
 }
 
 void MenuModel::adjust_deposition_rate(float delta) {
@@ -76,6 +90,18 @@ void MenuModel::adjust_source_max_sources(int delta) {
 
 void MenuModel::adjust_pde_fixed_color_scale(float delta) {
     pending_.pde_fixed_color_scale = std::clamp(pending_.pde_fixed_color_scale + delta, 1.0e-8f, 1.0e3f);
+}
+
+void MenuModel::step_pde_fixed_color_scale(int direction) {
+    pending_.pde_fixed_color_scale = std::clamp(log_step(pending_.pde_fixed_color_scale, direction, 1.0e-8f), 1.0e-8f, 1.0e3f);
+}
+
+void MenuModel::step_time_scale(int direction) {
+    pending_.time_scale = std::clamp(log_step(pending_.time_scale, direction, kMinTimeScale), kMinTimeScale, kMaxTimeScale);
+}
+
+void MenuModel::step_sensor_noise_std(int direction) {
+    pending_.sensor_noise_std = std::clamp(log_step(pending_.sensor_noise_std, direction, 1.0e-7f), 0.0f, 100.0f);
 }
 
 void MenuModel::adjust_sensor_sample_period_s(float delta) {
@@ -170,10 +196,10 @@ bool MenuModel::commit_edit() {
     try {
         switch (active_edit_field_) {
         case EditableField::TimeScale:
-            pending_.time_scale = clampf(std::stof(edit_buffer_), 0.25f, 120.0f);
+            pending_.time_scale = clampf(std::stof(edit_buffer_), kMinTimeScale, kMaxTimeScale);
             break;
         case EditableField::MaxParticles:
-            pending_.max_particles = clampi(std::stoi(edit_buffer_), 1, 500000);
+            pending_.max_particles = clampi(std::stoi(edit_buffer_), 1, kMaxParticles);
             break;
         case EditableField::DepositionRate:
             pending_.deposition_rate = clampf(std::stof(edit_buffer_), 0.0f, 5.0f);

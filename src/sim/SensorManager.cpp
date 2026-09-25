@@ -49,6 +49,38 @@ float SensorManager::spatial_average_radius() const {
     return spatial_average_radius_m_;
 }
 
+float SensorManager::noise_detection_floor(std::size_t reports_tested, float family_false_alarm) const {
+    if (noise_std_ <= 0.0f) {
+        return 0.0f;
+    }
+    const double log_p = std::log(std::clamp(
+        static_cast<double>(family_false_alarm) / static_cast<double>(std::max<std::size_t>(1, reports_tested)),
+        1.0e-300, 0.5));
+    const double m = std::max(1.0, std::floor(static_cast<double>(sample_period_s_ / physical_sample_period_s_)));
+
+    // A report is the mean of m samples Y = max(0, X), X ~ N(0, sigma^2).
+    // Its right tail is heavier than a Gaussian approximation suggests, so
+    // use the Chernoff bound P(mean >= b*sigma) <= min_u M(u)^m exp(-u*m*b)
+    // with the exact MGF of Y/sigma, M(u) = 1/2 + exp(u^2/2) * Phi(u). It is
+    // an upper bound on the false-alarm probability, so the floor errs high.
+    const auto log_tail_bound = [m](double b) {
+        double best = 0.0;
+        for (int k = 1; k <= 400; ++k) {
+            const double u = 0.025 * k;
+            const double log_mgf = std::log(0.5 + std::exp(0.5 * u * u) * 0.5 * std::erfc(-u / std::sqrt(2.0)));
+            best = std::min(best, m * (log_mgf - u * b));
+        }
+        return best;
+    };
+    double lo = 0.0;
+    double hi = 20.0;
+    for (int it = 0; it < 60; ++it) {
+        const double mid = 0.5 * (lo + hi);
+        (log_tail_bound(mid) <= log_p ? hi : lo) = mid;
+    }
+    return noise_std_ * static_cast<float>(hi);
+}
+
 void SensorManager::set_history_capacity(std::size_t capacity) {
     history_capacity_ = std::max<std::size_t>(1, capacity);
     for (auto& sensor : sensors_) {

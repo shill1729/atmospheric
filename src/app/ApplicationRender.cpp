@@ -393,7 +393,9 @@ void Application::draw_hud_cards() {
     const float pde_max_ug_m3 = sim().pde().max_concentration() * c_factor;
     status << std::fixed << std::setprecision(2)
            << "t: " << sim().time_s() << " s"
-           << "\nspeed: x" << sim().time_scale()
+           << "\nspeed: x" << sim().time_scale() << " (actual x" << sim().achieved_time_scale() << ")"
+           << "\ndt: " << std::setprecision(3) << sim().config().numerics.dt << " s (stable <~"
+           << std::setprecision(2) << sim().pde().max_stable_dt() << " s)" << std::setprecision(2)
            << "\nstate: " << (sim().paused() ? "paused" : "running")
            << "\nwind: " << sim().wind_model_name()
            << "\ndiff: " << sim().diffusion_model_name()
@@ -488,6 +490,8 @@ void Application::draw_hud_cards() {
             } else {
                 result_line << r.message;
             }
+            static constexpr const char* kOverlayNames[] = {"posterior", "backward flow", "off"};
+            result_line << "\noverlay (J): " << kOverlayNames[static_cast<int>(adjoint_overlay_mode_)];
         }
         sf::Text result_text(font_, result_line.str(), 12);
         result_text.setPosition({est.card.position.x + 10.0f, est.card.position.y + 132.0f});
@@ -583,7 +587,7 @@ void Application::draw_menu_overlay() {
 }
 
 void Application::draw_help_overlay() {
-    const sf::Vector2f panel_size(760.0f, 430.0f);
+    const sf::Vector2f panel_size(760.0f, 680.0f);
     const sf::Vector2f panel_pos = draw_modal_panel(
         window_, panel_size, sf::Color(4, 8, 14, 192), sf::Color(16, 24, 36, 238), sf::Color(108, 150, 188, 236));
 
@@ -598,7 +602,8 @@ void Application::draw_help_overlay() {
         "L-click left panel  : place source\n"
         "L-click right panel : place sensor\n"
         "E       : run source estimation (paused)\n"
-        "J       : toggle adjoint overlay\n"
+        "M       : cycle displayed estimation method\n"
+        "J       : cycle overlay: posterior / backward flow / off\n"
         "L       : load NY wildfire sensor network (clears current sensors)\n"
         "N       : apply NY observation preset (phys 300 s, avg 3600 s)\n"
         "Space   : pause/resume\n"
@@ -618,9 +623,9 @@ void Application::draw_help_overlay() {
         "Time\n"
         "[       : decrease simulation speed\n"
         "]       : increase simulation speed\n"
-        "\\       : reset speed to x1";
+        "\\       : reset speed to configured base";
 
-    sf::Text text(font_, body, 18);
+    sf::Text text(font_, body, 16);
     text.setPosition({panel_pos.x + 24.0f, panel_pos.y + 56.0f});
     text.setLineSpacing(1.1f);
     text.setFillColor(sf::Color(188, 208, 226));
@@ -700,11 +705,14 @@ void Application::draw_sensor_overlay() {
 }
 
 void Application::draw_adjoint_overlay() {
-    if (!show_adjoint_overlay_) {
+    if (adjoint_overlay_mode_ == AdjointOverlayMode::Off) {
         return;
     }
 
-    if (feynman_kac_anim_.active && !feynman_kac_anim_.solution.snapshots.empty()) {
+    if (adjoint_overlay_mode_ == AdjointOverlayMode::BackwardFlow) {
+        if (!feynman_kac_anim_.active || feynman_kac_anim_.solution.snapshots.empty()) {
+            return;
+        }
         const int nx = feynman_kac_anim_.solution.nx;
         const int ny = feynman_kac_anim_.solution.ny;
         if (nx < 2 || ny < 2) {

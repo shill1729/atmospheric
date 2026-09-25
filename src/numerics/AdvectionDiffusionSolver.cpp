@@ -1,6 +1,8 @@
 #include "numerics/AdvectionDiffusionSolver.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 namespace atm {
 namespace {
@@ -65,6 +67,9 @@ void AdvectionDiffusionSolver::step(
         source_cache_.assign(n, 0.0f);
     }
 
+    const float inv_dx = 1.0f / dx_;
+    const float inv_dy = 1.0f / dy_;
+    float max_rate = 0.0f;
     for (int j = 0; j < domain_.ny; ++j) {
         for (int i = 0; i < domain_.nx; ++i) {
             const float x = domain_.x_min + static_cast<float>(i) * dx_;
@@ -74,8 +79,16 @@ void AdvectionDiffusionSolver::step(
             wind_cache_[k] = fields.wind(time_s, p);
             diff_cache_[k] = fields.diffusivity(time_s, p);
             source_cache_[k] = source.source_density(p);
+
+            const Vec2& w = wind_cache_[k];
+            const Mat2& d = diff_cache_[k];
+            const float rate = std::abs(w.x()) * inv_dx + std::abs(w.y()) * inv_dy
+                + 2.0f * (d(0, 0) * inv_dx * inv_dx + d(1, 1) * inv_dy * inv_dy + std::abs(d(0, 1)) * inv_dx * inv_dy)
+                + deposition_rate_;
+            max_rate = std::max(max_rate, rate);
         }
     }
+    max_rate_ = max_rate;
 
     auto c_at = [&](int i, int j) { return sample(c_, i, j, boundary_mode); };
     auto d_at = [&](int i, int j) { return sample_diffusivity(diff_cache_, i, j, boundary_mode); };
@@ -217,6 +230,10 @@ float AdvectionDiffusionSolver::total_mass() const {
         sum += v;
     }
     return sum * dx_ * dy_;
+}
+
+float AdvectionDiffusionSolver::max_stable_dt() const {
+    return max_rate_ > 0.0f ? 1.0f / max_rate_ : std::numeric_limits<float>::infinity();
 }
 
 int AdvectionDiffusionSolver::idx(int i, int j) const {

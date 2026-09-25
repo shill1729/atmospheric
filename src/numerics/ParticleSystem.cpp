@@ -57,7 +57,7 @@ void ParticleSystem::emit(float emission_rate, float dt, const Vec2& source_posi
 
     const std::size_t remaining = max_particles_ - particles_.size();
     spawn_count = std::min<int>(spawn_count, static_cast<int>(remaining));
-    const float spread = 0.02f * source_.sigma;
+    const float spread = std::max(0.0f, source_.particle_spread_fraction) * source_.sigma;
     int emitted_count = 0;
     for (int i = 0; i < spawn_count; ++i) {
         Vec2 p = source_position;

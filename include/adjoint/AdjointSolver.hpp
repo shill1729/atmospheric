@@ -19,6 +19,8 @@ public:
         DomainConfig domain;
         int nx = 96;
         int ny = 96;
+        // Maximum step; the solver uses a smaller one when stable_dt()
+        // requires it (e.g. fast winds on this grid).
         float dt_s = 0.5f;
         float deposition_rate = 0.0f;
         DiffusionMode diffusion_mode = DiffusionMode::ScalarizedTrace;
@@ -45,6 +47,11 @@ public:
         float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn,
         const ForcingFn& forcing_fn,
         const std::vector<float>& initial_phi = {}) const;
+
+    // Explicit-update stability bound on the adjoint step for these fields
+    // over [t_start_s, t_end_s].
+    static float stable_dt(
+        float t_start_s, float t_end_s, const Config& cfg, const WindFn& wind_fn, const DiffusivityFn& diffusivity_fn);
 };
 
 } // namespace atm

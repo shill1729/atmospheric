@@ -405,6 +405,10 @@ int main() {
                 ++failures;
                 continue;
             }
+            if (r.nx < 2 || r.ny < 2 || r.p_star.size() != static_cast<std::size_t>(r.nx * r.ny)) {
+                std::cerr << "SEM method '" << name << "' produced no posterior heatmap (p_star)\n";
+                ++failures;
+            }
             const float dist = (r.x_star - true_source).norm();
             if (r.method == atm::SourceEstimationMethod::BayesianGrid) {
                 const float dx = std::abs(r.x_star.x() - true_source.x());
@@ -424,6 +428,43 @@ int main() {
                 std::cerr << "SEM method '" << name << "' localized to (" << r.x_star.x() << ", " << r.x_star.y()
                           << "), " << dist << " m from the true source (" << true_source.x() << ", "
                           << true_source.y() << "); expected within " << kTolerance_m << " m\n";
+                ++failures;
+            }
+        }
+    }
+
+    // --- Noise-only sensors must not count as a detection ------------------
+    // Clamped sensor noise has a positive mean, so with a fixed tiny
+    // threshold pure noise used to "detect" forever. With the family-wise
+    // noise floor applied, sensors that never saw a plume must yield
+    // insufficient_signal from every method.
+    {
+        atm::Config cfg{};
+        cfg.domain.nx = 40;
+        cfg.domain.ny = 40;
+        cfg.numerics.dt = 1.0f;
+        cfg.numerics.max_substeps_per_frame = 1;
+        atm::Simulator sim(cfg);
+
+        atm::SensorManager sensor_manager(5.0f, 5.4e-6f, 120, 1.0f, 40.0f);
+        for (int i = 0; i < 10; ++i) {
+            sensor_manager.add_sensor(atm::Vec2(500.0f + 400.0f * static_cast<float>(i), 2500.0f), sim.time_s());
+        }
+        for (int k = 0; k < 600; ++k) {
+            sim.step(cfg.numerics.dt);
+            sensor_manager.step(sim.time_s(), sim.pde(), cfg.domain);
+        }
+
+        std::size_t reports = 0;
+        for (const auto& s : sensor_manager.sensors()) {
+            reports += s.history.size();
+        }
+        atm::SourceEstimator estimator;
+        estimator.set_noise_floor(sensor_manager.noise_detection_floor(reports));
+        for (const auto& r : estimator.estimate_all(sensor_manager.sensors(), sim)) {
+            if (!r.insufficient_signal) {
+                std::cerr << "SEM method '" << atm::source_estimation_method_name(r.method)
+                          << "' treated sensor noise as a detection (no source was ever placed)\n";
                 ++failures;
             }
         }

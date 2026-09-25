@@ -62,6 +62,10 @@ public:
     void adjust_sensor_sample_period_s(float delta);
     void adjust_sensor_noise_std(float delta);
     void adjust_sensor_history_capacity(int delta);
+    // Proportional (x1.25 / /1.25) steps for quantities that span decades.
+    void step_time_scale(int direction);
+    void step_pde_fixed_color_scale(int direction);
+    void step_sensor_noise_std(int direction);
 
     void adjust_pde_grid_nx(int delta);
     void adjust_pde_grid_ny(int delta);

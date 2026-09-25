@@ -111,6 +111,14 @@ std::string format_fixed(float v, int precision) {
     return ss.str();
 }
 
+// For values that span many decades (noise std, color scale), where a fixed
+// decimal count would print e.g. 5.4e-6 as "0.000".
+std::string format_sci(float v) {
+    std::ostringstream ss;
+    ss << std::scientific << std::setprecision(2) << v;
+    return ss.str();
+}
+
 std::string diffusion_mode_label(AdvectionDiffusionSolver::DiffusionMode mode) {
     return mode == AdvectionDiffusionSolver::DiffusionMode::ScalarizedTrace ? "Scalarized (1)" : "Full Tensor (0)";
 }
@@ -136,11 +144,11 @@ std::string editable_field_string(const RuntimeSettings& pending, MenuModel::Edi
     case MenuModel::EditableField::SourceMaxSources:
         return std::to_string(pending.source_max_sources);
     case MenuModel::EditableField::PdeFixedColorScale:
-        return format_fixed(pending.pde_fixed_color_scale, 4);
+        return format_sci(pending.pde_fixed_color_scale);
     case MenuModel::EditableField::SensorSamplePeriod:
         return format_fixed(pending.sensor_sample_period_s, 2);
     case MenuModel::EditableField::SensorNoiseStd:
-        return format_fixed(pending.sensor_noise_std, 3);
+        return format_sci(pending.sensor_noise_std);
     case MenuModel::EditableField::SensorHistoryCapacity:
         return std::to_string(pending.sensor_history_capacity);
     case MenuModel::EditableField::PdeGridNx:
@@ -237,7 +245,7 @@ void draw_setting_row(
 void adjust_field(MenuModel& menu_model, MenuModel::EditableField field, int direction) {
     switch (field) {
     case MenuModel::EditableField::TimeScale:
-        menu_model.adjust_time_scale(direction * 0.25f);
+        menu_model.step_time_scale(direction);
         break;
     case MenuModel::EditableField::MaxParticles:
         menu_model.adjust_max_particles(direction * 1000);
@@ -264,13 +272,13 @@ void adjust_field(MenuModel& menu_model, MenuModel::EditableField field, int dir
         menu_model.adjust_source_max_sources(direction);
         break;
     case MenuModel::EditableField::PdeFixedColorScale:
-        menu_model.adjust_pde_fixed_color_scale(direction * 1.0e-4f);
+        menu_model.step_pde_fixed_color_scale(direction);
         break;
     case MenuModel::EditableField::SensorSamplePeriod:
         menu_model.adjust_sensor_sample_period_s(direction * 0.5f);
         break;
     case MenuModel::EditableField::SensorNoiseStd:
-        menu_model.adjust_sensor_noise_std(direction * 0.01f);
+        menu_model.step_sensor_noise_std(direction);
         break;
     case MenuModel::EditableField::SensorHistoryCapacity:
         menu_model.adjust_sensor_history_capacity(direction * 10);

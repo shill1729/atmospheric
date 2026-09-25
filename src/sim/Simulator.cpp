@@ -1,6 +1,7 @@
 #include "sim/Simulator.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 namespace atm {
@@ -16,22 +17,40 @@ Simulator::Simulator(const Config& config)
     particle_mass_ = 1.0f / (base_scale * particle_birth_multiplier_);
 }
 
-void Simulator::step(float frame_dt) {
+void Simulator::step(float frame_dt, const std::function<void()>& after_step) {
     if (paused_) {
         last_emitted_total_ = 0;
         last_emission_rate_per_second_ = 0.0f;
+        achieved_time_scale_ = 0.0f;
         return;
     }
+
+    using Clock = std::chrono::steady_clock;
+    const auto frame_start = Clock::now();
+    const auto budget = std::chrono::duration<float, std::milli>(std::max(0.0f, config_.numerics.frame_step_budget_ms));
 
     accumulator_ += frame_dt * time_scale_runtime_;
     int substeps = 0;
     int emitted_frame = 0;
     float sim_dt_frame = 0.0f;
+    bool out_of_budget = false;
     while (accumulator_ >= config_.numerics.dt && substeps < config_.numerics.max_substeps_per_frame) {
         emitted_frame += step_fixed(config_.numerics.dt);
+        if (after_step) {
+            after_step();
+        }
         sim_dt_frame += config_.numerics.dt;
         accumulator_ -= config_.numerics.dt;
         ++substeps;
+        if (Clock::now() - frame_start >= budget) {
+            out_of_budget = accumulator_ >= config_.numerics.dt;
+            break;
+        }
+    }
+
+    if (frame_dt > 0.0f) {
+        const float rate = sim_dt_frame / frame_dt;
+        achieved_time_scale_ = achieved_time_scale_ <= 0.0f ? rate : 0.9f * achieved_time_scale_ + 0.1f * rate;
     }
 
     if (substeps > 0) {
@@ -42,7 +61,9 @@ void Simulator::step(float frame_dt) {
         last_emission_rate_per_second_ = 0.0f;
     }
 
-    if (substeps == config_.numerics.max_substeps_per_frame) {
+    // Drop time the CPU could not keep up with instead of carrying a
+    // growing backlog into later frames.
+    if (out_of_budget || substeps == config_.numerics.max_substeps_per_frame) {
         accumulator_ = 0.0f;
     }
 }
@@ -94,11 +115,11 @@ Mat2 Simulator::diffusivity_at_time(float time_s, const Vec2& x) const {
 }
 
 void Simulator::scale_time(float factor) {
-    time_scale_runtime_ = std::clamp(time_scale_runtime_ * factor, 0.25f, 120.0f);
+    time_scale_runtime_ = std::clamp(time_scale_runtime_ * factor, kMinTimeScale, kMaxTimeScale);
 }
 
 void Simulator::set_time_scale(float value) {
-    time_scale_runtime_ = std::clamp(value, 0.25f, 120.0f);
+    time_scale_runtime_ = std::clamp(value, kMinTimeScale, kMaxTimeScale);
 }
 
 void Simulator::reset_time_scale() {
@@ -107,6 +128,10 @@ void Simulator::reset_time_scale() {
 
 float Simulator::time_scale() const {
     return time_scale_runtime_;
+}
+
+float Simulator::achieved_time_scale() const {
+    return achieved_time_scale_;
 }
 
 void Simulator::adjust_trail_length(int delta) {

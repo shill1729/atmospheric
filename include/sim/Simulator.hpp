@@ -7,6 +7,7 @@
 #include "science/Fields.hpp"
 #include "science/SourceModel.hpp"
 
+#include <functional>
 #include <string_view>
 
 namespace atm {
@@ -15,7 +16,11 @@ class Simulator {
 public:
     explicit Simulator(const Config& config);
 
-    void step(float frame_dt);
+    // Advances by frame_dt * time_scale in fixed steps, within the per-frame
+    // wall-clock budget. after_step (if set) runs after every fixed step, so
+    // observers such as sensors see each intermediate state rather than only
+    // the end-of-frame one.
+    void step(float frame_dt, const std::function<void()>& after_step = {});
     void set_paused(bool paused);
     bool paused() const;
     void toggle_paused();
@@ -31,6 +36,8 @@ public:
     void set_time_scale(float value);
     void reset_time_scale();
     float time_scale() const;
+    // Smoothed simulated seconds actually advanced per wall second.
+    float achieved_time_scale() const;
     void adjust_trail_length(int delta);
     std::size_t trail_length() const;
     void cycle_wind_model(int direction);
@@ -71,6 +78,7 @@ private:
     float accumulator_ = 0.0f;
     bool paused_ = false;
     float time_scale_runtime_ = 1.0f;
+    float achieved_time_scale_ = 0.0f;
     int last_emitted_total_ = 0;
     float last_emission_rate_per_second_ = 0.0f;
     float particle_mass_ = 1.0f;
