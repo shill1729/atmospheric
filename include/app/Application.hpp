@@ -127,7 +127,7 @@ private:
     bool show_wind_ = true;
     AdjointOverlayMode adjoint_overlay_mode_ = AdjointOverlayMode::Posterior;
     bool show_ecs_quick_panel_ = false;
-    bool pde_auto_color_scale_ = true;
+    bool pde_auto_color_scale_ = false;
     float concentration_scale_ug_per_m2_ = 1.923e8f;
     float mixing_height_m_ = 800.0f;
     float pde_fixed_color_scale_ = 1.0e-4f;

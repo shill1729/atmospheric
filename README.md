@@ -380,7 +380,7 @@ Keyboard:
 - `P`: cycle PDE diffusion mode (scalarized/full tensor flux)
 - `B`: cycle shared SDE/PDE boundary mode (periodic/reflecting/absorbing)
 - `H`: toggle Brownian/Heat special case
-- `C`: toggle PDE color scaling mode (auto/fixed)
+- `C`: toggle PDE color scaling mode (fixed, the default, / auto)
 - `U`: toggle the mass-unit label on the HUD (`g/m^2` vs `ug/m^2`)
 - `[` / `]`: slower/faster simulation speed (×0.8 / ×1.25, clamped to 0.25–100,000)
 - `\`: reset speed to configured base
@@ -448,7 +448,7 @@ HUD:
   - `conc_display = model_concentration * conc_scale / mixing_height`
 - `--conc-scale` sets `conc_scale` (ug/m^2 per model unit; default `1.923e8`).
 - `--mixing-height` is the assumed vertical mixing depth (meters; default 800).
-- The PDE heatmap uses a log color map. In auto mode it tracks 15% of the current maximum with smoothing; in fixed mode it uses **Display → PDE Fixed Color Scale**.
+- The PDE heatmap uses a log color map. It starts in fixed mode; in auto mode it tracks 15% of the current maximum with smoothing; in fixed mode it uses **Display → PDE Fixed Color Scale**.
 
 ### Sensors
 

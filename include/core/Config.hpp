@@ -52,7 +52,7 @@ struct PhysicsConfig {
     float wind_scale = 1.0f;
 };
 struct NumericsConfig {
-    float dt = 0.01f;
+    float dt = 0.1f;
     float time_scale = 10.0f;
     std::size_t max_particles = 1000000;
     // Hard cap on fixed steps per rendered frame. The practical limit is
