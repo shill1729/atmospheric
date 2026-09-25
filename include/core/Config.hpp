@@ -60,7 +60,7 @@ struct AppConfig {
     // ~5% of a typical default-plume model concentration (quasi-steady peak
     // from analysis.forward_model), matching the relative_model_error assumed
     // by SourceEstimationConfig.
-    float sensor_noise_std = 5.4e-6f;
+    float sensor_noise_std = 3.2e-6f;
     float sensor_physical_sample_period_s = 1.0f;
     float sensor_spatial_avg_radius_m = 40.0f;
     // 120 reports x 5 s = 10 min, long enough to include a plume's arrival
@@ -70,7 +70,7 @@ struct AppConfig {
     // concentration maps to the real network-mean event peak (~26 ug/m^3,
     // Nov 2024 wildfire) at mixing_height_m below. See
     // analysis/forward_model.solve_conc_scale and calibration_report.md.
-    float concentration_scale_ug_per_m2 = 1.923e8f;
+    float concentration_scale_ug_per_m2 = 3.243e8f;
     // Typical daytime convective boundary-layer depth (500-1500 m range;
     // not derivable from these surface-only datasets).
     float mixing_height_m = 800.0f;

@@ -158,7 +158,7 @@ Both methods reuse `AdjointSolver`; see `src/adjoint/SourceEstimator.cpp` for th
 
 ### Detection threshold
 
-Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 5.4\times10^{-6}$) it is about $1.1\times10^{-5}$ model units, roughly 10% of a typical plume peak. It is 0 when noise is off.
+Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 3.2\times10^{-6}$) it is about $6.5\times10^{-6}$ model units, roughly 10% of the calibration plume's reference peak. It is 0 when noise is off.
 
 Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has decayed (the default deposition $\lambda = 0.01\,\text{s}^{-1}$ is a 100 s e-folding time) or left an absorbing domain. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
 
@@ -332,7 +332,7 @@ Defaults live in `include/core/Config.hpp`. The combined configuration is valida
 
 One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200\,\Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.1` the ceiling is about 20×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
 
-`dt` is set with `--dt` or **PDE → dt**. The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind and diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) and `--dt 2` (~400×) are stable, and the 49 h faithful-event run takes minutes. Keep `dt` at most the sensor physical sample period if every physical sample should see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
+`dt` is set with `--dt` or **PDE → dt**. The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind and diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) and `--dt 2` (~400×) are stable. Keep `dt` at most the sensor physical sample period if every physical sample should see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
 
 Sensors sample after every fixed step, so their readings stay correct at any speed-up.
 
@@ -353,20 +353,19 @@ Example:
 
 ### Faithful NY wildfire event export
 
-The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are kept fast so a clicked source evolves within seconds of wall time. The real Nov 2024 event's rise/decay time constants are much slower, ~15 h / ~42 h (see [Calibration](#calibration)). For an offline export meant to mimic that event's actual timescale, override them explicitly:
+The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are kept fast so a clicked source evolves within seconds of wall time. The real Nov 2024 event's decay time constant is ~42 h, with ~49 h above threshold (see [Calibration](#calibration)). Exported time is stretched by ~50.6× (see [CSV Export](#csv-export)), so in simulation seconds that event is 50.6× shorter. For an export that mimics the event's timescale:
 
 ```bash
 ./build-release/atmospheric \
-  --dt 1 \
-  --time-scale 400 \
-  --source-decay 6.7e-6 \
-  --source-lifespan 176400 \
+  --time-scale 100 \
+  --source-decay 3.38e-4 \
+  --source-lifespan 3489 \
   --source-sigma 95 \
-  --conc-scale 1.923e8 \
+  --conc-scale 3.243e8 \
   --mixing-height 800
 ```
 
-(`--dt`/`--time-scale` make the ~49 h event practical to run; see [Speeding up simulations](#speeding-up-simulations). The last three flags equal the current defaults and are listed so the run stays reproducible if defaults change. With the default deposition rate the plume decays within minutes, so you may also want a smaller `--deposition` for event-scale runs.)
+At the default `dt` this runs at ~20× and takes about 3 minutes; add `--dt 1` for ~200×. The last three flags equal the current defaults and are listed so the run stays reproducible if defaults change. With the default deposition rate the plume decays within about 100 simulation seconds (~1.4 h exported), so you may also want a smaller `--deposition` for event-scale runs.
 
 Then press `L` to load the NY site network, `N` to apply the matching hourly-observation sensor preset, click a source, and record/export as described below.
 
@@ -388,14 +387,14 @@ Keyboard:
 - `M`: cycle which estimation method's result is displayed/HUD-reported
 - `J`: cycle the right-panel overlay: selected method's posterior heatmap → backward-flow animation → off
 - `L`: clear sensors and load the NY wildfire site network from `wildfire_pm25_dataset.csv`
-- `N`: apply NY observation preset: physical sample period 300 s, averaging window 3600 s (mimics 5-min readings averaged to 1-hour reports); does not change domain or physics
+- `N`: apply NY observation preset: 5-min physical readings averaged into 1-hour reports in exported time (5.9 s / 71.2 s in simulation time, given the export time stretch); does not change domain or physics
 - `F1`: open/close the controls help overlay
 - `Esc`: close an open toolbar menu / cancel a field edit; otherwise open/close the preferences overlay
 
 Mouse:
 - `Left click` (left panel): add source (up to `source-max` active sources)
 - `Left click` (right panel): add concentration sensor
-- **Estimate** HUD card: `RUN ESTIMATE (E)` button (reads `PAUSE FIRST` while running), and `<` / `>` to cycle methods
+- **Estimate** HUD card: `RUN ESTIMATE (E)` button (reads `PAUSE FIRST` while the simulation runs and `RUNNING...` while an estimate is computed; the status strip also says so, and the window pauses for a few seconds), and `<` / `>` to cycle methods
 
 Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
 - `File` actions:
@@ -407,7 +406,7 @@ Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
   - `Export CSV`: write captured sensor time series to a CSV file in the current working directory
 - Editable fields:
   - `Source`: Base Emission, Decay Rate, Lifespan (s), Sigma, Max Sources
-  - `Numerics`: Time Scale, Max Particles, Deposition, Const Diffusivity, Wind Scale
+  - `Numerics`: Time Scale (shows the live value, including `[`/`]` changes), Max Particles, Deposition, Const Diffusivity, Wind Scale
   - `Sensors`: Sample Period (s), Noise Std, History Capacity
   - `Display`: PDE Fixed Color Scale
   - `PDE`: Grid Nx, Grid Ny, dt, Diffusion Mode
@@ -427,7 +426,7 @@ Preferences overlay (`Esc`), with `Up/Down` to select and `Left/Right/Enter` to 
 - Reset simulation
 
 HUD:
-- **Status** card: time, requested and achieved speed, `dt` with its stability bound, run state, models, BC, PDE max concentration (`ug/m^3`)
+- **Status** card: time (plus the exported real-time equivalent when georeferenced), requested and achieved speed, `dt` with its stability bound (flagged `UNSTABLE` when `dt` exceeds it), run state, models, BC, PDE max concentration (`ug/m^3`)
 - **Source** card: total emission rate, emitted particles/step, active sources, particle count, newest source age, $M_{\text{sde}}/M_{\text{pde}}$
 - **Estimate** card: selected method and its $x^*$, $t^*$ (and $q_0$ for the two inversion methods), and the current overlay mode
 - Status strip: estimator status line, including `error=… m` (distance from $x^*$ to the most recently clicked source), recording status, and georeference / `L` / `N` status
@@ -446,14 +445,14 @@ HUD:
 
 - Displayed PDE and sensor concentrations are reported as `ug/m^3` using:
   - `conc_display = model_concentration * conc_scale / mixing_height`
-- `--conc-scale` sets `conc_scale` (ug/m^2 per model unit; default `1.923e8`).
+- `--conc-scale` sets `conc_scale` (ug/m^2 per model unit; default `3.243e8`). It maps the default burst's plume peak about 100 s after emission stops (a proxy for downwind sensor readings) to the real network-mean event peak (~26 ug/m^3); concentrations right at an active source run several times higher.
 - `--mixing-height` is the assumed vertical mixing depth (meters; default 800).
 - The PDE heatmap uses a log color map. It starts in fixed mode; in auto mode it tracks 15% of the current maximum with smoothing; in fixed mode it uses **Display → PDE Fixed Color Scale**.
 
 ### Sensors
 
 - Each sensor takes a physical sample of the PDE field every `--sensor-physical-period` (default 1 s). A sample is a 13-point disk-stencil average of radius `--sensor-spatial-radius` (default 40 m), bilinearly interpolated from the grid.
-- Gaussian noise with std **Sensors → Noise Std** (model units; default `5.4e-6`, ~5% of a typical plume peak) is added to each physical sample and clamped at zero.
+- Gaussian noise with std **Sensors → Noise Std** (model units; default `3.2e-6`, 5% of the calibration plume's reference peak) is added to each physical sample and clamped at zero.
 - Every **Sensors → Sample Period** (default 5 s) the sensor reports the window average of its noisy samples. Reports go into a rolling history of `--sensor-history-capacity` entries (default 120, i.e. 10 min at the default period). A long enough history lets the estimators see the plume's arrival at the sensors, which pins down the release time.
 - On-plot labels show each sensor's latest report value (`ug/m^3`), or `N/A` before the first report.
 
@@ -463,11 +462,11 @@ The real datasets are **not tracked in git** (`*.csv` is ignored). Place them at
 - `wildfire_pm25_dataset.csv`: hourly PM2.5 time series for 38 sensor sites across the NY metro and Hudson Valley region (Nov 2024 wildfire event). Needed for `L` and for `analysis/`.
 - `multimonth_pm25_dataset.csv`: Sep 2023–Mar 2024 multi-pollutant record for 29 sites. Needed for `analysis/` only.
 
-At startup, if `wildfire_pm25_dataset.csv` is present, the domain is georeferenced to the NY network (the same projection `L` uses). Hand-placed and `L`-loaded sensors then share one lat/lon frame in exports, and the status strip says which mode is active. Without the file, exports fall back to domain `x_m, y_m`.
+At startup, if `wildfire_pm25_dataset.csv` is present, the domain is georeferenced to the NY network (the same projection `L` uses). Hand-placed and `L`-loaded sensors then share one lat/lon frame in exports, and the status strip says which mode is active. Because the ~212 × 157 km network is fitted into the 5 km domain (a ~1:51 scale model), exported time is stretched by the same factor; see [Output format](#output-format). Without the file, exports fall back to domain `x_m, y_m`.
 
 Press **`L`** to load the site network into the simulation. Unique sites are read from the `site_name`, `lat_deg`, `lon_deg` columns and sorted by name. Their coordinates are projected to domain coordinates via an equirectangular approximation centred on the network centroid (lat ≈ 41.02°, lon ≈ −73.96°). The network is then uniformly scaled and centred to fit the active domain with 8% padding, preserving the relative geometry of the sites. Sensors keep their real site names as labels.
 
-Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 900 s observation window holds at most one hourly report, so `N` is intended for export; estimation needs a shorter report period.
+Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 900 s observation window holds about 12 of these reports.
 
 The `R` (reset) key always clears sensors regardless of how they were placed.
 
@@ -490,7 +489,7 @@ Several defaults were set from this report's output, and each has a comment citi
 - in `include/core/Config.hpp`: `mixing_height_m`, `concentration_scale_ug_per_m2`, `source.sigma`, `app.sensor_noise_std`
 - in `src/science/Fields.cpp`: the wind preset magnitudes (at wind scale 1)
 
-The "Faithful NY wildfire event export" example above uses the report's `faithful_source_decay_rate_per_s`/`faithful_source_lifespan_s` recommendations.
+The report also gives `export_time_stretch` and converts real durations into simulation seconds (`faithful_source_decay_rate_per_sim_s`, `faithful_source_lifespan_sim_s`, `hourly_report_period_sim_s`); the "Faithful NY wildfire event export" example and the `N` preset use those.
 
 ## CSV Export
 
@@ -507,6 +506,8 @@ The forward simulation as observed by the sensor network can be exported to a CS
 7. Open **File → Export CSV**. The file is written to the current working directory and the filename is shown in the status strip.
 
 Recording is independent of the rolling sensor history used by the estimators. It is unbounded and accumulates for the full duration between start and stop. You can export the same recorded session multiple times (e.g. before and after running an estimate). Calling **Start Recording** again clears the previous buffer.
+
+Resetting (`R`), loading the NY sites (`L`), or applying a setting that rebuilds the simulator replaces the sensors, so a recording in progress cannot simply continue. Instead, the buffer so far is saved to its own CSV, a fresh recording starts, and the status strip reports `Restarted after …; earlier data saved: <file>`.
 
 Sources already active when recording starts, and sources clicked during recording, are logged as ground-truth source events.
 
@@ -537,12 +538,13 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 # Sensors recorded: 3
 # Concentration: sensor window-averaged reading converted to ug/m^3
 # Coordinates: lat_deg, lon_deg (WGS84, equirectangular back-projection from domain)
+# Time stretch: 50.553303 real s per simulation s (Datetime_UTC = anchor + time_s * stretch; the domain is a 1:51 scale model of the network)
 # Wind: u eastward, v northward (m/s); wind_direction is where the wind blows from, degrees clockwise from north
 # Sources: 1
-# Source 1: lat=41.018000 lon=-73.962000 born=12.340000s lifespan=100.000000s died=112.340000s
+# Source 1: lat=41.018000 lon=-73.962000 born=12.340000s lifespan=100.000000s died=112.340000s born_utc=2024-11-08T00:10:24+00:00 died_utc=2024-11-08T01:34:39+00:00
 # Source term estimates (from the last 'E' run before export): 3
-# Estimate 1 (Adjoint Backtracking): lat*=... lon*=... t*=...s
-# Estimate 2 (Regularized Least Squares): lat*=... lon*=... t*=...s q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
+# Estimate 1 (Adjoint Backtracking): lat*=... lon*=... t*=...s t*_utc=...
+# Estimate 2 (Regularized Least Squares): lat*=... lon*=... t*=...s t*_utc=... q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
 # Estimate 3 (Bayesian Grid): ...
 Datetime_UTC,site_name,lat_deg,lon_deg,pm25_ugm-3,wind_speed,wind_direction,wind_u_component,wind_v_component,time_s
 ```
@@ -556,7 +558,7 @@ An estimate that failed is written as `no result - <reason>`.
 
 The first nine columns match `wildfire_pm25_dataset.csv` in name, order, format and units, so scripts written for the real data can read an export directly. `time_s` is appended last:
 
-- `Datetime_UTC`: synthetic timestamp, `time_s` offset from an anchor. With the geo projection active, the anchor is the real wildfire event start (2024-11-08 00:00 UTC); otherwise it is the wall-clock time recording started.
+- `Datetime_UTC`: synthetic timestamp. With the geo projection active it is the real wildfire event start (2024-11-08 00:00 UTC) plus `time_s` × the time stretch; otherwise the wall-clock time recording started plus `time_s`. The stretch equals the domain's length scale factor (~50.6), so distances, times and wind speeds are mutually consistent in real geography, and effective real diffusivities are ~50.6× the domain values.
 - `site_name`: sensor label; the real site name when loaded via `L`, else `Sensor_<index>`
 - `lat_deg`, `lon_deg`: sensor coordinates when the geo projection is active; `x_m`, `y_m` (domain meters) otherwise
 - `pm25_ugm-3`: noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion

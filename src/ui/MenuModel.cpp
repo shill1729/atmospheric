@@ -8,6 +8,7 @@ namespace {
 constexpr int kMaxParticles = 10000000;
 constexpr float kLogStepFactor = 1.25f;
 constexpr float kMaxWindScale = 100.0f;
+constexpr float kMaxSourceLifespan = 1.0e7f;
 
 // Multiplies a positive quantity by kLogStepFactor^direction, so +/- steps
 // stay proportionate whether the value is 1e-6 or 1e3. A zero value steps
@@ -78,7 +79,7 @@ void MenuModel::adjust_source_decay_rate(float delta) {
 }
 
 void MenuModel::adjust_source_lifespan(float delta) {
-    pending_.source_lifespan = std::clamp(pending_.source_lifespan + delta, 0.1f, 36000.0f);
+    pending_.source_lifespan = std::clamp(pending_.source_lifespan + delta, 0.1f, kMaxSourceLifespan);
 }
 
 void MenuModel::adjust_source_sigma(float delta) {
@@ -222,7 +223,7 @@ bool MenuModel::commit_edit() {
             pending_.source_decay_rate = clampf(std::stof(edit_buffer_), 0.0f, 10.0f);
             break;
         case EditableField::SourceLifespan:
-            pending_.source_lifespan = clampf(std::stof(edit_buffer_), 0.1f, 36000.0f);
+            pending_.source_lifespan = clampf(std::stof(edit_buffer_), 0.1f, kMaxSourceLifespan);
             break;
         case EditableField::SourceSigma:
             pending_.source_sigma = clampf(std::stof(edit_buffer_), 0.1f, 5000.0f);

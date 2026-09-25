@@ -78,6 +78,10 @@ public:
     void set_geo_projection(const GeoProjection& p);
     void clear_geo_projection();
     bool has_geo_projection() const;
+    // Real seconds per simulation second in exports: the inverse of the
+    // projection's length scale, so lengths, times and wind speeds stay
+    // mutually consistent in real geography. 1 without a geo projection.
+    float time_stretch() const;
 
     const std::vector<SensorRecord>& records() const;
     const std::vector<SourceEvent>& source_events() const;

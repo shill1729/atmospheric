@@ -12,6 +12,21 @@ import pandas as pd
 EARTH_RADIUS_M = 6_371_000.0
 
 
+def domain_projection_scale(df: pd.DataFrame, domain_span_m: float = 5000.0, pad_fraction: float = 0.08) -> float:
+    """Domain metres per real metre when the site network is fitted into the domain.
+
+    Mirrors project_sites_to_domain in src/io/SiteLoader.cpp: equirectangular
+    projection about the site centroid, then a uniform scale fitting the
+    network's bounding box inside the domain minus pad_fraction on each side.
+    """
+    sites = df.drop_duplicates("site_name")
+    lat0 = np.radians(sites["lat_deg"].mean())
+    x = np.radians(sites["lon_deg"] - sites["lon_deg"].mean()) * np.cos(lat0) * EARTH_RADIUS_M
+    y = np.radians(sites["lat_deg"] - sites["lat_deg"].mean()) * EARTH_RADIUS_M
+    avail = domain_span_m * (1.0 - 2.0 * pad_fraction)
+    return float(min(avail / np.ptp(x), avail / np.ptp(y)))
+
+
 def haversine_m(lat1, lon1, lat2, lon2) -> np.ndarray:
     """Great-circle distance in meters between paired (or broadcastable) lat/lon arrays."""
     lat1, lon1, lat2, lon2 = map(np.radians, (lat1, lon1, lat2, lon2))

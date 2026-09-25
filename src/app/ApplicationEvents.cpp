@@ -50,11 +50,7 @@ void Application::process_events() {
                 sim().toggle_paused();
             }
             if (key->code == sf::Keyboard::Key::R) {
-                sim().reset();
-                sensor_manager_.clear();
-                clear_source_estimation();
-                has_last_source_click_ = false;
-                source_click_count_since_reset_ = 0;
+                reset_simulation();
             }
             if (key->code == sf::Keyboard::Key::B) {
                 sim().toggle_boundary_mode();
@@ -90,7 +86,7 @@ void Application::process_events() {
                 sim().toggle_brownian_heat_case();
             }
             if (key->code == sf::Keyboard::Key::E) {
-                run_source_estimation();
+                request_source_estimation();
             }
             if (key->code == sf::Keyboard::Key::J) {
                 adjoint_overlay_mode_ = static_cast<AdjointOverlayMode>((static_cast<int>(adjoint_overlay_mode_) + 1) % 3);
@@ -134,7 +130,7 @@ void Application::process_events() {
                     apply_settings_report(report);
                 }
                 if (toolbar_click.request_source_estimate) {
-                    run_source_estimation();
+                    request_source_estimation();
                 }
                 if (toolbar_click.request_apply_queued_settings) {
                     const ApplySettingsReport report = controller_.apply_settings(menu_model_.pending_settings());
@@ -157,13 +153,7 @@ void Application::process_events() {
                         recording_status_ = "Stopped. "
                             + std::to_string(data_recorder_.total_readings()) + " readings captured.";
                     } else {
-                        data_recorder_.start_recording();
-                        for (const auto& src : sim().source().active_sources()) {
-                            data_recorder_.record_source_event(
-                                src.position,
-                                sim().time_s() - src.age_s,
-                                sim().config().source.lifespan);
-                        }
+                        start_recording();
                         recording_status_ = "Recording...";
                     }
                 }
@@ -171,16 +161,7 @@ void Application::process_events() {
                     if (!data_recorder_.has_data()) {
                         recording_status_ = "No data to export. Record a session first.";
                     } else {
-                        const std::string path = data_recorder_.export_csv(
-                            ".",
-                            std::string(sim().wind_model_name()),
-                            std::string(sim().diffusion_model_name()),
-                            std::string(sim().pde_diffusion_mode_name()),
-                            sim().config().numerics.dt,
-                            sim().time_scale(),
-                            sensor_manager_.sample_period(),
-                            sim().wind_scale(),
-                            estimation_results_);
+                        const std::string path = export_recording();
                         recording_status_ = path.empty() ? "Export failed (IO error)." : "Saved: " + path;
                     }
                 }
@@ -193,7 +174,7 @@ void Application::process_events() {
                     static_cast<float>(click->position.x), static_cast<float>(click->position.y));
                 const EstimateButtonLayout est = estimate_button_layout();
                 if (est.run_button.contains(click_pos)) {
-                    run_source_estimation();
+                    request_source_estimation();
                     continue;
                 }
                 if (est.prev_button.contains(click_pos)) {
@@ -263,15 +244,70 @@ void Application::apply_menu_adjustment(int direction) {
         sim().adjust_trail_length(direction > 0 ? 1 : -1);
         break;
     case 10:
-        sim().reset();
-        sensor_manager_.clear();
-        clear_source_estimation();
-        has_last_source_click_ = false;
-        source_click_count_since_reset_ = 0;
+        reset_simulation();
         break;
     default:
         break;
     }
+}
+
+void Application::reset_simulation() {
+    restart_recording_if_active("reset");
+    sim().reset();
+    sensor_manager_.clear();
+    clear_source_estimation();
+    has_last_source_click_ = false;
+    source_click_count_since_reset_ = 0;
+}
+
+void Application::capture_recording_meta() {
+    recording_meta_.wind_model = std::string(sim().wind_model_name());
+    recording_meta_.diffusion_model = std::string(sim().diffusion_model_name());
+    recording_meta_.pde_mode = std::string(sim().pde_diffusion_mode_name());
+    recording_meta_.dt = sim().config().numerics.dt;
+    recording_meta_.time_scale = sim().time_scale();
+    recording_meta_.sample_period_s = sensor_manager_.sample_period();
+    recording_meta_.wind_scale = sim().wind_scale();
+}
+
+void Application::start_recording() {
+    data_recorder_.start_recording();
+    for (const auto& src : sim().source().active_sources()) {
+        data_recorder_.record_source_event(src.position, sim().time_s() - src.age_s, sim().config().source.lifespan);
+    }
+    capture_recording_meta();
+}
+
+std::string Application::export_recording() {
+    const auto& m = recording_meta_;
+    return data_recorder_.export_csv(".", m.wind_model, m.diffusion_model, m.pde_mode, m.dt, m.time_scale,
+        m.sample_period_s, m.wind_scale, estimation_results_);
+}
+
+void Application::restart_recording_if_active(const std::string& reason) {
+    if (!data_recorder_.is_recording()) {
+        return;
+    }
+    std::string saved;
+    if (data_recorder_.has_data()) {
+        saved = export_recording();
+    }
+    start_recording();
+    recording_status_ = "Restarted after " + reason
+        + (saved.empty() ? std::string("; nothing recorded before it") : "; earlier data saved: " + saved);
+}
+
+void Application::request_source_estimation() {
+    if (!sim().paused()) {
+        source_estimation_.status = "Pause simulation before running.";
+        return;
+    }
+    if (sensor_manager_.sensors().empty()) {
+        source_estimation_.status = "No sensors placed.";
+        return;
+    }
+    estimation_pending_ = true;
+    source_estimation_.status = "Running source estimation (3 methods)...";
 }
 
 void Application::run_source_estimation() {
@@ -482,6 +518,7 @@ void Application::load_ny_sites() {
         sites_status_ = "L: " + err;
         return;
     }
+    restart_recording_if_active("loading NY sites");
     sensor_manager_.clear();
     for (std::size_t i = 0; i < positions.size(); ++i) {
         sensor_manager_.add_sensor(positions[i], sim().time_s(), i < sites.size() ? sites[i].name : "");
@@ -490,11 +527,16 @@ void Application::load_ny_sites() {
 }
 
 void Application::apply_ny_sensor_preset() {
-    // Mimic hourly-averaged, 5-min physical readings — no domain/physics changes.
-    sensor_manager_.set_physical_sample_period(300.0f);
-    sensor_manager_.set_sample_period(3600.0f);
+    // 5-min physical readings averaged into hourly reports, in real (exported)
+    // time; simulation periods are shorter by the export time stretch.
+    const float stretch = data_recorder_.time_stretch();
+    sensor_manager_.set_physical_sample_period(300.0f / stretch);
+    sensor_manager_.set_sample_period(3600.0f / stretch);
     menu_model_.sync_from_current(controller_.current_settings());
-    sites_status_ = "N: sensor preset — phys 300 s, avg 3600 s";
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(1) << "N: sensor preset - phys " << 300.0f / stretch << " s, avg "
+       << 3600.0f / stretch << " s (5 min / 1 h in exported time)";
+    sites_status_ = ss.str();
 }
 
 } // namespace atm

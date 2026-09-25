@@ -67,7 +67,17 @@ private:
     bool right_panel_contains(const sf::Vector2i& pixel) const;
     Vec2 right_panel_pixel_to_domain(const sf::Vector2i& pixel) const;
     sf::Vector2f domain_to_right_panel(const Vec2& x) const;
+    // Queues an estimate: the status shows it is running, the frame renders,
+    // and run() then performs the (blocking) estimation.
+    void request_source_estimation();
     void run_source_estimation();
+    void reset_simulation();
+    void start_recording();
+    // Called before sensors or the simulator are replaced during a recording:
+    // saves the buffer so far to CSV, then starts a fresh recording.
+    void restart_recording_if_active(const std::string& reason);
+    std::string export_recording();
+    void capture_recording_meta();
     void clear_source_estimation();
     void sync_source_estimation_view();
     void cycle_estimation_method(int direction);
@@ -109,6 +119,21 @@ private:
     SourceEstimationView source_estimation_;
     FeynmanKacAnimation feynman_kac_anim_;
     std::vector<SourceEstimateResult> estimation_results_;
+    bool estimation_pending_ = false;
+
+    // Simulation settings written into the export header, refreshed every
+    // frame while recording so a restart after a settings change still
+    // describes the data it saves.
+    struct RecordingMeta {
+        std::string wind_model;
+        std::string diffusion_model;
+        std::string pde_mode;
+        float dt = 0.0f;
+        float time_scale = 0.0f;
+        float sample_period_s = 0.0f;
+        float wind_scale = 1.0f;
+    };
+    RecordingMeta recording_meta_;
     int selected_estimation_method_ = 0;
     DataRecorder data_recorder_;
     std::string recording_status_;
@@ -128,7 +153,7 @@ private:
     AdjointOverlayMode adjoint_overlay_mode_ = AdjointOverlayMode::Posterior;
     bool show_ecs_quick_panel_ = false;
     bool pde_auto_color_scale_ = false;
-    float concentration_scale_ug_per_m2_ = 1.923e8f;
+    float concentration_scale_ug_per_m2_ = 3.243e8f;
     float mixing_height_m_ = 800.0f;
     float pde_fixed_color_scale_ = 1.0e-4f;
     float pde_color_scale_runtime_ = 4.0e-4f;

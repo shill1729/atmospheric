@@ -42,17 +42,19 @@ multimonth baseline:
 - v_std_m_s: 1.85
 
 ## Forward-model replica (default Config.hpp params)
-- peak_model_conc: 0.000100961
-- mean_positive_model_conc: 2.30879e-07
-- quasi_steady_peak: 0.000108481
+- peak_model_conc: 6.04472e-05
+- mean_positive_model_conc: 2.31877e-07
+- quasi_steady_peak: 6.43197e-05
 
 ## Recommended simulator defaults
 - mixing_height_m: 800.0
-- conc_scale_ug_per_m2: 192253232.08363998
+- conc_scale_ug_per_m2: 324252040.5393315
+- sensor_noise_std_model_units: 3.215983940785816e-06
 - source_sigma_m: 94.581967084661
 - representative_wind_speed_m_s: 1.866137593250572
 - wind_speed_p90_m_s: 4.407629088046355
-- faithful_source_decay_rate_per_s: 6.688512901530769e-06
-- faithful_source_lifespan_s: 176400.0
-- sensor_sample_period_s_hourly: 3600.0
+- export_time_stretch: 50.55340360767338
+- faithful_source_decay_rate_per_sim_s: 0.00033812709224621557
+- faithful_source_lifespan_sim_s: 3489.37929815718
+- hourly_report_period_sim_s: 71.21182241137102
 - decorrelation_time_s: 21600.0

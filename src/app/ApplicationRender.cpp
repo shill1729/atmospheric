@@ -391,11 +391,16 @@ void Application::draw_hud_cards() {
     std::ostringstream status;
     const float c_factor = concentration_display_factor_ug_per_m3(concentration_scale_ug_per_m2_, mixing_height_m_);
     const float pde_max_ug_m3 = sim().pde().max_concentration() * c_factor;
+    const float stable_dt = sim().pde().max_stable_dt();
     status << std::fixed << std::setprecision(2)
-           << "t: " << sim().time_s() << " s"
-           << "\nspeed: x" << sim().time_scale() << " (actual x" << sim().achieved_time_scale() << ")"
+           << "t: " << sim().time_s() << " s";
+    if (data_recorder_.has_geo_projection()) {
+        status << " (real " << sim().time_s() * data_recorder_.time_stretch() / 3600.0f << " h)";
+    }
+    status << "\nspeed: x" << sim().time_scale() << " (actual x" << sim().achieved_time_scale() << ")"
            << "\ndt: " << std::setprecision(3) << sim().config().numerics.dt << " s (stable <~"
-           << std::setprecision(2) << sim().pde().max_stable_dt() << " s)" << std::setprecision(2)
+           << std::setprecision(2) << stable_dt << " s)" << (sim().config().numerics.dt > stable_dt ? " UNSTABLE" : "")
+           << std::setprecision(2)
            << "\nstate: " << (sim().paused() ? "paused" : "running")
            << "\nwind: " << sim().wind_model_name() << " x" << sim().wind_scale()
            << "\ndiff: " << sim().diffusion_model_name()
@@ -474,7 +479,8 @@ void Application::draw_hud_cards() {
 
         draw_button(est.prev_button, "<", false);
         draw_button(est.next_button, ">", false);
-        draw_button(est.run_button, sim().paused() ? "RUN ESTIMATE (E)" : "PAUSE FIRST", sim().paused());
+        draw_button(est.run_button,
+            estimation_pending_ ? "RUNNING..." : (sim().paused() ? "RUN ESTIMATE (E)" : "PAUSE FIRST"), sim().paused());
 
         std::ostringstream result_line;
         if (has_methods) {

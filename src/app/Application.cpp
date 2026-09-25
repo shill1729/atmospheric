@@ -38,9 +38,14 @@ Application::Application(const Config& config)
     // dataset is present), so hand-placed and L-loaded sensors export in the
     // same lat/lon frame and Datetime_UTC always anchors to the real event.
     std::string georef_err;
-    sites_status_ = load_ny_georeference(nullptr, nullptr, georef_err)
-        ? "Georeferenced to NY network: exports use lat/lon"
-        : "No NY georeference (" + georef_err + "): exports use x/y";
+    if (load_ny_georeference(nullptr, nullptr, georef_err)) {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(1) << "Georeferenced to NY network (1:" << data_recorder_.time_stretch()
+           << " scale): exports use lat/lon, time x" << data_recorder_.time_stretch();
+        sites_status_ = ss.str();
+    } else {
+        sites_status_ = "No NY georeference (" + georef_err + "): exports use x/y";
+    }
 }
 
 void Application::run() {
@@ -49,6 +54,13 @@ void Application::run() {
         const float frame_dt = frame_clock_.restart().asSeconds();
         update(frame_dt);
         render();
+        if (estimation_pending_) {
+            // The frame just rendered shows the "running" status; the estimate
+            // blocks for a few seconds, which the next frame_dt should not include.
+            estimation_pending_ = false;
+            run_source_estimation();
+            frame_clock_.restart();
+        }
     }
 }
 
@@ -71,6 +83,9 @@ void Application::update(float frame_dt) {
         }
     }
     sensor_manager_.clear_pending_reports();
+    if (data_recorder_.is_recording()) {
+        capture_recording_meta();
+    }
 
     if (feynman_kac_anim_.active && sim().paused() && !feynman_kac_anim_.solution.snapshots.empty()) {
         feynman_kac_anim_.wall_accum_s += frame_dt;
@@ -405,15 +420,11 @@ void Application::handle_ecs_action(const ui::UiEvent& event) {
         return;
     }
     if (event.action == "reset_simulation") {
-        sim().reset();
-        sensor_manager_.clear();
-        clear_source_estimation();
-        has_last_source_click_ = false;
-        source_click_count_since_reset_ = 0;
+        reset_simulation();
         return;
     }
     if (event.action == "estimate_source") {
-        run_source_estimation();
+        request_source_estimation();
         return;
     }
     if (event.action == "pde_nx_dec") {
@@ -522,6 +533,7 @@ void Application::apply_settings_report(const ApplySettingsReport& report) {
     sensor_manager_.set_history_capacity(static_cast<std::size_t>(settings.sensor_history_capacity));
 
     if (report.recreated_simulator) {
+        restart_recording_if_active("a settings change rebuilt the simulator");
         sensor_manager_.clear();
         clear_source_estimation();
         menu_open_ = false;

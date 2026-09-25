@@ -449,7 +449,7 @@ int main() {
         cfg.numerics.max_substeps_per_frame = 1;
         atm::Simulator sim(cfg);
 
-        atm::SensorManager sensor_manager(5.0f, 5.4e-6f, 120, 1.0f, 40.0f);
+        atm::SensorManager sensor_manager(5.0f, 3.2e-6f, 120, 1.0f, 40.0f);
         for (int i = 0; i < 10; ++i) {
             sensor_manager.add_sensor(atm::Vec2(500.0f + 400.0f * static_cast<float>(i), 2500.0f), sim.time_s());
         }

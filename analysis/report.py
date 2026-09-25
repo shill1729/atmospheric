@@ -21,6 +21,10 @@ REPORT_PATH = Path(__file__).resolve().parent / "calibration_report.md"
 # daytime mixed layer over land, and 800 m is a mid-range value.
 ASSUMED_MIXING_HEIGHT_M = 800.0
 
+# Sensor noise std as a fraction of the default plume's peak model
+# concentration; matches SourceEstimationConfig::relative_model_error.
+RELATIVE_SENSOR_NOISE = 0.05
+
 
 def build_report() -> dict:
     wildfire = io.load_wildfire()
@@ -47,15 +51,24 @@ def build_report() -> dict:
     sigma_fraction_of_extent = spacing["nearest_neighbor_median_m"] / spacing["network_extent_m"]
     recommended_source_sigma = max(20.0, sigma_fraction_of_extent * domain_span_m)
 
+    # The domain is a scale model of the network: lengths shrink by
+    # `projection_scale`, and exported time is stretched by its inverse so
+    # wind speeds (m/s) are the same in the domain and in real geography.
+    # Real-world durations therefore map to simulation seconds / time_stretch.
+    projection_scale = scales.domain_projection_scale(wildfire, domain_span_m=domain_span_m)
+    time_stretch = 1.0 / projection_scale
+
     recommendations = {
         "mixing_height_m": ASSUMED_MIXING_HEIGHT_M,
         "conc_scale_ug_per_m2": conc_scale,
+        "sensor_noise_std_model_units": RELATIVE_SENSOR_NOISE * plume["quasi_steady_peak"],
         "source_sigma_m": recommended_source_sigma,
         "representative_wind_speed_m_s": representative_wind_u,
         "wind_speed_p90_m_s": wind["speed_p90_m_s"],
-        "faithful_source_decay_rate_per_s": (1.0 / event["decay_tau_s"]) if event["decay_tau_s"] else None,
-        "faithful_source_lifespan_s": event["event_duration_s"],
-        "sensor_sample_period_s_hourly": sample_interval_s,
+        "export_time_stretch": time_stretch,
+        "faithful_source_decay_rate_per_sim_s": (time_stretch / event["decay_tau_s"]) if event["decay_tau_s"] else None,
+        "faithful_source_lifespan_sim_s": event["event_duration_s"] / time_stretch,
+        "hourly_report_period_sim_s": sample_interval_s / time_stretch,
         "decorrelation_time_s": decorr_s,
     }
 

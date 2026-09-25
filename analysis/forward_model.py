@@ -3,8 +3,9 @@
 The C++ solver works in model concentration units, converted for display and
 export by conc_ug_m3 = model_conc * conc_scale / mixing_height. This module
 runs the same upwind-advection / scalar-diffusion update (ConstantScalar
-preset) with the default Config.hpp parameters to find the raw peak of a
-default source burst; solve_conc_scale then maps that peak to a real one.
+preset) to find the raw peak of a default source burst; solve_conc_scale then
+maps that peak to a real one. The keyword defaults mirror Config.hpp (grid,
+kappa, deposition, source) and must be kept in sync with it.
 """
 from __future__ import annotations
 
@@ -12,8 +13,8 @@ import numpy as np
 
 
 def simulate_default_plume(
-    nx: int = 140,
-    ny: int = 140,
+    nx: int = 200,
+    ny: int = 200,
     x_min: float = 0.0,
     x_max: float = 5000.0,
     y_min: float = 0.0,
@@ -22,7 +23,7 @@ def simulate_default_plume(
     wind_u: float = 2.5,
     wind_v: float = 0.5,
     deposition_rate: float = 0.01,
-    source_sigma: float = 50.0,
+    source_sigma: float = 95.0,
     base_emission: float = 1.0,
     decay_rate: float = 0.03,
     lifespan: float = 100.0,

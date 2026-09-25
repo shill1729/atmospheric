@@ -94,6 +94,10 @@ bool DataRecorder::has_geo_projection() const {
     return has_geo_projection_;
 }
 
+float DataRecorder::time_stretch() const {
+    return has_geo_projection_ && geo_projection_.scale > 0.0f ? 1.0f / geo_projection_.scale : 1.0f;
+}
+
 namespace {
 
 std::string sanitize_name(std::string s) {
@@ -171,8 +175,9 @@ std::string DataRecorder::export_csv(
 #endif
     const std::time_t datetime_anchor = has_geo_projection_ ? wildfire_start_utc : recording_start_wall_;
 
+    const float stretch = time_stretch();
     auto format_datetime_utc = [&](float time_s_val) {
-        const std::time_t t = datetime_anchor + static_cast<std::time_t>(std::lround(time_s_val));
+        const std::time_t t = datetime_anchor + static_cast<std::time_t>(std::lround(time_s_val * stretch));
         std::tm tm_utc{};
 #ifdef _WIN32
         gmtime_s(&tm_utc, &t);
@@ -182,6 +187,12 @@ std::string DataRecorder::export_csv(
         std::ostringstream oss;
         oss << std::put_time(&tm_utc, "%Y-%m-%d %H:%M:%S") << "+00:00";
         return oss.str();
+    };
+    // ISO 8601 with a 'T' separator, for space-free key=value header fields.
+    auto format_iso_utc = [&](float time_s_val) {
+        std::string s = format_datetime_utc(time_s_val);
+        s[10] = 'T';
+        return s;
     };
 
     out << std::fixed << std::setprecision(6);
@@ -203,6 +214,11 @@ std::string DataRecorder::export_csv(
         << (has_geo_projection_
             ? "u eastward, v northward (m/s); wind_direction is where the wind blows from, degrees clockwise from north\n"
             : "u along +x, v along +y (m/s, domain axes); wind_direction = atan2(-u, -v) in degrees\n")
+        << "# Time stretch: " << stretch
+        << (has_geo_projection_
+            ? " real s per simulation s (Datetime_UTC = anchor + time_s * stretch; the domain is a 1:"
+                + std::to_string(static_cast<int>(std::lround(stretch))) + " scale model of the network)\n"
+            : " (no geo projection)\n")
         << "# Sources: " << source_events_.size() << "\n";
     for (std::size_t i = 0; i < source_events_.size(); ++i) {
         const auto& se = source_events_[i];
@@ -216,7 +232,9 @@ std::string DataRecorder::export_csv(
         }
         out << " born=" << se.birth_time_s << "s"
             << " lifespan=" << se.lifespan_s << "s"
-            << " died=" << se.death_time_s << "s\n";
+            << " died=" << se.death_time_s << "s"
+            << " born_utc=" << format_iso_utc(se.birth_time_s)
+            << " died_utc=" << format_iso_utc(se.death_time_s) << "\n";
     }
 
     out << "# Source term estimates (from the last 'E' run before export): " << estimation_results.size() << "\n";
@@ -234,7 +252,7 @@ std::string DataRecorder::export_csv(
         } else {
             out << "x*=" << r.x_star.x() << " y*=" << r.x_star.y();
         }
-        out << " t*=" << r.t_star_s << "s";
+        out << " t*=" << r.t_star_s << "s t*_utc=" << format_iso_utc(r.t_star_s);
         if (r.method != SourceEstimationMethod::AdjointBacktracking) {
             out << " q0=" << r.q0 << " q0_std=" << r.q0_std << " x_std_m=" << r.x_std_m << " y_std_m=" << r.y_std_m
                 << " t_std_s=" << r.t_std_s << " weighted_rmse=" << r.weighted_rmse

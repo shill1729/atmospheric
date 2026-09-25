@@ -21,7 +21,10 @@ const Simulator& SimulationController::simulator() const {
 }
 
 RuntimeSettings SimulationController::current_settings() const {
-    return make_runtime_settings(config_, simulator().pde_diffusion_mode());
+    RuntimeSettings out = make_runtime_settings(config_, simulator().pde_diffusion_mode());
+    // Report the live time scale, which [ / ] change without touching config_.
+    out.time_scale = simulator().time_scale();
+    return out;
 }
 
 ApplySettingsReport SimulationController::apply_settings(const RuntimeSettings& next) {
