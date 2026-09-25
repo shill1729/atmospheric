@@ -211,15 +211,27 @@ void Application::render() {
     }
 
     if (source_estimation_.has_result) {
-        sf::CircleShape marker(4.0f);
-        marker.setOrigin({4.0f, 4.0f});
-        marker.setFillColor(sf::Color(255, 220, 40, 235));
-        marker.setOutlineColor(sf::Color::Black);
-        marker.setOutlineThickness(1.0f);
-        marker.setPosition(domain_to_left_panel(source_estimation_.x_star));
-        window_.draw(marker);
-        marker.setPosition(domain_to_right_panel(source_estimation_.x_star));
-        window_.draw(marker);
+        // Hollow red ring with a white border: distinct from the filled yellow
+        // sensors and filled red true sources, and visible over the posterior
+        // heatmap's red peak.
+        constexpr float kRadius = 7.0f;
+        sf::CircleShape border(kRadius);
+        border.setOrigin({kRadius, kRadius});
+        border.setFillColor(sf::Color::Transparent);
+        border.setOutlineColor(sf::Color(255, 255, 255, 235));
+        border.setOutlineThickness(4.0f);
+        sf::CircleShape ring(kRadius);
+        ring.setOrigin({kRadius, kRadius});
+        ring.setFillColor(sf::Color::Transparent);
+        ring.setOutlineColor(sf::Color(230, 30, 30, 255));
+        ring.setOutlineThickness(2.0f);
+        for (const sf::Vector2f p :
+            {domain_to_left_panel(source_estimation_.x_star), domain_to_right_panel(source_estimation_.x_star)}) {
+            border.setPosition(p);
+            window_.draw(border);
+            ring.setPosition(p);
+            window_.draw(ring);
+        }
     }
 
     sf::Text left_label(font_, "SDE Particle Panel", 16);

@@ -435,7 +435,7 @@ HUD:
 
 1. Place sensors on the right panel (or press `L`), click a source on the left panel, and let the plume reach the sensors.
 2. Pause (`Space`), then press `E` (or the **RUN ESTIMATE** button). Each method reports "Insufficient signal" if no report in the observation window exceeds the [detection threshold](#detection-threshold).
-3. All three methods run. The selected method's $x^*$ is drawn as a yellow marker on both panels, and `M` (or `<`/`>`) switches between methods. The inversion methods also append `q0_std`, `wrmse`, and a `(weakly identified)` flag to the status strip.
+3. All three methods run. The selected method's $x^*$ is drawn as a red ring with a white border on both panels (sensors are yellow dots, true sources red dots), and `M` (or `<`/`>`) switches between methods. The inversion methods also append `q0_std`, `wrmse`, and a `(weakly identified)` flag to the status strip.
 4. The right-panel overlay (`J` cycles it) shows one of three views:
    - **posterior** (default): the selected method's `p_star` heatmap, normalized to its own maximum. Backtracking uses the 96×96 adjoint grid; the two inversion methods use the 14×14 search grid.
    - **backward flow**: an animation of backward adjoint probability flow, seeded from each sensor's most recent above-threshold report and looping over the observation window. It is a diagnostic view, separate from the three estimators, and it advances only while paused.
