@@ -426,9 +426,7 @@ void Application::draw_hud_cards() {
     draw_card(left, top, card_w, card_h, "Status", status.str());
     draw_card(left + card_w + gap, top, card_w, card_h, "Source", source_text.str());
 
-    // --- Estimate card: a first-class button, not just a File-menu entry
-    // or a keyboard shortcut, since running a source estimate is the whole
-    // point of placing sensors.
+    // Estimate card: method selector and run button.
     const EstimateButtonLayout est = estimate_button_layout();
     {
         sf::RectangleShape card({est.card.size.x, est.card.size.y});

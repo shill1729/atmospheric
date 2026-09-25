@@ -64,7 +64,7 @@ $$
 
 where $\mu = w+\nabla\cdot D$, $LL^\top = D$ (Cholesky, with an eigen-decomposition fallback), and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle. $\nabla\cdot D$ is evaluated by central differences.
 
-Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot\texttt{particle\_scale}\cdot\Delta t$ particles in expectation (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from exactly $s(t,x)$. That is the particle representation of the same source term the PDE uses: by Duhamel's principle the PDE solution is a superposition of transition densities started at birth points drawn from $s$. A value below 1 (the original code used 0.02) makes the SDE solve the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/\texttt{particle\_scale}$, which is how the HUD compares SDE and PDE total mass.
+Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot\texttt{particle\_scale}\cdot\Delta t$ particles in expectation (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from $s(t,x)$ itself, the same source term the PDE uses: by Duhamel's principle, the PDE solution is a superposition of transition densities started at birth points drawn from $s$. With $f<1$ the SDE solves the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/\texttt{particle\_scale}$, which is how the HUD compares SDE and PDE total mass.
 
 Deposition is simulated with Bernoulli survival over each step (hazard $\lambda$): remove particle with probability
 
@@ -158,7 +158,7 @@ Both methods reuse `AdjointSolver`; see `src/adjoint/SourceEstimator.cpp` for th
 
 ### Detection threshold
 
-Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample). With a fixed tiny threshold, noise alone would count as a detection forever, and estimation could never refuse. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 5.4\times10^{-6}$) it is about $1.1\times10^{-5}$ model units, roughly 10% of a typical plume peak. It is 0 when noise is off.
+Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 5.4\times10^{-6}$) it is about $1.1\times10^{-5}$ model units, roughly 10% of a typical plume peak. It is 0 when noise is off.
 
 Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has decayed (the default deposition $\lambda = 0.01\,\text{s}^{-1}$ is a 100 s e-folding time) or left an absorbing domain. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
 
@@ -166,7 +166,7 @@ Estimation therefore refuses ("Insufficient signal") once no report in the obser
 
 Wind presets (`W` cycles them in this order; default Jet Shear). Magnitudes are calibrated to the real wind-speed distribution (median ≈ 1.9 m/s, p90 ≈ 4.4 m/s); see [Calibration](#calibration).
 
-Every preset is multiplied by a global **wind scale** (`--wind-scale`, **Numerics → Wind Scale**; default 1, which keeps the calibration). It changes the physics, not just playback: the advection/diffusion balance (Péclet number) shifts, and the stable `dt` shrinks roughly as 1/scale. Changes apply live, without resetting the simulation. The estimators use the same scaled wind, the HUD shows it next to the wind model, and exports record it as `# Wind scale:`.
+Every preset is multiplied by a global **wind scale** (`--wind-scale`, **Numerics → Wind Scale**; default 1, which keeps the calibration). It is a physical parameter: the advection/diffusion balance (Péclet number) shifts, and the stable `dt` shrinks roughly as 1/scale. Changes apply live, without resetting the simulation. The estimators use the same scaled wind, the HUD shows it next to the wind model, and exports record it as `# Wind scale:`.
 
 | Preset | Description |
 |---|---|
@@ -216,7 +216,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 
 ### Time stepping (shared)
 
-- Fixed internal step $\Delta t$ (`--dt`, default 0.01 s), accumulated from wall-clock time × time scale
+- Fixed internal step $\Delta t$ (`--dt`, default 0.1 s), accumulated from wall-clock time × time scale
 - Each frame steps until the accumulated time is used up or `frame_step_budget_ms` (12 ms) of wall time is spent, whichever comes first (hard cap `max_substeps_per_frame` = 10,000). Time the CPU could not keep up with is dropped rather than carried over, so the achieved speed can be below the requested time scale; the HUD shows both.
 - Per step: emit particles → SDE step → PDE step → age/expire sources → sensor sampling
 
@@ -330,9 +330,9 @@ Defaults live in `include/core/Config.hpp`. The combined configuration is valida
 
 ### Speeding up simulations
 
-One fixed step costs roughly 2–3 ms on the default $200\times200$ grid, whatever $\Delta t$ is. At most about four steps fit in each frame's 12 ms budget, so the achieved speed is roughly $200\times\Delta t$ simulated seconds per wall second. At the default `--dt 0.01` that is only ~2–3×, whatever time scale you request. The time scale is the *requested* playback speed (simulated seconds per wall second; `[`/`]` change it immediately, **Numerics → Time Scale** after **File → Apply Queued Changes**, up to 100,000). The simulation delivers $\min(\text{requested}, \sim 200\,\Delta t)$. At `dt 0.01` any time scale above ~3 therefore looks the same, and the HUD's `speed: xR (actual xA)` shows the gap. Once `dt` is large enough, the time scale is what sets the pace.
+One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200\,\Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.1` the ceiling is about 20×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
 
-The main lever is therefore **`dt`** (`--dt` or **PDE → dt**). The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind/diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) or `--dt 2` (~400×) is stable, and even the 49 h faithful-event run takes minutes rather than hours. Keep `dt` at most the sensor physical sample period if you want every physical sample to see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
+`dt` is set with `--dt` or **PDE → dt**. The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind and diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) and `--dt 2` (~400×) are stable, and the 49 h faithful-event run takes minutes. Keep `dt` at most the sensor physical sample period if every physical sample should see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
 
 Sensors sample after every fixed step, so their readings stay correct at any speed-up.
 
@@ -353,7 +353,7 @@ Example:
 
 ### Faithful NY wildfire event export
 
-The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are kept fast so a clicked source fully evolves in seconds, not hours, for a responsive demo. The real Nov 2024 event's rise/decay time constants are much slower, ~15 h / ~42 h (see [Calibration](#calibration)). For an offline export meant to mimic that event's actual timescale, override them explicitly:
+The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are kept fast so a clicked source evolves within seconds of wall time. The real Nov 2024 event's rise/decay time constants are much slower, ~15 h / ~42 h (see [Calibration](#calibration)). For an offline export meant to mimic that event's actual timescale, override them explicitly:
 
 ```bash
 ./build-release/atmospheric \
@@ -467,13 +467,13 @@ At startup, if `wildfire_pm25_dataset.csv` is present, the domain is georeferenc
 
 Press **`L`** to load the site network into the simulation. Unique sites are read from the `site_name`, `lat_deg`, `lon_deg` columns and sorted by name. Their coordinates are projected to domain coordinates via an equirectangular approximation centred on the network centroid (lat ≈ 41.02°, lon ≈ −73.96°). The network is then uniformly scaled and centred to fit the active domain with 8% padding, preserving the relative geometry of the sites. Sensors keep their real site names as labels.
 
-Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 900 s observation window holds at most one hourly report, so `N` is meant for export, not for estimation.
+Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 900 s observation window holds at most one hourly report, so `N` is intended for export; estimation needs a shorter report period.
 
 The `R` (reset) key always clears sensors regardless of how they were placed.
 
 ## Calibration
 
-The `analysis/` Python package infers real-world scales from `wildfire_pm25_dataset.csv` and `multimonth_pm25_dataset.csv` and turns them into concrete simulator defaults. This makes the synthetic data quantitatively (not just structurally) faithful to the real event, at whatever numerical scale the simulator actually runs at:
+The `analysis/` Python package infers real-world scales from `wildfire_pm25_dataset.csv` and `multimonth_pm25_dataset.csv` and turns them into simulator defaults, so that synthetic concentrations and time scales match the real event:
 
 - `analysis/io.py`: standardized loaders for both datasets
 - `analysis/scales.py`: site-spacing, concentration, temporal (rise/decay/decorrelation), and wind statistics from real data
@@ -520,7 +520,7 @@ atmospheric_{wind}_{diffusion}_{pde_mode}_dt{dt}_ts{time_scale}_sp{sample_period
 
 Example:
 ```
-atmospheric_Jet_Shear_Constant_Scalar_Full_Tensor_Flux_dt0.010_ts10.0_sp5.0s_20260618_143022.csv
+atmospheric_Jet_Shear_Constant_Scalar_Full_Tensor_Flux_dt0.100_ts10.0_sp5.0s_20260618_143022.csv
 ```
 
 The file begins with `#` metadata comment lines, followed by a data header and one row per `(time, sensor)` pair, sorted time-first:
@@ -531,7 +531,7 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 # Wind scale: 1.000000
 # Diffusion model: Constant Scalar
 # PDE diffusion mode: Full Tensor Flux
-# dt (s): 0.010000
+# dt (s): 0.100000
 # Time scale: 10.000000
 # Sensor averaging window (s): 5.000000
 # Sensors recorded: 3
@@ -553,7 +553,7 @@ When the geo projection is active (whenever `wildfire_pm25_dataset.csv` was pres
 
 An estimate that failed is written as `no result - <reason>`.
 
-Column names deliberately mirror `wildfire_pm25_dataset.csv`/`multimonth_pm25_dataset.csv` where the concept matches, so exported synthetic data is close to a drop-in replacement for tooling built against the real datasets:
+Column names mirror `wildfire_pm25_dataset.csv`/`multimonth_pm25_dataset.csv` where the concept matches, so exported synthetic data is close to a drop-in replacement for tooling built against the real datasets:
 
 - `time_s`: simulation time at end of the averaging window (no real-data equivalent; kept for simulation traceability)
 - `Datetime_UTC`: synthetic timestamp, `time_s` offset from an anchor. With the geo projection active, the anchor is the real wildfire event start (2024-11-08 00:00 UTC); otherwise it is the wall-clock time recording started.

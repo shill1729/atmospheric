@@ -69,8 +69,7 @@ ApplySettingsReport SimulationController::apply_settings(const RuntimeSettings& 
         config_.numerics.time_scale = next.time_scale;
         simulator().set_time_scale(next.time_scale);
     }
-    // Applied live (like cycling the wind preset), so a running plume keeps
-    // evolving under the new wind rather than being reset.
+    // Applied without recreating the simulator, like cycling the wind preset.
     config_.physics.wind_scale = next.wind_scale;
     simulator().set_wind_scale(next.wind_scale);
     if (next.pde_fixed_color_scale != current.pde_fixed_color_scale) {

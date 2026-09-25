@@ -158,10 +158,8 @@ std::string DataRecorder::export_csv(
         lon = geo_projection_.lon0_deg + xm / (geo_projection_.cos_lat0 * R_EARTH * DEG2RAD);
     };
 
-    // Datetime_UTC anchor: when the sensor network was loaded from the real
-    // wildfire CSV, anchor to that event's actual start so exported
-    // timestamps line up with the real record; otherwise anchor to when
-    // recording began.
+    // Datetime_UTC anchor: the real wildfire event's start when the domain is
+    // georeferenced to the NY network, otherwise the recording start time.
     std::tm wildfire_start_tm{};
     wildfire_start_tm.tm_year = 2024 - 1900;
     wildfire_start_tm.tm_mon = 11 - 1;

@@ -31,8 +31,8 @@ public:
         float death_time_s;
     };
 
-    // Parameters of the equirectangular projection used when NY sites were loaded.
-    // Stored so export_csv() can back-project domain (x,y) to (lat, lon).
+    // Equirectangular projection from the NY site network (see SiteLoader),
+    // used by export_csv() to back-project domain (x,y) to (lat, lon).
     struct GeoProjection {
         float lat0_deg  = 0.0f;
         float lon0_deg  = 0.0f;
@@ -88,9 +88,8 @@ private:
     std::vector<SourceEvent> source_events_;
     bool has_geo_projection_ = false;
     GeoProjection geo_projection_ {};
-    // Wall-clock time recording started, used as the Datetime_UTC anchor for
-    // exported rows when the sensor network wasn't loaded from the real
-    // wildfire CSV (which anchors to that event's actual start instead).
+    // Wall-clock time recording started; the Datetime_UTC anchor when no geo
+    // projection is set.
     std::time_t recording_start_wall_ = 0;
 };
 

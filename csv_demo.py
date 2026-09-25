@@ -2,9 +2,8 @@ import pandas as pd
 import re
 from pathlib import Path
 
-import pandas as pd
 
-# Function used for reading in the source metadata and returning it as a string to print.
+# Return the source metadata lines of an export as one string.
 def read_source_metadata(filepath):
     lines = []
 
@@ -20,9 +19,8 @@ def read_source_metadata(filepath):
 
 
 
-# Alternatively actually parse the metadata and put it into a dataframe, using Regular Expressions.
-# Source positions are lat/lon when the export is georeferenced (the NY dataset was present),
-# and x/y domain metres otherwise.
+# Parse the "# Source N:" lines into a DataFrame. Positions are lat/lon when the
+# export is georeferenced (the NY dataset was present) and x/y domain metres otherwise.
 SOURCE_PATTERN = re.compile(
     r"""
     ^\#\s*Source\s+(?P<source_id>\d+):\s*
@@ -63,12 +61,12 @@ def get_source_metadata(filepath: str | Path) -> pd.DataFrame:
 
 if __name__ == "__main__":
     
-    # Read in the file skipping the metadata (which has a variable amount of rows!)
+    # Read the data rows, skipping the variable-length metadata header.
     filepath = "synthetic_pm25_data_1.csv"
     dat = pd.read_csv(filepath, comment="#")
     print(dat.head())
-    # Read and just print metadata as one big string
+    # Print the source metadata as text.
     print(read_source_metadata(filepath))
-    # Actually get source metadata into a dataframe
+    # Parse the source metadata into a DataFrame.
     md = get_source_metadata(filepath)
     print(md)

@@ -1,18 +1,10 @@
-"""A numpy replica of the C++ PDE step, used only to translate real-world
-concentration scales into a --conc-scale/--mixing-height pair.
+"""Numpy replica of the C++ PDE step, used to calibrate --conc-scale.
 
-The C++ AdvectionDiffusionSolver (src/numerics/AdvectionDiffusionSolver.cpp)
-works in dimensionless "model concentration" units; conc_scale (ug/m^2 per
-model unit) and mixing_height (m) convert that to ug/m^3 for display and
-export via conc_ug_m3 = model_concentration * conc_scale / mixing_height.
-There is no way to derive that conversion analytically for a divergent,
-time-varying wind field, so this module re-runs the same conservative
-upwind-advection / scalarized-diffusion update the C++ solver uses (for the
-ConstantScalar diffusivity preset, where scalarized and full-tensor modes are
-identical) with the project's default Config.hpp parameters, to find what
-raw model concentration a default source burst actually produces. Callers
-then solve for conc_scale so that peak maps to a real, data-derived peak in
-ug/m^3.
+The C++ solver works in model concentration units, converted for display and
+export by conc_ug_m3 = model_conc * conc_scale / mixing_height. This module
+runs the same upwind-advection / scalar-diffusion update (ConstantScalar
+preset) with the default Config.hpp parameters to find the raw peak of a
+default source burst; solve_conc_scale then maps that peak to a real one.
 """
 from __future__ import annotations
 

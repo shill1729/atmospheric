@@ -311,10 +311,7 @@ void Application::run_source_estimation() {
     const std::size_t n = static_cast<std::size_t>(nx * ny);
 
     // Seed the backward-flow animation from each sensor's most recent
-    // above-threshold report inside the estimators' observation window, so
-    // a plume that has just moved off a sensor still counts. Whether there
-    // is enough signal to estimate at all is decided by the estimators
-    // themselves, over that same window.
+    // above-threshold report in the observation window.
     std::vector<float> initial_phi(n, 0.0f);
     bool any_signal = false;
 

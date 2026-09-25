@@ -6,7 +6,7 @@ Run as a script:
 
 Prints a human-readable report and writes analysis/calibration_report.md.
 Every recommended value states the real-data quantity it was derived from,
-so re-running this after the datasets change keeps the C++ defaults honest.
+so re-running this after the datasets change keeps the C++ defaults in sync.
 """
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from . import io, scales, forward_model
 REPORT_PATH = Path(__file__).resolve().parent / "calibration_report.md"
 
 # Assumed daytime convective boundary-layer depth. Not derivable from these
-# datasets (no vertical profile data) -- 500-1500 m is the typical range for
-# a mixed layer over land in daytime; 800 m is a defensible mid-range default.
+# datasets (no vertical profile data); 500-1500 m is the typical range for a
+# daytime mixed layer over land, and 800 m is a mid-range value.
 ASSUMED_MIXING_HEIGHT_M = 800.0
 
 

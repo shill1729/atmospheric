@@ -275,9 +275,8 @@ Vec2 Fields::wind_vortex_pair(float time_s, const Vec2& x) const {
     const Vec2 c1(domain_.x_min + 0.33f * lx, domain_.y_min + 0.5f * ly);
     const Vec2 c2(domain_.x_min + 0.67f * lx, domain_.y_min + 0.5f * ly);
 
-    // Peak circumferential speed ~10 m/s (elevated vs. the ~4.4 m/s real p90,
-    // as a deliberately-visible local feature, but no longer the ~40 m/s of
-    // the original constant; see analysis/calibration_report.md).
+    // Peak circumferential speed ~10 m/s, above the real p90 (~4.4 m/s) so
+    // the vortices are visible; see analysis/calibration_report.md.
     const float gamma = 1.5e5f;
     const float core2 = 1200.0f * 1200.0f;
 
@@ -299,8 +298,8 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
     const float xs = (x.x() - domain_.x_min) / lx;
     const float ys = (x.y() - domain_.y_min) / ly;
 
-    // Rescaled from 2.5e4 (peak circulation speed ~31 m/s) to ~5 m/s peak,
-    // in line with real wind_speed p90/max; see analysis/calibration_report.md.
+    // Peak circulation speed ~5 m/s, near the real wind-speed p90; see
+    // analysis/calibration_report.md.
     const float amp = 4.0e3f;
     const float phase = 0.12f * time_s;
     const float dpsi_dy = amp * (2.0f * PI / ly) * std::sin(2.0f * PI * xs + phase) * std::cos(2.0f * PI * ys);
@@ -320,8 +319,7 @@ Vec2 Fields::wind_solid_body_rotation(const Vec2& x) const {
     // Rigid-body rotation about the domain centre.
     // Every fluid element completes one revolution in T = 2*pi/Omega seconds.
     // Omega = 0.0022 rad/s -> T ~ 2856 sim-s, giving ~5 m/s at the mid-edge
-    // (r=2500 m), rescaled from the original ~50 m/s to match real wind
-    // speeds (see analysis/calibration_report.md).
+    // (r=2500 m), in line with real wind speeds.
     constexpr float OMEGA = 0.0022f;
     const float cx = 0.5f * (domain_.x_min + domain_.x_max);
     const float cy = 0.5f * (domain_.y_min + domain_.y_max);

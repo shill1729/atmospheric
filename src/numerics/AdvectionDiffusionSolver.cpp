@@ -103,10 +103,9 @@ void AdvectionDiffusionSolver::step(
             const float cym = c_at(i, j - 1);
             const float cyp = c_at(i, j + 1);
 
-            // Conservative first-order upwind discretization of -div(w c).
-            // This matters for the Fokker--Planck correspondence: the particle
-            // drift is w + div(D), so its density evolves with -div(w c), not
-            // merely -w.grad(c), whenever the configured wind has divergence.
+            // Conservative first-order upwind form of -div(w c): the density
+            // equation for particle drift w + div(D), correct also when
+            // div(w) != 0.
             const float ue = 0.5f * (w_at(i, j).x() + w_at(i + 1, j).x());
             const float uw = 0.5f * (w_at(i - 1, j).x() + w_at(i, j).x());
             const float vn = 0.5f * (w_at(i, j).y() + w_at(i, j + 1).y());

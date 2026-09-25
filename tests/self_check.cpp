@@ -391,12 +391,9 @@ int main() {
             ++failures;
         }
 
-        // AdjointBacktracking/RegularizedLeastSquares report a point estimate
-        // meant to be accurate; BayesianGrid deliberately trades resolution
-        // (a coarse search_grid_nx x search_grid_ny grid, covered with only
-        // O(#sensors) adjoint solves) for a real posterior with calibrated
-        // uncertainty, so the right check for it is "does the credible
-        // region cover the truth", not "is the point estimate close".
+        // AdjointBacktracking and RegularizedLeastSquares must land within
+        // kTolerance_m of the source. BayesianGrid works on a coarse grid, so
+        // its check is that the kCredibleSigma credible region covers it.
         constexpr float kTolerance_m = 400.0f;
         constexpr float kCredibleSigma = 3.0f;
         constexpr float kMinStd_m = 50.0f;
@@ -441,10 +438,9 @@ int main() {
     }
 
     // --- Noise-only sensors must not count as a detection ------------------
-    // Clamped sensor noise has a positive mean, so with a fixed tiny
-    // threshold pure noise used to "detect" forever. With the family-wise
-    // noise floor applied, sensors that never saw a plume must yield
-    // insufficient_signal from every method.
+    // Clamped sensor noise has a positive mean. With the noise floor applied,
+    // sensors that never saw a plume must give insufficient_signal from every
+    // method.
     {
         atm::Config cfg{};
         cfg.domain.nx = 40;

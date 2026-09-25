@@ -131,9 +131,8 @@ AdjointSolver::Solution AdjointSolver::solve_backward(
     }
     std::vector<float> next(n, 0.0f);
     std::vector<float> forcing(n, 0.0f);
-    // Fields are evaluated once per node per step; the stencils below read
-    // neighbors from these caches instead of re-evaluating the (sin/cos-heavy)
-    // wind/diffusivity presets up to five times per node.
+    // Wind and diffusivity are evaluated once per node per step; the stencils
+    // read neighbors from these caches.
     std::vector<Vec2> w_cache(n, Vec2::Zero());
     std::vector<Mat2> d_cache(n, Mat2::Zero());
 

@@ -275,10 +275,7 @@ bool check_signal(const SeriesBuildResult& build, SourceEstimateResult& out) {
 // onto a coarser (search_grid_nx x search_grid_ny x search_time_count)
 // candidate grid via bilinear/linear interpolation. By adjoint reciprocity,
 // sensor i's projected field at (x,y,t) is its predicted response to a
-// unit-amplitude source released at (x,y,t). Each sensor's full-resolution
-// AdjointSolver::Solution (which stores one grid per internal timestep) is
-// scoped to a single loop iteration so peak memory stays bounded regardless
-// of sensor count.
+// unit-amplitude source released at (x,y,t).
 CandidateField build_candidate_field(
     const std::vector<SensorSeries>& series, const Simulator& sim, const SourceEstimationConfig& cfg,
     const AdjointSolver& solver, float t_start, float t_end, int search_nx, int search_ny, int search_nt) {
@@ -328,8 +325,8 @@ CandidateField build_candidate_field(
             }
         };
 
-        // `sol` (potentially hundreds of full-resolution snapshots) is
-        // scoped to this iteration and freed before moving to the next sensor.
+        // `sol` holds one full-resolution grid per adjoint step; scoping it to
+        // this iteration bounds peak memory regardless of sensor count.
         const auto sol = solver.solve_backward(t_start, t_end, solve_cfg, wind_fn, diffusivity_fn, forcing_fn);
 
         std::vector<std::vector<float>> per_time(static_cast<std::size_t>(cf.nt));
@@ -788,15 +785,10 @@ SourceEstimateResult bayesian_grid_from(
     const float cell_area = dxg * dyg;
     const std::size_t ncell = static_cast<std::size_t>(nx * ny);
 
-    // Scan the ridge point-estimate first: with a tight relative_model_error
-    // (e.g. 5%), the likelihood in q0 is sharply peaked, so a single global
-    // [0, q0_max] quadrature range would miss the peak entirely at most
-    // cells (all nq samples underflow to exp(-huge) = 0, and the cell's
-    // evidence is silently zero). q0_scan_max only serves as a fallback
-    // bound for the rare cell whose analytic variance is ~infinite (no
-    // sensitivity to any sensor); each cell instead centers its own
-    // quadrature on its analytic ridge estimate +/- a few standard
-    // deviations, computed below.
+    // Each cell centers its q0 quadrature on its own ridge estimate, since a
+    // tight relative_model_error makes the likelihood too sharp for one global
+    // range. q0_scan_max only bounds cells with no sensitivity to any sensor
+    // (infinite analytic variance).
     float q0_scan_max = 0.0f;
     for (int k = 0; k < nt; ++k) {
         const float t = cf.times[static_cast<std::size_t>(k)];
@@ -814,22 +806,11 @@ SourceEstimateResult bayesian_grid_from(
     const float q0_fallback_max = std::max(1.0e-9f, 3.0f * q0_scan_max);
     const int nq = std::max(3, cfg.response_quadrature_points);
 
-    // Marginal likelihood (evidence) per (time, cell), found by trapezoidal
-    // quadrature over a non-negative q0 prior support centered on each
-    // cell's analytic ridge estimate; this also yields the posterior
-    // mean/second-moment of q0 at each cell "for free".
-    //
-    // With a tight relative_model_error, chi2 at even the best-fit q0 can
-    // run into the hundreds (a handful of sensors each contributing
-    // -0.5*(1/relative_model_error)^2-ish in the worst case), so the raw
-    // likelihood routinely underflows a `float` (and even a `double`) long
-    // before cells can be compared. Two things make this tractable: (1)
-    // each cell's own q0_mean/q0_m2 are RATIOS of quadrature sums, so they
-    // are computed via a per-cell log-sum-exp shift that cancels exactly,
-    // independent of the absolute chi2 scale; (2) cross-cell comparability
-    // (needed for the posterior over x,y,t) is recovered by keeping
-    // log-evidence in double precision and only exponentiating relative to
-    // the single best cell found across the whole grid, at the very end.
+    // Evidence per (time, cell): trapezoidal quadrature over q0 >= 0, which
+    // also gives each cell's posterior mean and second moment of q0. The raw
+    // likelihood underflows even a double, so each cell's sums use a local
+    // log-sum-exp shift (it cancels in the moment ratios), and log-evidence
+    // is exponentiated only relative to the best cell over the whole grid.
     std::vector<std::vector<float>> log_evidence(static_cast<std::size_t>(nt), std::vector<float>(ncell, -std::numeric_limits<float>::infinity()));
     std::vector<std::vector<float>> q0_mean(static_cast<std::size_t>(nt), std::vector<float>(ncell, 0.0f));
     std::vector<std::vector<float>> q0_m2(static_cast<std::size_t>(nt), std::vector<float>(ncell, 0.0f));
@@ -894,10 +875,8 @@ SourceEstimateResult bayesian_grid_from(
         }
     }
 
-    // Exponentiate relative to the single best (time, cell) across the whole
-    // grid: this is exactly the posterior up to the (irrelevant, cancels on
-    // normalization) constant exp(global_log_max), and every ratio needed
-    // downstream (p_star, z_by_time) only cares about relative evidence.
+    // Evidence relative to the best (time, cell); the constant factor
+    // exp(global_log_max) cancels in every normalization below.
     std::vector<std::vector<float>> evidence(static_cast<std::size_t>(nt), std::vector<float>(ncell, 0.0f));
     for (int k = 0; k < nt; ++k) {
         for (std::size_t c = 0; c < ncell; ++c) {
@@ -986,13 +965,8 @@ SourceEstimateResult bayesian_grid_from(
     }
     const std::size_t best_cell = static_cast<std::size_t>(idx(best_i, best_j, nx));
 
-    // Standard 3-point parabolic sub-cell refinement: the search grid is
-    // coarse (a handful of cells per axis, by design -- it's what makes
-    // O(#sensors) adjoint solves cover the whole domain), so the raw argmax
-    // node can be a full cell width away from the true peak of the
-    // (smooth, bilinearly-interpolated) evidence field. Fitting a parabola
-    // through the node and its two neighbors along each axis recovers most
-    // of that sub-cell error at negligible cost.
+    // 3-point parabolic sub-cell refinement of the argmax along each axis,
+    // since the coarse search grid puts nodes up to a cell width from the peak.
     auto parabolic_offset = [](float fm, float f0, float fp) -> float {
         const float denom = fm - 2.0f * f0 + fp;
         if (std::abs(denom) < 1.0e-20f) {
@@ -1021,9 +995,7 @@ SourceEstimateResult bayesian_grid_from(
     out.q0_std = std::sqrt(std::max(0.0f, q0_m2[static_cast<std::size_t>(best_k)][best_cell] - out.q0 * out.q0));
     out.total_released_mass = out.q0;
 
-    // Posterior spatial second moments about x*,y* (a genuine discretized
-    // posterior is available here, unlike the profile-likelihood curvature
-    // used by RegularizedLeastSquares).
+    // Posterior spatial second moments about x*, y*.
     double var_x = 0.0, var_y = 0.0, mass = 0.0;
     for (int j = 0; j < ny; ++j) {
         const float yfrac = ny > 1 ? static_cast<float>(j) / static_cast<float>(ny - 1) : 0.0f;
@@ -1037,14 +1009,8 @@ SourceEstimateResult bayesian_grid_from(
             mass += p;
         }
     }
-    // A relative_model_error as tight as the default 5% makes the likelihood
-    // sharp enough that every cell but the discrete argmax can underflow to
-    // 0 even after the log-domain rescaling above, collapsing the posterior
-    // second moment to near zero regardless of how coarse search_grid_nx/ny
-    // actually is. Flooring at the uniform-within-a-cell std (cell_width/sqrt(12))
-    // makes the reported uncertainty honest about what a search_grid_nx x
-    // search_grid_ny grid can resolve, independent of how peaked the
-    // measurement-driven likelihood happens to be.
+    // Floor at the within-cell std (width/sqrt(12)): a sharp likelihood can
+    // collapse the second moment below what the search grid resolves.
     const float quantization_std_x = dxg / std::sqrt(12.0f);
     const float quantization_std_y = dyg / std::sqrt(12.0f);
     out.x_std_m = std::max(
