@@ -1,10 +1,10 @@
-# Atmospheric (SDE + PDE + Adjoint Prototype)
+# Simulation and STE for atmospheric dispersion
 
 Interactive C++ atmospheric transport prototype with a split view:
-- **Left panel:** tagged-particle simulation via SDE (Euler-Maruyama)
-- **Right panel:** concentration evolution via advection-diffusion(-reaction) PDE
+- **Left panel:** tagged-particle simulation via a SDE solver (Euler-Maruyama)
+- **Right panel:** concentration/density evolution via the advection-diffusion/Fokker Planck PDE
 
-The two models share the same wind field, diffusivity model, source emission schedule, deposition rate, and boundary mode. On top of the forward models, a paused simulation can be inverted from sensor readings to estimate where and when a source was released (source term estimation).
+The two solvers share the same wind field, diffusivity model, source emission schedule, deposition rate, and boundary mode. On top of the forward models, a paused simulation can be inverted from sensor readings to estimate where and when a source was released via three source-term-estimation (STE) methods.
 
 ## Features
 
@@ -13,10 +13,10 @@ The two models share the same wind field, diffusivity model, source emission sch
 - PDE concentration transport with source and deposition, in either scalarized or full-tensor diffusion mode
 - 7 wind presets and 6 diffusivity presets (scalar and SPD tensor), cycled at runtime, plus a global wind scale factor; see [Wind and diffusivity models](#wind-and-diffusivity-models)
 - Brownian/heat-equation special case (zero wind, $D=\tfrac12 I$) for checking the SDE against the PDE
-- Shared runtime boundary mode: periodic, reflecting, or absorbing
+- Shared runtime boundary mode: periodic, reflecting, or absorbing; change via `B`
 - HUD with the SDE-to-PDE total mass ratio $M_{\text{sde}}/M_{\text{pde}}$ as a consistency check
 - PDE-panel sensors that take noisy, spatially averaged physical samples and report window averages
-- Pause-time source term estimation from sensor history using three methods (adjoint backtracking, regularized least squares, Bayesian grid). All three run on each request, and `M` cycles which one is displayed. Each reports $(x^*, t^*)$ and a posterior heatmap; the latter two also report amplitude and uncertainty.
+- Pause-time source term estimation from sensor history using three methods (adjoint backtracking, regularized least squares, Bayesian grid). All three run on each request, and `M` cycles which one is displayed. Each reports $(x^{\ast}, t^{\ast})$ and a posterior heatmap; the latter two also report amplitude and uncertainty.
 - Time acceleration up to 100,000× requested, limited in practice by a per-frame CPU budget; the HUD shows the achieved speed and the largest stable `dt` (see [Speeding up simulations](#speeding-up-simulations))
 - Loading of the real NY wildfire sensor network (`L`) and a matching hourly-observation preset (`N`); the domain is georeferenced to that network at startup, so exports are in lat/lon
 - CSV recording/export of the sensor time series, with source ground truth and estimates in the file header
@@ -43,7 +43,7 @@ and is removed after lifespan $T_s$.
 The PDE's spatial source density is a sum of Gaussian emitters:
 
 $$
-s(t,x) = \sum_{k=1}^{K(t)} q_k(t)\,\frac{1}{2\pi\sigma^2}\exp\left(-\frac{\|x-x_k\|^2}{2\sigma^2}\right).
+s(t,x) = \sum_{k=1}^{K(t)} q_k(t) \frac{1}{2\pi\sigma^2}\exp\left(-\frac{\Vert x-x_k\Vert ^2}{2\sigma^2}\right).
 $$
 
 ### SDE viewpoint (tagged particles)
@@ -51,7 +51,7 @@ $$
 Particles follow the It\^o SDE
 
 $$
-dX_t = \big(w(t,X_t)+\nabla\cdot D(t,X_t)\big)dt + \sqrt{2}\,D(t,X_t)^{1/2} dB_t,
+dX_t = \big(w(t,X_t)+\nabla\cdot D(t,X_t)\big)dt + \sqrt{2} D(t,X_t)^{1/2} dB_t,
 $$
 
 with deposition (killing) rate $\lambda$.
@@ -59,12 +59,12 @@ with deposition (killing) rate $\lambda$.
 Numerically, per particle and step $\Delta t$:
 
 $$
-X_{n+1}=X_n + \mu(t_n,X_n)\Delta t + \sqrt{2\Delta t}\,L(t_n,X_n)\,\xi_n,
+X_{n+1}=X_n + \mu(t_n,X_n)\Delta t + \sqrt{2\Delta t} L(t_n,X_n) \xi_n,
 $$
 
 where $\mu = w+\nabla\cdot D$, $LL^\top = D$ (Cholesky, with an eigen-decomposition fallback), and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle. $\nabla\cdot D$ is evaluated by central differences.
 
-Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot\texttt{particle\_scale}\cdot\Delta t$ particles in expectation (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from $s(t,x)$ itself, the same source term the PDE uses: by Duhamel's principle, the PDE solution is a superposition of transition densities started at birth points drawn from $s$. With $f<1$ the SDE solves the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/\texttt{particle\_scale}$, which is how the HUD compares SDE and PDE total mass.
+Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot n_p\cdot\Delta t$ particles in expectation, where $n_p$ = `particle_scale` (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from $s(t,x)$ itself, the same source term the PDE uses: by Duhamel's principle, the PDE solution is a superposition of transition densities started at birth points drawn from $s$. With $f<1$ the SDE solves the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/n_p$, which is how the HUD compares SDE and PDE total mass.
 
 Deposition is simulated with Bernoulli survival over each step (hazard $\lambda$): remove particle with probability
 
@@ -99,11 +99,11 @@ $$
 \quad \phi(T,x)=0.
 $$
 
-The forcing $f(t,x)$ is built from sensor sites $\{x_i\}$ using threshold-gated Gaussian bumps:
+The forcing $f(t,x)$ is built from sensor sites $\lbrace x_i \rbrace$ using threshold-gated Gaussian bumps:
 
 $$
-f(t,x)=\sum_i \alpha_i\,\mathbf{1}_{\tilde c(t,x_i)>c_T}\,\beta_i
-\exp\!\left(-\frac{\|x-x_i\|^2}{2\sigma^2}\right).
+f(t,x)=\sum_i \alpha_i \mathbf{1}_{\tilde c(t,x_i)>c_T} \beta_i
+\exp\left(-\frac{\Vert x-x_i\Vert ^2}{2\sigma^2}\right).
 $$
 
 Current defaults in code (`SourceEstimationConfig` in `include/adjoint/SourceEstimator.hpp`; not exposed on the CLI):
@@ -112,15 +112,15 @@ Current defaults in code (`SourceEstimationConfig` in `include/adjoint/SourceEst
 - detection threshold $c_T$: at least $10^{-6}$ (model units), raised on each run to the sensors' noise floor (see [Detection threshold](#detection-threshold))
 - forcing is piecewise-constant in time from recorded sensor samples (the last report at or before $t$)
 - observation window: reports from the last 900 s (`max_lookback_s`) that are still in each sensor's rolling history
-- release-time search horizon: the adjoint starts 900 s (`release_search_margin_s`) before the earliest observation in the window (clamped at $t=0$). A release precedes its first detection by the source-to-sensor travel time, so searching only the observation window would pin $t^*$ to its start.
+- release-time search horizon: the adjoint starts 900 s (`release_search_margin_s`) before the earliest observation in the window (clamped at $t=0$). A release precedes its first detection by the source-to-sensor travel time, so searching only the observation window would pin $t^{\ast}$ to its start.
 - adjoint step at most 2 s, reduced automatically when the explicit stability bound for the current fields requires it
 
 The app computes
 
 $$
-Z(t)=\int_\Omega \phi(t,x)\,dx,\quad
-t^*=\arg\max_t Z(t),\quad
-x^*=\arg\max_x \int_0^T p(t,x)\,dt,\quad
+Z(t)=\int_\Omega \phi(t,x) dx,\quad
+t^{\ast}=\arg\max_t Z(t),\quad
+x^{\ast}=\arg\max_x \int_0^T p(t,x) dt,\quad
 p=\phi/Z.
 $$
 
@@ -133,10 +133,10 @@ This is `SourceEstimationMethod::AdjointBacktracking`, the summed-forcing heuris
 Both remaining methods (`RegularizedLeastSquares`, `BayesianGrid`) are built on the same linear source-receptor model. By adjoint reciprocity, solving the backward adjoint PDE once per sensor $i$, forced by a unit-weight bump at that sensor's own gated observation times, yields a sensitivity field $h_i(x,t)$. A unit-amplitude source released at $(x,t)$ is then predicted to produce a response
 
 $$
-y_i \approx q_0\, h_i(x,t)
+y_i \approx q_0  h_i(x,t)
 $$
 
-at sensor $i$, where $y_i=\sum_{k:\,\tilde c_i(t_k)>c_T} \tilde c_i(t_k)$ is that sensor's own sum of gated noisy readings over the observation window. Each sensor's adjoint solution is projected (nearest snapshot in time, bilinear in space) onto a coarse `search_grid_nx`$\times$`search_grid_ny`$\times$`search_time_count` candidate grid (default $14\times14\times24$) and trilinearly interpolated from there. The whole domain is therefore covered with $O(\#\text{sensors})$ adjoint solves rather than one solve per candidate, and `estimate_all` computes these sensitivity fields once and shares them between both methods.
+at sensor $i$, where $y_i=\sum_{k: \tilde c_i(t_k)>c_T} \tilde c_i(t_k)$ is that sensor's own sum of gated noisy readings over the observation window. Each sensor's adjoint solution is projected (nearest snapshot in time, bilinear in space) onto a coarse `search_grid_nx`$\times$`search_grid_ny`$\times$`search_time_count` candidate grid (default $14\times14\times24$) and trilinearly interpolated from there. The whole domain is therefore covered with $O(N_{\text{sensors}})$ adjoint solves rather than one solve per candidate, and `estimate_all` computes these sensitivity fields once and shares them between both methods.
 
 **Regularized least squares.** At each candidate $(x,t)$, $q_0$ has the closed-form ridge (i.e. Bayesian-linear-regression MAP) solution, clamped to $\hat q_0 \ge 0$:
 
@@ -148,8 +148,8 @@ $$
 with $\rho=$ `amplitude_ridge` ($10^{-8}$) and $\varepsilon_{\text{rel}}=$ `relative_model_error` (0.05). The best `candidate_count` (5) coarse cells, ranked by weighted RSS, are refined over `refinement_levels` (3) rounds of a $9\times9\times9$ local grid search whose window shrinks by $0.4\times$ per round. Positional uncertainty comes from the profile-likelihood curvature of the weighted RSS at the optimum ($\text{std}=\sqrt{2/\partial^2_\theta \text{RSS}}$). If any curvature is non-positive, that std falls back to the full domain or window span and the result is flagged `weakly_identified`. $q_0$'s uncertainty is the linear-regression variance $1/(\sum_i w_i h_i^2 + \rho)$. Its heatmap `p_star` is the profile likelihood over the coarse spatial grid, $\exp(-\tfrac12 \min_t \text{RSS}(x,y,t))$ normalized to a density (flat prior, release time profiled out).
 
 **Bayesian grid.** At each candidate cell, $q_0$ is marginalized out by trapezoidal quadrature (`response_quadrature_points`, default 6 nodes). The nodes span that cell's own ridge estimate $\pm 6$ standard deviations, truncated at $q_0\ge0$, because a tight $\varepsilon_{\text{rel}}$ makes the likelihood sharply peaked. This gives a marginal likelihood (evidence) per cell, computed in log space to avoid underflow, plus a per-cell posterior mean/variance for $q_0$.
-- $t^*$ is the argmax of the time-marginal evidence.
-- $x^*,y^*$ are the argmax of the evidence at $t^*$, refined with a standard 3-point parabolic sub-cell fit.
+- $t^{\ast}$ is the argmax of the time-marginal evidence.
+- $x^{\ast},y^{\ast}$ are the argmax of the evidence at $t^{\ast}$, refined with a standard 3-point parabolic sub-cell fit.
 - The reported heatmap `p_star` is the time-integrated, spatially normalized evidence $p(x,y\mid \text{data})$ over the search grid, in the same layout as `AdjointBacktracking`.
 - $x_{\text{std}},y_{\text{std}},t_{\text{std}}$ are posterior second moments, floored at the grid's own quantization noise ($\text{cell width}/\sqrt{12}$). Without the floor, a sharp likelihood would report more precision than the coarse grid can resolve.
 - The result is flagged `weakly_identified` when the posterior peak is less than $3\times$ the uniform density.
@@ -160,7 +160,7 @@ Both methods reuse `AdjointSolver`; see `src/adjoint/SourceEstimator.cpp` for th
 
 Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 3.2\times10^{-6}$) it is about $6.5\times10^{-6}$ model units, roughly 10% of the calibration plume's reference peak. It is 0 when noise is off.
 
-Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has decayed (the default deposition $\lambda = 0.01\,\text{s}^{-1}$ is a 100 s e-folding time) or left an absorbing domain. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
+Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has decayed (the default deposition $\lambda = 0.01 \text{s}^{-1}$ is a 100 s e-folding time) or left an absorbing domain. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
 
 ## Wind and diffusivity models
 
@@ -184,9 +184,9 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 |---|---|
 | Constant Scalar | $\kappa I$, $\kappa = 6$ m²/s (editable as **Numerics → Const Diffusivity**) |
 | Spatial Scalar | $\kappa(t,x) I$, sinusoidally varying around 8 m²/s |
-| Constant Tensor | $\begin{pmatrix}6&2\\2&4\end{pmatrix}$ |
+| Constant Tensor | $\begin{pmatrix}6&2\cr 2&4\end{pmatrix}$ |
 | Diagonal Tensor | Space/time-varying diagonal SPD |
-| Full Anisotropic | Rotated SPD $R(\theta)\,\mathrm{diag}(\lambda_1,\lambda_2)\,R(\theta)^\top$ with varying $\theta,\lambda_i$ |
+| Full Anisotropic | Rotated SPD $R(\theta) \mathrm{diag}(\lambda_1,\lambda_2) R(\theta)^\top$ with varying $\theta,\lambda_i$ |
 | Brownian (k=0.5) | $\tfrac12 I$ |
 
 `H` toggles the Brownian/heat special case, which sets Zero Wind + Brownian (k=0.5) + scalarized PDE diffusion, raises particle births 12×, and zooms the left panel 2.4× around the newest source. Toggling it off restores Jet Shear + Constant Scalar.
@@ -224,7 +224,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 
 - Scheme: Euler-Maruyama
 - Drift: $w+\nabla\cdot D$ (row-wise divergence of the diffusivity tensor)
-- Noise: matrix diffusion via $\sqrt{2\Delta t}\,L\xi$ with $LL^\top=D$
+- Noise: matrix diffusion via $\sqrt{2\Delta t} L\xi$ with $LL^\top=D$
 
 ### PDE solver
 
@@ -243,7 +243,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 - Advection: first-order upwind for $w\cdot\nabla\phi$
 - Diffusion mode: matched to the current PDE mode (scalarized trace or full tensor flux)
 - Forcing: built from recorded sensor history (threshold-gated Gaussian bumps)
-- Output: time-averaged normalized density $\bar p(x)$, estimated $(x^*,t^*)$
+- Output: time-averaged normalized density $\bar p(x)$, estimated $(x^{\ast},t^{\ast})$
 
 ## Dependencies
 
@@ -330,7 +330,7 @@ Defaults live in `include/core/Config.hpp`. The combined configuration is valida
 
 ### Speeding up simulations
 
-One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200\,\Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.1` the ceiling is about 20×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
+One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200 \Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.1` the ceiling is about 20×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
 
 `dt` is set with `--dt` or **PDE → dt**. The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind and diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) and `--dt 2` (~400×) are stable. Keep `dt` at most the sensor physical sample period if every physical sample should see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
 
@@ -428,14 +428,14 @@ Preferences overlay (`Esc`), with `Up/Down` to select and `Left/Right/Enter` to 
 HUD:
 - **Status** card: time (plus the exported real-time equivalent when georeferenced), requested and achieved speed, `dt` with its stability bound (flagged `UNSTABLE` when `dt` exceeds it), run state, models, BC, PDE max concentration (`ug/m^3`)
 - **Source** card: total emission rate, emitted particles/step, active sources, particle count, newest source age, $M_{\text{sde}}/M_{\text{pde}}$
-- **Estimate** card: selected method and its $x^*$, $t^*$ (and $q_0$ for the two inversion methods), and the current overlay mode
-- Status strip: estimator status line, including `error=… m` (distance from $x^*$ to the most recently clicked source), recording status, and georeference / `L` / `N` status
+- **Estimate** card: selected method and its $x^{\ast}$, $t^{\ast}$ (and $q_0$ for the two inversion methods), and the current overlay mode
+- Status strip: estimator status line, including `error=… m` (distance from $x^{\ast}$ to the most recently clicked source), recording status, and georeference / `L` / `N` status
 
 ### Source estimation workflow
 
 1. Place sensors on the right panel (or press `L`), click a source on the left panel, and let the plume reach the sensors.
 2. Pause (`Space`), then press `E` (or the **RUN ESTIMATE** button). Each method reports "Insufficient signal" if no report in the observation window exceeds the [detection threshold](#detection-threshold).
-3. All three methods run. The selected method's $x^*$ is drawn as a red ring with a white border on both panels (sensors are yellow dots, true sources red dots), and `M` (or `<`/`>`) switches between methods. The inversion methods also append `q0_std`, `wrmse`, and a `(weakly identified)` flag to the status strip.
+3. All three methods run. The selected method's $x^{\ast}$ is drawn as a red ring with a white border on both panels (sensors are yellow dots, true sources red dots), and `M` (or `<`/`>`) switches between methods. The inversion methods also append `q0_std`, `wrmse`, and a `(weakly identified)` flag to the status strip.
 4. The right-panel overlay (`J` cycles it) shows one of three views:
    - **posterior** (default): the selected method's `p_star` heatmap, normalized to its own maximum. Backtracking uses the 96×96 adjoint grid; the two inversion methods use the 14×14 search grid.
    - **backward flow**: an animation of backward adjoint probability flow, seeded from each sensor's most recent above-threshold report and looping over the observation window. It is a diagnostic view, separate from the three estimators, and it advances only while paused.
@@ -563,7 +563,7 @@ The first nine columns match `wildfire_pm25_dataset.csv` in name, order, format 
 - `lat_deg`, `lon_deg`: sensor coordinates when the geo projection is active; `x_m`, `y_m` (domain meters) otherwise
 - `pm25_ugm-3`: noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion
 - `wind_speed`: $\sqrt{u^2+v^2}$ (m/s)
-- `wind_direction`: meteorological convention, as in the real datasets: the direction the wind blows *from*, in degrees clockwise from north, $\operatorname{atan2}(-u,-v)$
+- `wind_direction`: meteorological convention, as in the real datasets: the direction the wind blows *from*, in degrees clockwise from north, $\mathrm{atan2}(-u,-v)$
 - `wind_u_component`, `wind_v_component`: wind at the sensor site at report time (m/s). With lat/lon output, u is eastward and v northward. The domain's +y axis points south (north is up on screen), so v is the negated domain y component.
 - `time_s`: simulation time at the end of the averaging window
 
@@ -664,7 +664,7 @@ fonts/
 - `atm::AdjointSolver`
   - Backward adjoint transport solver (scalarized/full-tensor diffusion modes)
 - `atm::SourceEstimator`
-  - Runs the three `SourceEstimationMethod`s over sensor history and returns $(x^*, t^*)$, amplitude, uncertainty, and posterior fields
+  - Runs the three `SourceEstimationMethod`s over sensor history and returns $(x^{\ast}, t^{\ast})$, amplitude, uncertainty, and posterior fields
 - `atm::DataRecorder`
   - Captures sensor reports and source events during a recording session and exports them as a CSV with simulation metadata and estimates
 - `load_unique_sites` / `project_sites_to_domain` (`io/SiteLoader`)
