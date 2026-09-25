@@ -1,6 +1,6 @@
 # Simulation and STE for atmospheric dispersion
 
-Interactive C++ atmospheric transport prototype with a split view:
+Interactive C++ atmospheric transport simulation with a split view:
 - **Left panel:** tagged-particle simulation via a SDE solver (Euler-Maruyama)
 - **Right panel:** concentration/density evolution via the advection-diffusion/Fokker Planck PDE
 
@@ -64,7 +64,7 @@ $$
 
 where $\mu = w+\nabla\cdot D$, $LL^\top = D$ (Cholesky, with an eigen-decomposition fallback), and $\xi_n\sim\mathcal{N}(0,I)$ i.i.d. per particle. $\nabla\cdot D$ is evaluated by central differences.
 
-Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot n_p\cdot\Delta t$ particles in expectation, where $n_p$ = `particle_scale` (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from $s(t,x)$ itself, the same source term the PDE uses: by Duhamel's principle, the PDE solution is a superposition of transition densities started at birth points drawn from $s$. With $f<1$ the SDE solves the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/n_p$, which is how the HUD compares SDE and PDE total mass.
+Particle births are generated independently from each active source. Each step, a source emits $q_k(t)\cdot n_p\cdot\Delta t$ particles in expectation, where $n_p$ = `particle_scale` (floor plus a Bernoulli draw for the fractional part). New particles are placed at $x_k + \mathcal{N}(0, (f\sigma)^2 I)$ with $f=$ `SourceConfig::particle_spread_fraction` in `include/core/Config.hpp`. The default $f=1$ samples births from $s(t,x)$ itself, the same source term the PDE uses: by Duhamel's principle, the PDE solution is a superposition of transition densities started at birth points drawn from $s$. With $f<1$ the SDE corresponds to a sample path whose ensemble density solves the Fokker–Planck equation with a narrower source than the PDE. Each particle carries mass $1/n_p$, which is how the HUD compares SDE and PDE total mass.
 
 Deposition is simulated with Bernoulli survival over each step (hazard $\lambda$): remove particle with probability
 
@@ -252,6 +252,8 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 - SFML 3 (`Graphics`, `Window`, `System`)
 - Eigen3
 - For `analysis/` and `csv_demo.py` only: Python 3.10+ with `numpy` and `pandas`
+
+You can install Eigen3 and SFML via *homebrew* on Mac, and via *vcpkg* on Windows. 
 
 ## Build
 
