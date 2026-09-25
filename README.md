@@ -536,31 +536,34 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 # Sensor averaging window (s): 5.000000
 # Sensors recorded: 3
 # Concentration: sensor window-averaged reading converted to ug/m^3
-# Coordinates: x_m, y_m (simulation domain, metres)
+# Coordinates: lat_deg, lon_deg (WGS84, equirectangular back-projection from domain)
+# Wind: u eastward, v northward (m/s); wind_direction is where the wind blows from, degrees clockwise from north
 # Sources: 1
-# Source 1: x=2500.000000 y=2500.000000 born=12.340000s lifespan=100.000000s died=112.340000s
+# Source 1: lat=41.018000 lon=-73.962000 born=12.340000s lifespan=100.000000s died=112.340000s
 # Source term estimates (from the last 'E' run before export): 3
-# Estimate 1 (Adjoint Backtracking): x*=... y*=... t*=...s
-# Estimate 2 (Regularized Least Squares): x*=... y*=... t*=...s q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
+# Estimate 1 (Adjoint Backtracking): lat*=... lon*=... t*=...s
+# Estimate 2 (Regularized Least Squares): lat*=... lon*=... t*=...s q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
 # Estimate 3 (Bayesian Grid): ...
-time_s,Datetime_UTC,site_name,x_m,y_m,pm25_ugm-3,wind_u_component,wind_v_component
+Datetime_UTC,site_name,lat_deg,lon_deg,pm25_ugm-3,wind_speed,wind_direction,wind_u_component,wind_v_component,time_s
 ```
 
-When the geo projection is active (whenever `wildfire_pm25_dataset.csv` was present at startup), coordinates are back-projected to real coordinates:
-- the header reads `# Coordinates: lat_deg, lon_deg (...)`
-- source and estimate lines use `lat=`/`lon=` and `lat*=`/`lon*=`
-- the columns are `lat_deg,lon_deg` in place of `x_m,y_m`
+This is the georeferenced format, used whenever `wildfire_pm25_dataset.csv` was present at startup. Without it, positions stay in domain coordinates:
+- the header reads `# Coordinates: x_m, y_m (...)`, and `# Wind:` describes domain axes
+- source and estimate lines use `x=`/`y=` and `x*=`/`y*=`
+- the columns are `x_m,y_m` in place of `lat_deg,lon_deg`
 
 An estimate that failed is written as `no result - <reason>`.
 
-Column names mirror `wildfire_pm25_dataset.csv`/`multimonth_pm25_dataset.csv` where the concept matches, so exported synthetic data is close to a drop-in replacement for tooling built against the real datasets:
+The first nine columns match `wildfire_pm25_dataset.csv` in name, order, format and units, so scripts written for the real data can read an export directly. `time_s` is appended last:
 
-- `time_s`: simulation time at end of the averaging window (no real-data equivalent; kept for simulation traceability)
 - `Datetime_UTC`: synthetic timestamp, `time_s` offset from an anchor. With the geo projection active, the anchor is the real wildfire event start (2024-11-08 00:00 UTC); otherwise it is the wall-clock time recording started.
 - `site_name`: sensor label; the real site name when loaded via `L`, else `Sensor_<index>`
 - `lat_deg`, `lon_deg`: sensor coordinates when the geo projection is active; `x_m`, `y_m` (domain meters) otherwise
 - `pm25_ugm-3`: noisy window-averaged sensor reading in µg/m³, using `conc_scale / mixing_height` conversion
-- `wind_u_component`, `wind_v_component`: wind vector at the sensor site sampled at report time
+- `wind_speed`: $\sqrt{u^2+v^2}$ (m/s)
+- `wind_direction`: meteorological convention, as in the real datasets: the direction the wind blows *from*, in degrees clockwise from north, $\operatorname{atan2}(-u,-v)$
+- `wind_u_component`, `wind_v_component`: wind at the sensor site at report time (m/s). With lat/lon output, u is eastward and v northward. The domain's +y axis points south (north is up on screen), so v is the negated domain y component.
+- `time_s`: simulation time at the end of the averaging window
 
 `csv_demo.py` shows how to read an export with pandas (`comment="#"`) and parse the `# Source` lines (lat/lon or x/y form) into a DataFrame.
 

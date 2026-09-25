@@ -199,6 +199,10 @@ std::string DataRecorder::export_csv(
         << (has_geo_projection_
             ? "lat_deg, lon_deg (WGS84, equirectangular back-projection from domain)\n"
             : "x_m, y_m (simulation domain, metres)\n")
+        << "# Wind: "
+        << (has_geo_projection_
+            ? "u eastward, v northward (m/s); wind_direction is where the wind blows from, degrees clockwise from north\n"
+            : "u along +x, v along +y (m/s, domain axes); wind_direction = atan2(-u, -v) in degrees\n")
         << "# Sources: " << source_events_.size() << "\n";
     for (std::size_t i = 0; i < source_events_.size(); ++i) {
         const auto& se = source_events_[i];
@@ -240,11 +244,9 @@ std::string DataRecorder::export_csv(
         out << "\n";
     }
 
-    if (has_geo_projection_) {
-        out << "time_s,Datetime_UTC,site_name,lat_deg,lon_deg,pm25_ugm-3,wind_u_component,wind_v_component\n";
-    } else {
-        out << "time_s,Datetime_UTC,site_name,x_m,y_m,pm25_ugm-3,wind_u_component,wind_v_component\n";
-    }
+    // Column order matches wildfire_pm25_dataset.csv, with time_s appended.
+    out << "Datetime_UTC,site_name," << (has_geo_projection_ ? "lat_deg,lon_deg" : "x_m,y_m")
+        << ",pm25_ugm-3,wind_speed,wind_direction,wind_u_component,wind_v_component,time_s\n";
 
     struct Entry {
         float time_s;
@@ -268,7 +270,7 @@ std::string DataRecorder::export_csv(
         const auto& rec = records_[e.sensor_idx];
         const auto& r = rec.readings[e.reading_idx];
         const std::string label = rec.label.empty() ? ("Sensor_" + std::to_string(e.sensor_idx)) : rec.label;
-        out << r.time_s << "," << format_datetime_utc(r.time_s) << "," << label << ",";
+        out << format_datetime_utc(r.time_s) << "," << label << ",";
         if (has_geo_projection_) {
             float lat, lon;
             domain_to_latlon(rec.position.x(), rec.position.y(), lat, lon);
@@ -276,9 +278,19 @@ std::string DataRecorder::export_csv(
         } else {
             out << rec.position.x() << "," << rec.position.y();
         }
+        // Domain +y points south (screen-down; see project_sites_to_domain),
+        // so the northward component is -wind_v when exporting lat/lon.
+        const float u = r.wind_u;
+        const float v = has_geo_projection_ ? -r.wind_v : r.wind_v;
+        const float speed = std::hypot(u, v);
+        // Meteorological convention, as in the real datasets: direction the wind blows from.
+        const float direction = std::fmod(std::atan2(-u, -v) * 180.0f / 3.14159265358979323846f + 360.0f, 360.0f);
         out << "," << r.concentration_ug_m3
-            << "," << r.wind_u
-            << "," << r.wind_v << "\n";
+            << "," << speed
+            << "," << direction
+            << "," << u
+            << "," << v
+            << "," << r.time_s << "\n";
     }
 
     return path;

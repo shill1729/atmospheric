@@ -310,7 +310,7 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
 }
 
 Vec2 Fields::wind_uniform() const {
-    // Steady westerly with a slight northward component, calibrated to the
+    // Steady westerly with a slight +y (southward on screen) component, at the
     // real median wind speed (~2.2 m/s; see analysis/calibration_report.md).
     return Vec2(2.2f, 0.4f);
 }
