@@ -120,11 +120,10 @@ The app computes
 $$
 Z(t)=\int_\Omega \phi(t,x) dx,\quad
 t^{\ast}=\arg\max_t Z(t),\quad
-x^{\ast}=\arg\max_x \int_0^T p(t,x) dt,\quad
-p=\phi/Z.
+x^{\ast}=\arg\max_x \phi(t^{\ast},x).
 $$
 
-The time integral is trapezoidal over the adjoint snapshots, and the result is renormalized to a spatial density before the argmax.
+Both estimates come from the same adjoint snapshot. The heatmap (`p_star`) is the time average $\bar p(x) = \frac{1}{T}\int_0^T p(t,x) dt$ of $p=\phi/Z$ (trapezoidal over the snapshots, renormalized to a density), which traces the backward path of the plume. Its argmax is not used as $x^{\ast}$: near the end of the window $\phi$ is still concentrated around the sensors, so the time average peaks there rather than at the source.
 
 This is `SourceEstimationMethod::AdjointBacktracking`, the summed-forcing heuristic above. It uses detections only and ignores reading magnitude.
 
@@ -243,7 +242,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 - Advection: first-order upwind for $w\cdot\nabla\phi$
 - Diffusion mode: matched to the current PDE mode (scalarized trace or full tensor flux)
 - Forcing: built from recorded sensor history (threshold-gated Gaussian bumps)
-- Output: time-averaged normalized density $\bar p(x)$, estimated $(x^{\ast},t^{\ast})$
+- Output: estimated $(x^{\ast},t^{\ast})$ from the $t^{\ast}$ snapshot, and the time-averaged density $\bar p(x)$ for display
 
 ## Dependencies
 
@@ -251,7 +250,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 - CMake >= 3.20
 - SFML 3 (`Graphics`, `Window`, `System`)
 - Eigen3
-- For `analysis/` and `csv_demo.py` only: Python 3.10+ with `numpy` and `pandas`
+- For `analysis/` and `read_csv.py` only: Python 3.10+ with `numpy` and `pandas`
 
 You can install Eigen3 and SFML via *homebrew* on Mac, and via *vcpkg* on Windows. 
 
@@ -405,7 +404,7 @@ Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
   - `Revert Queued Changes`
   - `Restore Launch Defaults` (also resets PDE diffusion mode to full tensor and recreates the simulator)
   - `Start Recording` / `Stop Recording`: toggle CSV data capture (label reflects state; `* REC` indicator appears in toolbar while active)
-  - `Export CSV`: write captured sensor time series to a CSV file in the current working directory
+  - `Export CSV`: write captured sensor time series to a CSV file in `exports/`
 - Editable fields:
   - `Source`: Base Emission, Decay Rate, Lifespan (s), Sigma, Max Sources
   - `Numerics`: Time Scale (shows the live value, including `[`/`]` changes), Max Particles, Deposition, Const Diffusivity, Wind Scale
@@ -505,7 +504,7 @@ The forward simulation as observed by the sensor network can be exported to a CS
 4. Click a source on the left panel and let the plume evolve.
 5. Open **File → Stop Recording**. The status strip shows how many readings were captured.
 6. Optionally pause and run `E`. The most recent estimates are written into the export header.
-7. Open **File → Export CSV**. The file is written to the current working directory and the filename is shown in the status strip.
+7. Open **File → Export CSV**. The file is written to `exports/` (created if needed, ignored by git) and its name is shown in the status strip.
 
 Recording is independent of the rolling sensor history used by the estimators. It is unbounded and accumulates for the full duration between start and stop. You can export the same recorded session multiple times (e.g. before and after running an estimate). Calling **Start Recording** again clears the previous buffer.
 
@@ -515,7 +514,7 @@ Sources already active when recording starts, and sources clicked during recordi
 
 ### Output format
 
-The file is named to encode the key simulation parameters (spaces and path characters in model names become `_`):
+Exports are written to `exports/` under the working directory. Each file is named to encode the key simulation parameters (spaces and path characters in model names become `_`):
 
 ```
 atmospheric_{wind}_{diffusion}_{pde_mode}_dt{dt}_ts{time_scale}_sp{sample_period}s_{YYYYMMDD_HHMMSS}.csv
@@ -545,8 +544,8 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 # Sources: 1
 # Source 1: lat=41.018000 lon=-73.962000 born=12.340000s lifespan=100.000000s died=112.340000s born_utc=2024-11-08T00:10:24+00:00 died_utc=2024-11-08T01:34:39+00:00
 # Source term estimates (from the last 'E' run before export): 3
-# Estimate 1 (Adjoint Backtracking): lat*=... lon*=... t*=...s t*_utc=...
-# Estimate 2 (Regularized Least Squares): lat*=... lon*=... t*=...s t*_utc=... q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
+# Estimate 1 (Adjoint Backtracking): lat*=... lon*=... t*=...s t*_utc=... err_m=... nearest_source=1
+# Estimate 2 (Regularized Least Squares): lat*=... lon*=... t*=...s t*_utc=... err_m=... nearest_source=1 q0=... q0_std=... x_std_m=... y_std_m=... t_std_s=... weighted_rmse=... weakly_identified=false sensors_used=... observations_used=...
 # Estimate 3 (Bayesian Grid): ...
 Datetime_UTC,site_name,lat_deg,lon_deg,pm25_ugm-3,wind_speed,wind_direction,wind_u_component,wind_v_component,time_s
 ```
@@ -556,7 +555,11 @@ This is the georeferenced format, used whenever `wildfire_pm25_dataset.csv` was 
 - source and estimate lines use `x=`/`y=` and `x*=`/`y*=`
 - the columns are `x_m,y_m` in place of `lat_deg,lon_deg`
 
-An estimate that failed is written as `no result - <reason>`.
+In the estimate lines:
+- `err_m` is the distance from the estimated location to the nearest recorded source, and `nearest_source` gives that source's number. Both are omitted when the recording holds no sources.
+- Distances (`err_m`, `x_std_m`, `y_std_m`) are in real metres when the export is georeferenced, and in domain metres otherwise.
+- Times (`t*`, `t_std_s`, like `time_s` and the source `born`/`died`) are in simulation seconds, and the `*_utc` fields give the matching real times.
+- An estimate that failed is written as `no result - <reason>`.
 
 The first nine columns match `wildfire_pm25_dataset.csv` in name, order, format and units, so scripts written for the real data can read an export directly. `time_s` is appended last:
 
@@ -569,7 +572,28 @@ The first nine columns match `wildfire_pm25_dataset.csv` in name, order, format 
 - `wind_u_component`, `wind_v_component`: wind at the sensor site at report time (m/s). With lat/lon output, u is eastward and v northward. The domain's +y axis points south (north is up on screen), so v is the negated domain y component.
 - `time_s`: simulation time at the end of the averaging window
 
-`csv_demo.py` shows how to read an export with pandas (`comment="#"`) and parse the `# Source` lines (lat/lon or x/y form) into a DataFrame.
+### Reading exports
+
+`read_csv.py` splits an export into its data table and its metadata. With no path, it loads the newest file in `exports/`, so the usual workflow needs no file names: run the simulation, record, export, then
+
+```bash
+.venv/bin/python3 read_csv.py                          # summary of the newest export
+.venv/bin/python3 read_csv.py exports/atmospheric_...  # or a specific file
+```
+
+From Python or a notebook in the repository root:
+
+```python
+from read_csv import load_export
+
+data, meta = load_export()          # newest export; or load_export("exports/...csv")
+data                                # same columns as wildfire_pm25_dataset.csv, plus time_s
+meta["sources"]                     # true sources: position, born/died (s and UTC)
+meta["estimates"]                   # one row per method: position, t*, err_m, q0, ...
+meta["settings"]                    # wind model, dt, time stretch, ...
+```
+
+To read the data without the helper, use `pandas.read_csv(path, comment="#")`, which skips the metadata lines.
 
 ## Project Structure
 
@@ -639,7 +663,7 @@ analysis/
   report.py                         # Orchestrates the above into calibration_report.md
   calibration_report.md             # Generated calibration output
 
-csv_demo.py                         # Example: reading an exported CSV + its source metadata
+read_csv.py                         # Load an export: data table + parsed metadata
 
 fonts/
   arial.ttf

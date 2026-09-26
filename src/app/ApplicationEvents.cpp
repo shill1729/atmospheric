@@ -280,7 +280,7 @@ void Application::start_recording() {
 
 std::string Application::export_recording() {
     const auto& m = recording_meta_;
-    return data_recorder_.export_csv(".", m.wind_model, m.diffusion_model, m.pde_mode, m.dt, m.time_scale,
+    return data_recorder_.export_csv("exports", m.wind_model, m.diffusion_model, m.pde_mode, m.dt, m.time_scale,
         m.sample_period_s, m.wind_scale, estimation_results_);
 }
 

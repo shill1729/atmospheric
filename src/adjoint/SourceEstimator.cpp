@@ -549,12 +549,16 @@ SourceEstimateResult SourceEstimator::estimate_adjoint_backtracking(
         v /= z_space;
     }
 
+    // x* is read from the t* snapshot. p_star (the time average) is kept as a
+    // path summary for display; its argmax is biased toward the sensors,
+    // where phi is most concentrated just after being injected.
+    const auto& phi_star = sol.snapshots[static_cast<std::size_t>(best_snapshot)].phi;
     int best_i = 0;
     int best_j = 0;
     float best_p = -std::numeric_limits<float>::infinity();
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
-            const float p = out.p_star[static_cast<std::size_t>(idx(i, j, nx))];
+            const float p = phi_star[static_cast<std::size_t>(idx(i, j, nx))];
             if (p > best_p) {
                 best_p = p;
                 best_i = i;

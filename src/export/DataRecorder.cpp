@@ -4,8 +4,10 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 namespace atm {
@@ -145,7 +147,9 @@ std::string DataRecorder::export_csv(
        << "_" << ts.str()
        << ".csv";
 
-    const std::string path = output_dir + "/" + fn.str();
+    std::error_code dir_error;
+    std::filesystem::create_directories(output_dir, dir_error);
+    const std::string path = (std::filesystem::path(output_dir) / fn.str()).string();
 
     std::ofstream out(path);
     if (!out.is_open()) {
@@ -253,8 +257,22 @@ std::string DataRecorder::export_csv(
             out << "x*=" << r.x_star.x() << " y*=" << r.x_star.y();
         }
         out << " t*=" << r.t_star_s << "s t*_utc=" << format_iso_utc(r.t_star_s);
+        // Distance to the nearest recorded source, in the exported frame
+        // (real metres when georeferenced, domain metres otherwise).
+        if (!source_events_.empty()) {
+            std::size_t nearest = 0;
+            float best = std::numeric_limits<float>::infinity();
+            for (std::size_t k = 0; k < source_events_.size(); ++k) {
+                const float dist = (r.x_star - source_events_[k].position).norm();
+                if (dist < best) {
+                    best = dist;
+                    nearest = k;
+                }
+            }
+            out << " err_m=" << best * stretch << " nearest_source=" << (nearest + 1);
+        }
         if (r.method != SourceEstimationMethod::AdjointBacktracking) {
-            out << " q0=" << r.q0 << " q0_std=" << r.q0_std << " x_std_m=" << r.x_std_m << " y_std_m=" << r.y_std_m
+            out << " q0=" << r.q0 << " q0_std=" << r.q0_std << " x_std_m=" << r.x_std_m * stretch << " y_std_m=" << r.y_std_m * stretch
                 << " t_std_s=" << r.t_std_s << " weighted_rmse=" << r.weighted_rmse
                 << " weakly_identified=" << (r.weakly_identified ? "true" : "false")
                 << " sensors_used=" << r.sensors_used << " observations_used=" << r.observations_used;

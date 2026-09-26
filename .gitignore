@@ -52,7 +52,9 @@
 *.pyc
 
 /papers
-csv_demo.txt
 hello.py
 # Local design notes
 NOTES_point_source.md
+
+# Synthetic data exports
+/exports/
