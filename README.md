@@ -184,7 +184,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 |---|---|
 | Constant Scalar | $\kappa I$, $\kappa = 6$ m²/s (editable as **Numerics → Const Diffusivity**) |
 | Spatial Scalar | $\kappa(t,x) I$, sinusoidally varying around 8 m²/s |
-| Constant Tensor | $\begin{pmatrix}6&2\\ 2&4\end{pmatrix}$ |
+| Constant Tensor | $D_{11}=6$, $D_{12}=D_{21}=2$, $D_{22}=4$ |
 | Diagonal Tensor | Space/time-varying diagonal SPD |
 | Full Anisotropic | Rotated SPD $R(\theta) \mathrm{diag}(\lambda_1,\lambda_2) R(\theta)^\top$ with varying $\theta,\lambda_i$ |
 | Brownian (k=0.5) | $\tfrac12 I$ |
