@@ -6,6 +6,45 @@ Interactive C++ atmospheric transport simulation with a split view:
 
 The two solvers share the same wind field, diffusivity model, source emission schedule, deposition rate, and boundary mode. On top of the forward models, a paused simulation can be inverted from sensor readings to estimate where and when a source was released via three source-term-estimation (STE) methods.
 
+## Contents
+
+- [Features](#features)
+- [Mathematical Model](#mathematical-model)
+  - [Domain, state, and source](#domain-state-and-source)
+  - [SDE viewpoint (tagged particles)](#sde-viewpoint-tagged-particles)
+  - [PDE viewpoint (Fokker-Planck / advection-diffusion-reaction)](#pde-viewpoint-fokker-planck--advection-diffusion-reaction)
+  - [Adjoint viewpoint (inverse source estimation)](#adjoint-viewpoint-inverse-source-estimation)
+  - [Regularized least squares and Bayesian grid (linear source-receptor inversion)](#regularized-least-squares-and-bayesian-grid-linear-source-receptor-inversion)
+  - [Detection threshold](#detection-threshold)
+- [Wind and diffusivity models](#wind-and-diffusivity-models)
+- [Initial and Boundary Conditions](#initial-and-boundary-conditions)
+  - [Initial conditions (IC)](#initial-conditions-ic)
+  - [Boundary conditions (BC)](#boundary-conditions-bc)
+- [Numerical Methods Summary](#numerical-methods-summary)
+  - [Time stepping (shared)](#time-stepping-shared)
+  - [SDE solver](#sde-solver)
+  - [PDE solver](#pde-solver)
+  - [Adjoint solver](#adjoint-solver)
+- [Dependencies](#dependencies)
+- [Build](#build)
+- [Tests](#tests)
+- [Run](#run)
+- [Command Line Arguments](#command-line-arguments)
+  - [Speeding up simulations](#speeding-up-simulations)
+  - [Faithful NY wildfire event export](#faithful-ny-wildfire-event-export)
+- [Runtime Controls](#runtime-controls)
+  - [Source estimation workflow](#source-estimation-workflow)
+  - [Concentration display calibration](#concentration-display-calibration)
+  - [Sensors](#sensors)
+- [NY Wildfire Sensor Network](#ny-wildfire-sensor-network)
+- [Calibration](#calibration)
+- [CSV Export](#csv-export)
+  - [Workflow](#workflow)
+  - [Output format](#output-format)
+  - [Reading exports](#reading-exports)
+- [Project Structure](#project-structure)
+- [Core Classes](#core-classes)
+
 ## Features
 
 - Click-to-add continuous sources with finite lifetime and exponential decay (multi-source, capped by `--source-max`)
