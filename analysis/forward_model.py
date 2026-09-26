@@ -22,11 +22,11 @@ def simulate_default_plume(
     kappa: float = 6.0,
     wind_u: float = 2.5,
     wind_v: float = 0.5,
-    deposition_rate: float = 0.01,
+    deposition_rate: float = 6.3e-5,
     source_sigma: float = 95.0,
     base_emission: float = 1.0,
     decay_rate: float = 0.03,
-    lifespan: float = 100.0,
+    lifespan: float = 500.0,
     dt: float = 0.05,
     n_steps: int = 4000,
 ) -> dict:

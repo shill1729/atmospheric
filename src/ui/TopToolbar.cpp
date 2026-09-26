@@ -111,7 +111,7 @@ std::string format_fixed(float v, int precision) {
     return ss.str();
 }
 
-// For values that span many decades (noise std, color scale), where a fixed
+// For values that span many decades (noise std, deposition, color scale), where a fixed
 // decimal count would print e.g. 5.4e-6 as "0.000".
 std::string format_sci(float v) {
     std::ostringstream ss;
@@ -130,7 +130,7 @@ std::string editable_field_string(const RuntimeSettings& pending, MenuModel::Edi
     case MenuModel::EditableField::MaxParticles:
         return std::to_string(pending.max_particles);
     case MenuModel::EditableField::DepositionRate:
-        return format_fixed(pending.deposition_rate, 4);
+        return format_sci(pending.deposition_rate);
     case MenuModel::EditableField::ConstantScalarDiffusivity:
         return format_fixed(pending.constant_scalar_diffusivity, 3);
     case MenuModel::EditableField::WindScale:
@@ -253,7 +253,7 @@ void adjust_field(MenuModel& menu_model, MenuModel::EditableField field, int dir
         menu_model.adjust_max_particles(direction * 1000);
         break;
     case MenuModel::EditableField::DepositionRate:
-        menu_model.adjust_deposition_rate(direction * 0.0025f);
+        menu_model.step_deposition_rate(direction);
         break;
     case MenuModel::EditableField::ConstantScalarDiffusivity:
         menu_model.adjust_constant_scalar_diffusivity(direction * 1.0f);

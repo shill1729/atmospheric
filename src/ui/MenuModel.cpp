@@ -102,6 +102,10 @@ void MenuModel::step_time_scale(int direction) {
     pending_.time_scale = std::clamp(log_step(pending_.time_scale, direction, kMinTimeScale), kMinTimeScale, kMaxTimeScale);
 }
 
+void MenuModel::step_deposition_rate(int direction) {
+    pending_.deposition_rate = std::clamp(log_step(pending_.deposition_rate, direction, 1.0e-6f), 0.0f, 5.0f);
+}
+
 void MenuModel::step_wind_scale(int direction) {
     pending_.wind_scale = std::clamp(log_step(pending_.wind_scale, direction, 0.05f), 0.0f, kMaxWindScale);
 }

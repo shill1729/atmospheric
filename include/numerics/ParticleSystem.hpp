@@ -41,7 +41,7 @@ private:
     const DomainConfig& domain_;
     const SourceConfig& source_;
     std::size_t max_particles_;
-    BoundaryMode boundary_mode_ = BoundaryMode::Periodic;
+    BoundaryMode boundary_mode_ = BoundaryMode::Absorbing;
 
     std::vector<Vec2> particles_;
     std::vector<Vec2> previous_particles_;

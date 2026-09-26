@@ -300,6 +300,7 @@ Vec2 Fields::wind_cellular(float time_s, const Vec2& x) const {
 
     // Peak circulation speed ~5 m/s, near the real wind-speed p90; see
     // analysis/calibration_report.md.
+    // const float amp = 3.0e3f;
     const float amp = 4.0e3f;
     const float phase = 0.12f * time_s;
     const float dpsi_dy = amp * (2.0f * PI / ly) * std::sin(2.0f * PI * xs + phase) * std::cos(2.0f * PI * ys);

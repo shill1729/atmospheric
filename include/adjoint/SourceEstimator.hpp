@@ -29,11 +29,11 @@ struct SourceEstimationConfig {
     // Observation window: reports older than this (or already dropped from
     // a sensor's rolling history) are ignored. If no report inside it
     // exceeds detection_threshold, estimation reports insufficient signal.
-    float max_lookback_s = 900.0f;
+    float max_lookback_s = 1800.0f;
     // Release-time search horizon extends this far before the earliest
     // observation in the window, since a release precedes its first
-    // detection by the source-to-sensor travel time (~1-2 km at ~2 m/s).
-    float release_search_margin_s = 900.0f;
+    // detection by the source-to-sensor travel time (~3.5 km at ~2 m/s).
+    float release_search_margin_s = 1800.0f;
     int max_samples_per_sensor = 500;
     // Maximum adjoint step; AdjointSolver shrinks it when stability requires.
     float adjoint_dt_s = 2.0f;

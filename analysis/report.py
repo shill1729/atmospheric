@@ -21,6 +21,10 @@ REPORT_PATH = Path(__file__).resolve().parent / "calibration_report.md"
 # daytime mixed layer over land, and 800 m is a mid-range value.
 ASSUMED_MIXING_HEIGHT_M = 800.0
 
+# Typical PM2.5 dry-deposition velocity (~0.1 cm/s). Spread over the mixing
+# height this gives a first-order removal rate of ~1.25e-6 /s (~9 day e-folding).
+DEPOSITION_VELOCITY_M_S = 1.0e-3
+
 # Sensor noise std as a fraction of the default plume's peak model
 # concentration; matches SourceEstimationConfig::relative_model_error.
 RELATIVE_SENSOR_NOISE = 0.05
@@ -39,30 +43,35 @@ def build_report() -> dict:
     wind = scales.wind_stats(multimonth)  # wildfire set has sparser wind coverage
 
     # --- Translate into simulator defaults --------------------------------
+    domain_span_m = 5000.0  # current Config.hpp DomainConfig extent (x_max-x_min)
+
+    # The domain is a scale model of the network: lengths shrink by
+    # `projection_scale`, and exported time is stretched by its inverse so
+    # wind speeds (m/s) are the same in the domain and in real geography.
+    # Real-world durations therefore map to simulation seconds / time_stretch,
+    # and real rates to simulation rates * time_stretch.
+    projection_scale = scales.domain_projection_scale(wildfire, domain_span_m=domain_span_m)
+    time_stretch = 1.0 / projection_scale
+    deposition_rate_sim = DEPOSITION_VELOCITY_M_S / ASSUMED_MIXING_HEIGHT_M * time_stretch
+
     representative_wind_u = wind["speed_median_m_s"]
-    plume = forward_model.simulate_default_plume(wind_u=representative_wind_u, wind_v=0.0)
+    plume = forward_model.simulate_default_plume(
+        wind_u=representative_wind_u, wind_v=0.0, deposition_rate=deposition_rate_sim)
     conc_scale = forward_model.solve_conc_scale(
         raw_peak_model_conc=plume["quasi_steady_peak"],
         target_peak_ugm3=event["peak_ugm3"],
         mixing_height_m=ASSUMED_MIXING_HEIGHT_M,
     )
 
-    domain_span_m = 5000.0  # current Config.hpp DomainConfig extent (x_max-x_min)
     sigma_fraction_of_extent = spacing["nearest_neighbor_median_m"] / spacing["network_extent_m"]
     recommended_source_sigma = max(20.0, sigma_fraction_of_extent * domain_span_m)
-
-    # The domain is a scale model of the network: lengths shrink by
-    # `projection_scale`, and exported time is stretched by its inverse so
-    # wind speeds (m/s) are the same in the domain and in real geography.
-    # Real-world durations therefore map to simulation seconds / time_stretch.
-    projection_scale = scales.domain_projection_scale(wildfire, domain_span_m=domain_span_m)
-    time_stretch = 1.0 / projection_scale
 
     recommendations = {
         "mixing_height_m": ASSUMED_MIXING_HEIGHT_M,
         "conc_scale_ug_per_m2": conc_scale,
         "sensor_noise_std_model_units": RELATIVE_SENSOR_NOISE * plume["quasi_steady_peak"],
         "source_sigma_m": recommended_source_sigma,
+        "deposition_rate_per_sim_s": deposition_rate_sim,
         "representative_wind_speed_m_s": representative_wind_u,
         "wind_speed_p90_m_s": wind["speed_p90_m_s"],
         "export_time_stretch": time_stretch,

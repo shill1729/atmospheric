@@ -61,8 +61,9 @@ int main() {
         source.sigma = 0.5f;
 
         atm::ParticleSystem particles(domain, source, 500);
-        particles.toggle_boundary_mode();
-        particles.toggle_boundary_mode();
+        while (particles.boundary_mode() != atm::BoundaryMode::Absorbing) {
+            particles.toggle_boundary_mode();
+        }
         particles.emit(50.0f, 1.0f, atm::Vec2(-10.0f, -10.0f), 1.0f);
 
         if (particles.last_emitted_count() != 0) {
@@ -449,7 +450,7 @@ int main() {
         cfg.numerics.max_substeps_per_frame = 1;
         atm::Simulator sim(cfg);
 
-        atm::SensorManager sensor_manager(5.0f, 3.2e-6f, 120, 1.0f, 40.0f);
+        atm::SensorManager sensor_manager(5.0f, 1.6e-5f, 360, 1.0f, 40.0f);
         for (int i = 0; i < 10; ++i) {
             sensor_manager.add_sensor(atm::Vec2(500.0f + 400.0f * static_cast<float>(i), 2500.0f), sim.time_s());
         }

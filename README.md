@@ -54,7 +54,7 @@ $$
 dX_t = \big(w(t,X_t)+\nabla\cdot D(t,X_t)\big)dt + \sqrt{2} D(t,X_t)^{1/2} dB_t,
 $$
 
-with deposition (killing) rate $\lambda$.
+with deposition (killing) rate $\lambda$. The default $\lambda = 6.3\times10^{-5}$ per simulation second is PM2.5 dry deposition (~0.1 cm/s over the 800 m mixing height, a ~9 day e-folding time) converted through the export time stretch; it is set with `--deposition` or **Numerics → Deposition**.
 
 Numerically, per particle and step $\Delta t$:
 
@@ -111,8 +111,8 @@ Current defaults in code (`SourceEstimationConfig` in `include/adjoint/SourceEst
 - bump width $\sigma = 120$ m; $\beta_i$ normalized per bump over the computational domain
 - detection threshold $c_T$: at least $10^{-6}$ (model units), raised on each run to the sensors' noise floor (see [Detection threshold](#detection-threshold))
 - forcing is piecewise-constant in time from recorded sensor samples (the last report at or before $t$)
-- observation window: reports from the last 900 s (`max_lookback_s`) that are still in each sensor's rolling history
-- release-time search horizon: the adjoint starts 900 s (`release_search_margin_s`) before the earliest observation in the window (clamped at $t=0$). A release precedes its first detection by the source-to-sensor travel time, so searching only the observation window would pin $t^{\ast}$ to its start.
+- observation window: reports from the last 1800 s (`max_lookback_s`) that are still in each sensor's rolling history
+- release-time search horizon: the adjoint starts 1800 s (`release_search_margin_s`) before the earliest observation in the window (clamped at $t=0$). A release precedes its first detection by the source-to-sensor travel time, so searching only the observation window would pin $t^{\ast}$ to its start.
 - adjoint step at most 2 s, reduced automatically when the explicit stability bound for the current fields requires it
 
 The app computes
@@ -158,9 +158,9 @@ Both methods reuse `AdjointSolver`; see `src/adjoint/SourceEstimator.cpp` for th
 
 ### Detection threshold
 
-Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 120 reports each, $\sigma_n = 3.2\times10^{-6}$) it is about $6.5\times10^{-6}$ model units, roughly 10% of the calibration plume's reference peak. It is 0 when noise is off.
+Each physical sensor sample is $\max(0, c + \varepsilon)$ with $\varepsilon \sim \mathcal{N}(0, \sigma_n^2)$, so pure noise has a positive mean ($0.40\sigma_n$ per sample) and would exceed any fixed small threshold indefinitely. On each run the threshold is therefore raised to `SensorManager::noise_detection_floor(N)`. That is the report level which noise alone exceeds anywhere among the $N$ reports in the observation window with probability at most 5%. It uses a Chernoff bound on the mean of $m$ clamped samples ($m$ = report period / physical period), which is conservative. With the defaults (10 sensors, 360 reports each, $\sigma_n = 1.67\times10^{-5}$) it is about $3.6\times10^{-5}$ model units, roughly 10% of the calibration plume's reference peak. It is 0 when noise is off.
 
-Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has decayed (the default deposition $\lambda = 0.01 \text{s}^{-1}$ is a 100 s e-folding time) or left an absorbing domain. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
+Estimation therefore refuses ("Insufficient signal") once no report in the observation window stands out from the noise. This happens, for example, after a burst has left an absorbing domain or diluted below the noise. It keeps estimating as long as the plume's passage is still in the window, even if the current readings are back at noise level.
 
 ## Wind and diffusivity models
 
@@ -184,7 +184,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 |---|---|
 | Constant Scalar | $\kappa I$, $\kappa = 6$ m²/s (editable as **Numerics → Const Diffusivity**) |
 | Spatial Scalar | $\kappa(t,x) I$, sinusoidally varying around 8 m²/s |
-| Constant Tensor | $\begin{pmatrix}6&2\cr 2&4\end{pmatrix}$ |
+| Constant Tensor | $\begin{pmatrix}6&2\\ 2&4\end{pmatrix}$ |
 | Diagonal Tensor | Space/time-varying diagonal SPD |
 | Full Anisotropic | Rotated SPD $R(\theta) \mathrm{diag}(\lambda_1,\lambda_2) R(\theta)^\top$ with varying $\theta,\lambda_i$ |
 | Brownian (k=0.5) | $\tfrac12 I$ |
@@ -200,7 +200,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 
 ### Boundary conditions (BC)
 
-- **SDE:** selectable runtime mode (`B` cycles periodic → reflecting → absorbing; default periodic)
+- **SDE:** selectable runtime mode (`B` cycles periodic → reflecting → absorbing; default absorbing)
   - periodic wrapping
   - reflecting bounce
   - absorbing/outflow (particles leaving the domain are removed; births outside it are discarded)
@@ -216,7 +216,7 @@ Diffusivity presets (`K` cycles them; default Constant Scalar):
 
 ### Time stepping (shared)
 
-- Fixed internal step $\Delta t$ (`--dt`, default 0.1 s), accumulated from wall-clock time × time scale
+- Fixed internal step $\Delta t$ (`--dt`, default 0.5 s), accumulated from wall-clock time × time scale
 - Each frame steps until the accumulated time is used up or `frame_step_budget_ms` (12 ms) of wall time is spent, whichever comes first (hard cap `max_substeps_per_frame` = 10,000). Time the CPU could not keep up with is dropped rather than carried over, so the achieved speed can be below the requested time scale; the HUD shows both.
 - Per step: emit particles → SDE step → PDE step → age/expire sources → sensor sampling
 
@@ -332,7 +332,7 @@ Defaults live in `include/core/Config.hpp`. The combined configuration is valida
 
 ### Speeding up simulations
 
-One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200 \Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.1` the ceiling is about 20×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
+One fixed step costs about 2–3 ms on the default $200\times200$ grid regardless of $\Delta t$, and about four steps fit in each frame's 12 ms budget. The simulation therefore runs at $\min(\text{requested time scale}, \sim 200 \Delta t)$ simulated seconds per wall second, and the HUD's `speed: xR (actual xA)` line shows both. At the default `--dt 0.5` the ceiling is about 100×, so larger time scales look the same until `dt` is raised. The time scale (`[`/`]` apply immediately; **Numerics → Time Scale** after **File → Apply Queued Changes**; up to 100,000) then sets the pace.
 
 `dt` is set with `--dt` or **PDE → dt**. The HUD's `dt: … (stable <~ X s)` line shows the explicit stability bound for the current wind and diffusivity fields. With the default presets it is several seconds, so `--dt 1` (~200×) and `--dt 2` (~400×) are stable. Keep `dt` at most the sensor physical sample period if every physical sample should see a distinct field. Coarser grids (`--grid-nx/--grid-ny`) make each step cheaper but lower the stability bound.
 
@@ -355,7 +355,7 @@ Example:
 
 ### Faithful NY wildfire event export
 
-The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are kept fast so a clicked source evolves within seconds of wall time. The real Nov 2024 event's decay time constant is ~42 h, with ~49 h above threshold (see [Calibration](#calibration)). Exported time is stretched by ~50.6× (see [CSV Export](#csv-export)), so in simulation seconds that event is 50.6× shorter. For an export that mimics the event's timescale:
+The interactive defaults (`--source-decay 0.03`, `--source-lifespan 500`) are kept fast so a clicked source evolves within seconds of wall time. The real Nov 2024 event's decay time constant is ~42 h, with ~49 h above threshold (see [Calibration](#calibration)). Exported time is stretched by ~50.6× (see [CSV Export](#csv-export)), so in simulation seconds that event is 50.6× shorter. For an export that mimics the event's timescale:
 
 ```bash
 ./build-release/atmospheric \
@@ -363,11 +363,11 @@ The interactive defaults (`--source-decay 0.03`, `--source-lifespan 100`) are ke
   --source-decay 3.38e-4 \
   --source-lifespan 3489 \
   --source-sigma 95 \
-  --conc-scale 3.243e8 \
+  --conc-scale 6.240e7 \
   --mixing-height 800
 ```
 
-At the default `dt` this runs at ~20× and takes about 3 minutes; add `--dt 1` for ~200×. The last three flags equal the current defaults and are listed so the run stays reproducible if defaults change. With the default deposition rate the plume decays within about 100 simulation seconds (~1.4 h exported), so you may also want a smaller `--deposition` for event-scale runs.
+At the default `dt` this runs at ~100× and takes under a minute. The last three flags equal the current defaults and are listed so the run stays reproducible if defaults change.
 
 Then press `L` to load the NY site network, `N` to apply the matching hourly-observation sensor preset, click a source, and record/export as described below.
 
@@ -416,7 +416,7 @@ Top toolbar menus: `File | Source | Numerics | Sensors | Display | PDE`
   - Changing grid size, dt, max particles, deposition, constant diffusivity, or any `Source` field **recreates the simulator**: particles, concentration, sensors, and estimates are cleared.
   - Time scale, wind scale, color scale, sensor settings, and PDE diffusion mode apply in place.
 - Numeric edit UX in top menus:
-  - `-` / `+` buttons for stepped adjustments. Time Scale, Wind Scale, Noise Std and PDE Fixed Color Scale step proportionally (×1.25 / ÷1.25) and display in scientific notation, since they span decades.
+  - `-` / `+` buttons for stepped adjustments. Time Scale, Deposition, Wind Scale, Noise Std and PDE Fixed Color Scale step proportionally (×1.25 / ÷1.25) and display in scientific notation, since they span decades.
   - click value field to type
   - `Enter` commit, `Backspace` delete, `Esc` cancel
 
@@ -447,15 +447,15 @@ HUD:
 
 - Displayed PDE and sensor concentrations are reported as `ug/m^3` using:
   - `conc_display = model_concentration * conc_scale / mixing_height`
-- `--conc-scale` sets `conc_scale` (ug/m^2 per model unit; default `3.243e8`). It maps the default burst's plume peak about 100 s after emission stops (a proxy for downwind sensor readings) to the real network-mean event peak (~26 ug/m^3); concentrations right at an active source run several times higher.
+- `--conc-scale` sets `conc_scale` (ug/m^2 per model unit; default `6.240e7`). It maps the default burst's plume peak 190–200 s after release, once the decaying emission has mostly stopped (a proxy for downwind sensor readings), to the real network-mean event peak (~26 ug/m^3); concentrations right at an active source run several times higher.
 - `--mixing-height` is the assumed vertical mixing depth (meters; default 800).
 - The PDE heatmap uses a log color map. It starts in fixed mode; in auto mode it tracks 15% of the current maximum with smoothing; in fixed mode it uses **Display → PDE Fixed Color Scale**.
 
 ### Sensors
 
 - Each sensor takes a physical sample of the PDE field every `--sensor-physical-period` (default 1 s). A sample is a 13-point disk-stencil average of radius `--sensor-spatial-radius` (default 40 m), bilinearly interpolated from the grid.
-- Gaussian noise with std **Sensors → Noise Std** (model units; default `3.2e-6`, 5% of the calibration plume's reference peak) is added to each physical sample and clamped at zero.
-- Every **Sensors → Sample Period** (default 5 s) the sensor reports the window average of its noisy samples. Reports go into a rolling history of `--sensor-history-capacity` entries (default 120, i.e. 10 min at the default period). A long enough history lets the estimators see the plume's arrival at the sensors, which pins down the release time.
+- Gaussian noise with std **Sensors → Noise Std** (model units; default `1.67e-5`, 5% of the calibration plume's reference peak) is added to each physical sample and clamped at zero.
+- Every **Sensors → Sample Period** (default 5 s) the sensor reports the window average of its noisy samples. Reports go into a rolling history of `--sensor-history-capacity` entries (default 360, i.e. 30 min at the default period). A long enough history lets the estimators see the plume's arrival at the sensors, which pins down the release time.
 - On-plot labels show each sensor's latest report value (`ug/m^3`), or `N/A` before the first report.
 
 ## NY Wildfire Sensor Network
@@ -468,7 +468,7 @@ At startup, if `wildfire_pm25_dataset.csv` is present, the domain is georeferenc
 
 Press **`L`** to load the site network into the simulation. Unique sites are read from the `site_name`, `lat_deg`, `lon_deg` columns and sorted by name. Their coordinates are projected to domain coordinates via an equirectangular approximation centred on the network centroid (lat ≈ 41.02°, lon ≈ −73.96°). The network is then uniformly scaled and centred to fit the active domain with 8% padding, preserving the relative geometry of the sites. Sensors keep their real site names as labels.
 
-Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 900 s observation window holds about 12 of these reports.
+Press **`N`** after loading to apply the matching observation preset (5-min physical reads → 1-hour window averages). Combined with the CSV export, this produces a synthetic data set whose temporal structure mimics the real instrument cadence. The estimators' 1800 s observation window holds about 25 of these reports.
 
 The `R` (reset) key always clears sensors regardless of how they were placed.
 
@@ -488,7 +488,7 @@ Regenerate the report after either dataset changes (with a virtualenv at `.venv`
 ```
 
 Several defaults were set from this report's output, and each has a comment citing the real-data quantity it matches:
-- in `include/core/Config.hpp`: `mixing_height_m`, `concentration_scale_ug_per_m2`, `source.sigma`, `app.sensor_noise_std`
+- in `include/core/Config.hpp`: `mixing_height_m`, `concentration_scale_ug_per_m2`, `source.sigma`, `app.sensor_noise_std`, `physics.deposition_rate`
 - in `src/science/Fields.cpp`: the wind preset magnitudes (at wind scale 1)
 
 The report also gives `export_time_stretch` and converts real durations into simulation seconds (`faithful_source_decay_rate_per_sim_s`, `faithful_source_lifespan_sim_s`, `hourly_report_period_sim_s`); the "Faithful NY wildfire event export" example and the `N` preset use those.
