@@ -2,6 +2,7 @@
 
 #include "core/Config.hpp"
 #include "core/Types.hpp"
+#include "science/Fields.hpp"
 
 #include <string>
 #include <vector>
@@ -30,6 +31,11 @@ struct ProjectionParams {
 // Parse unique site records from the wildfire PM2.5 CSV (one entry per unique site_name).
 // Returns an empty vector and sets error_msg on failure.
 std::vector<SiteRecord> load_unique_sites(const std::string& csv_path, std::string& error_msg);
+
+// Network-mean measured wind per timestamp (sites with wind readings only),
+// in real seconds from the first timestamp. Used by the Jennings Replay preset.
+// Returns an empty vector and sets error_msg on failure.
+std::vector<Fields::ObservedWind> load_network_mean_wind(const std::string& csv_path, std::string& error_msg);
 
 // Equirectangular projection of sites to simulation domain coordinates.
 // Computes centroid, projects to meters, then uniformly scales + centers so the

@@ -43,6 +43,21 @@ struct PhysicsConfig {
     // values change the advection/diffusion balance (Peclet number), and the
     // explicit stability limit on dt shrinks roughly as 1/wind_scale.
     float wind_scale = 1.0f;
+    // Initial wind preset, as a Fields::WindPreset index (--wind-preset).
+    int wind_preset = 0;
+    // Veering Uniform preset: one wind for the whole domain whose direction
+    // turns steadily, in real (exported) units. from_deg is the meteorological
+    // direction the wind blows from (clockwise from north); positive rates veer
+    // clockwise. perturbation adds smooth spatial variation of that relative
+    // size, so sensors see similar but not identical winds.
+    struct VeeringWind {
+        float speed_m_s = 3.0f;
+        float from_deg = 270.0f;
+        float rate_deg_per_h = 4.0f;
+        // 0.3 gives ~10 deg of direction spread across the NY sites; ~0.8
+        // matches the ~28 deg measured during the Nov 2024 event.
+        float perturbation = 0.3f;
+    } veering;
 };
 struct NumericsConfig {
     float dt = 0.5f;

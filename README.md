@@ -32,6 +32,7 @@ The two solvers share the same wind field, diffusivity model, source emission sc
 - [Command Line Arguments](#command-line-arguments)
   - [Speeding up simulations](#speeding-up-simulations)
   - [Faithful NY wildfire event export](#faithful-ny-wildfire-event-export)
+  - [Turning-wind scenario (bearing-based STE)](#turning-wind-scenario-bearing-based-ste)
 - [Runtime Controls](#runtime-controls)
   - [Source estimation workflow](#source-estimation-workflow)
   - [Concentration display calibration](#concentration-display-calibration)
@@ -202,7 +203,7 @@ Estimation therefore refuses ("Insufficient signal") once no report in the obser
 
 ## Wind and diffusivity models
 
-Wind presets (`W` cycles them in this order; default Jet Shear). Magnitudes are calibrated to the real wind-speed distribution (median ≈ 1.9 m/s, p90 ≈ 4.4 m/s); see [Calibration](#calibration).
+Wind presets (`W` cycles them in this order; default Jet Shear; `--wind-preset NAME` picks the starting one). Magnitudes are calibrated to the real wind-speed distribution (median ≈ 1.9 m/s, p90 ≈ 4.4 m/s); see [Calibration](#calibration).
 
 Every preset is multiplied by a global **wind scale** (`--wind-scale`, **Numerics → Wind Scale**; default 1, which keeps the calibration). It is a physical parameter: the advection/diffusion balance (Péclet number) shifts, and the stable `dt` shrinks roughly as 1/scale. Changes apply live, without resetting the simulation. The estimators use the same scaled wind, the HUD shows it next to the wind model, and exports record it as `# Wind scale:`.
 
@@ -215,6 +216,15 @@ Every preset is multiplied by a global **wind scale** (`--wind-scale`, **Numeric
 | Zero Wind | $w=0$ |
 | Uniform | Steady $(2.2, 0.4)$ m/s |
 | Solid Body Rotation | Rigid rotation about the domain centre, $\Omega = 0.0022$ rad/s (~5 m/s at mid-edge) |
+| Veering Uniform | One wind for the whole domain whose direction turns steadily, plus optional smooth spatial variation (parameters below) |
+| Jennings Replay | The hourly network-mean wind measured during the Nov 2024 event, replayed through the export time stretch; available when `wildfire_pm25_dataset.csv` is present |
+
+The last two presets are spatially coherent winds that change direction slowly, the conditions under which a plume travels roughly in a straight line from source to sensor.
+
+- **Veering Uniform** is set with `--veer-speed` (m/s, default 3), `--veer-from` (the direction the wind initially blows from, degrees clockwise from north, default 270), `--veer-rate` (degrees per exported hour, positive = clockwise, default 4, the median rate during the real event), and `--veer-perturbation` (relative spatial variation, default 0.3). A perturbation of 0.3 gives about 10° of direction spread across the NY sites; about 0.8 matches the 28° measured during the real event, and 0 makes the wind identical everywhere.
+- **Jennings Replay** interpolates the measured hourly network-mean wind in time and holds its last value after the 91 h record. Exported hour *h* corresponds to hour *h* of the real event.
+
+Chosen wind and diffusivity presets are kept when an applied setting rebuilds the simulator. Exports record the preset and its parameters as `# Wind details:`.
 
 Diffusivity presets (`K` cycles them; default Constant Scalar):
 
@@ -354,6 +364,11 @@ Run from the repository root: the font (`fonts/arial.ttf`) and the NY dataset (`
 --max-particles N
 --deposition X
 --wind-scale X
+--wind-preset NAME
+--veer-speed X
+--veer-from X
+--veer-rate X
+--veer-perturbation X
 --source-emission X
 --source-decay X
 --source-lifespan X
@@ -409,6 +424,19 @@ At the default `dt` this runs at ~100× and takes under a minute. The last three
 
 Then press `L` to load the NY site network, `N` to apply the matching hourly-observation sensor preset, click a source, and record/export as described below.
 
+### Turning-wind scenario (bearing-based STE)
+
+Methods that read a bearing from each sensor's wind at its peak reading need three things: spatially coherent wind, direction changing slowly compared with plume travel, and enough turning over the event that smoke reaches sensors in different directions from the source. For that, combine a turning wind with a source that keeps emitting while the wind turns (the default source is effectively a ~100 s puff):
+
+```bash
+./build-release/atmospheric \
+  --wind-preset veering-uniform --veer-from 270 --veer-rate 4 --veer-perturbation 0.3 \
+  --source-decay 3.38e-4 \
+  --source-lifespan 3489
+```
+
+Then press `L` and `N`, place a source anywhere, and record/export as usual. Varying `--veer-from`, `--veer-rate`, `--veer-speed` and `--veer-perturbation` produces different but comparable scenarios for robustness testing; `--wind-preset jennings-replay` uses the real event's wind instead. Crossing the network takes about 1,750 simulation seconds (~25 exported hours), so at the default 4°/h the wind turns roughly 100° during a crossing; lower rates give straighter plume paths but reach fewer sensors. In one test with the recipe above (hourly reports, source placed arbitrarily in the network), the bearing from each hit sensor's reversed wind at its peak reading was off from the true bearing by 11° on average at 1°/h (6 of 38 sensors hit, all on one side), 10° at 2°/h (29 sensors, all around the source) and 18° at 4°/h (35 sensors).
+
 ## Runtime Controls
 
 Keyboard:
@@ -427,6 +455,7 @@ Keyboard:
 - `M`: cycle which estimation method's result is displayed/HUD-reported
 - `J`: cycle the right-panel overlay: selected method's posterior heatmap → backward-flow animation → off
 - `L`: clear sensors and load the NY wildfire site network from `wildfire_pm25_dataset.csv`
+- `S`: save a screenshot of the window as a PNG in `exports/`
 - `N`: apply NY observation preset: 5-min physical readings averaged into 1-hour reports in exported time (5.9 s / 71.2 s in simulation time, given the export time stretch); does not change domain or physics
 - `F1`: open/close the controls help overlay
 - `Esc`: close an open toolbar menu / cancel a field edit; otherwise open/close the preferences overlay
@@ -568,7 +597,8 @@ The file begins with `#` metadata comment lines, followed by a data header and o
 
 ```
 # Atmospheric Tool - Forward Simulation Export
-# Wind model: Jet Shear
+# Wind model: Veering Uniform
+# Wind details: Veering Uniform (3.00 m/s from 270.00 deg, veering 4.00 deg/h, perturbation 0.30)
 # Wind scale: 1.000000
 # Diffusion model: Constant Scalar
 # PDE diffusion mode: Full Tensor Flux

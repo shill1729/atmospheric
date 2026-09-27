@@ -152,6 +152,30 @@ float Simulator::wind_scale() const {
     return fields_.wind_scale();
 }
 
+void Simulator::set_time_stretch(float stretch) {
+    fields_.set_time_stretch(stretch);
+}
+
+void Simulator::set_observed_wind(std::vector<Fields::ObservedWind> series) {
+    fields_.set_observed_wind(std::move(series));
+}
+
+bool Simulator::has_observed_wind() const {
+    return fields_.has_observed_wind();
+}
+
+void Simulator::set_wind_preset(Fields::WindPreset preset) {
+    fields_.set_wind_preset(preset);
+}
+
+std::string Simulator::wind_model_details() const {
+    return fields_.wind_preset_details();
+}
+
+void Simulator::set_diffusivity_preset(Fields::DiffusivityPreset preset) {
+    fields_.set_diffusivity_preset(preset);
+}
+
 void Simulator::cycle_wind_model(int direction) {
     fields_.cycle_wind_preset(direction);
 }

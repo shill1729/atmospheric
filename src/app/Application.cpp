@@ -46,6 +46,13 @@ Application::Application(const Config& config)
     } else {
         sites_status_ = "No NY georeference (" + georef_err + "): exports use x/y";
     }
+    std::string wind_err;
+    observed_wind_ = load_network_mean_wind(ny_sites_csv_path_, wind_err);
+    configure_simulator();
+    if (sim().wind_preset() == Fields::WindPreset::JenningsReplay && !sim().has_observed_wind()) {
+        sim().set_wind_preset(Fields::WindPreset::JetShear);
+        sites_status_ += " | Jennings Replay unavailable (" + wind_err + "), using Jet Shear";
+    }
 }
 
 void Application::run() {
@@ -533,6 +540,7 @@ void Application::apply_settings_report(const ApplySettingsReport& report) {
     sensor_manager_.set_history_capacity(static_cast<std::size_t>(settings.sensor_history_capacity));
 
     if (report.recreated_simulator) {
+        configure_simulator();
         restart_recording_if_active("a settings change rebuilt the simulator");
         sensor_manager_.clear();
         clear_source_estimation();
@@ -651,6 +659,11 @@ void Application::left_view_bounds(float& x_min, float& x_max, float& y_min, flo
     y_min = std::max(y_min, d.y_min);
     x_max = std::min(x_max, d.x_max);
     y_max = std::min(y_max, d.y_max);
+}
+
+void Application::configure_simulator() {
+    sim().set_time_stretch(data_recorder_.time_stretch());
+    sim().set_observed_wind(observed_wind_);
 }
 
 Simulator& Application::sim() {

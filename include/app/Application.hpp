@@ -78,6 +78,10 @@ private:
     void restart_recording_if_active(const std::string& reason);
     std::string export_recording();
     void capture_recording_meta();
+    // Passes simulator-independent inputs (export time stretch, measured wind
+    // for Jennings Replay) to the current simulator; called whenever it is created.
+    void configure_simulator();
+    void save_screenshot();
     void clear_source_estimation();
     void sync_source_estimation_view();
     void cycle_estimation_method(int direction);
@@ -126,6 +130,7 @@ private:
     // describes the data it saves.
     struct RecordingMeta {
         std::string wind_model;
+        std::string wind_details;
         std::string diffusion_model;
         std::string pde_mode;
         float dt = 0.0f;
@@ -139,6 +144,8 @@ private:
     std::string recording_status_;
     std::string sites_status_;
     std::string ny_sites_csv_path_ = "wildfire_pm25_dataset.csv";
+    std::vector<Fields::ObservedWind> observed_wind_;
+    bool screenshot_requested_ = false;
 
     sf::RenderWindow window_;
     sf::Font font_;

@@ -1,7 +1,10 @@
 #include "science/Fields.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 
 namespace atm {
 namespace {
@@ -67,7 +70,23 @@ Mat2 tensor_full_anisotropic_spd(const DomainConfig& d, float time_s, const Vec2
 Fields::Fields(const DomainConfig& domain, const PhysicsConfig& physics)
     : domain_(domain)
     , constant_scalar_diffusivity_(std::max(1.0e-6f, physics.constant_scalar_diffusivity))
-    , wind_scale_(std::max(0.0f, physics.wind_scale)) {
+    , wind_scale_(std::max(0.0f, physics.wind_scale))
+    , veering_(physics.veering) {
+    if (physics.wind_preset >= 0 && physics.wind_preset <= static_cast<int>(WindPreset::JenningsReplay)) {
+        wind_preset_ = static_cast<WindPreset>(physics.wind_preset);
+    }
+}
+
+void Fields::set_time_stretch(float stretch) {
+    time_stretch_ = stretch > 0.0f ? stretch : 1.0f;
+}
+
+void Fields::set_observed_wind(std::vector<ObservedWind> series) {
+    observed_wind_ = std::move(series);
+}
+
+bool Fields::has_observed_wind() const {
+    return !observed_wind_.empty();
 }
 
 void Fields::set_wind_scale(float scale) {
@@ -98,6 +117,10 @@ Vec2 Fields::preset_wind(float time_s, const Vec2& x) const {
         return wind_uniform();
     case WindPreset::SolidBodyRotation:
         return wind_solid_body_rotation(x);
+    case WindPreset::VeeringUniform:
+        return wind_veering_uniform(time_s, x);
+    case WindPreset::JenningsReplay:
+        return wind_jennings_replay(time_s);
     }
     return wind_jet_shear(time_s, x);
 }
@@ -179,12 +202,11 @@ Vec2 Fields::grad_scalar_diffusivity(float time_s, const Vec2& x) const {
 }
 
 void Fields::cycle_wind_preset(int direction) {
+    const int n = static_cast<int>(WindPreset::JenningsReplay) + 1;
     int id = static_cast<int>(wind_preset_);
-    const int n = 7;
-    id = (id + direction) % n;
-    if (id < 0) {
-        id += n;
-    }
+    do {
+        id = ((id + direction) % n + n) % n;
+    } while (static_cast<WindPreset>(id) == WindPreset::JenningsReplay && !has_observed_wind());
     wind_preset_ = static_cast<WindPreset>(id);
 }
 
@@ -212,8 +234,48 @@ std::string_view Fields::wind_preset_name() const {
         return "Uniform";
     case WindPreset::SolidBodyRotation:
         return "Solid Body Rotation";
+    case WindPreset::VeeringUniform:
+        return "Veering Uniform";
+    case WindPreset::JenningsReplay:
+        return "Jennings Replay";
     }
     return "Jet Shear";
+}
+
+std::string Fields::wind_preset_details() const {
+    std::ostringstream ss;
+    ss << wind_preset_name();
+    if (wind_preset_ == WindPreset::VeeringUniform) {
+        ss << std::fixed << std::setprecision(2) << " (" << veering_.speed_m_s << " m/s from " << veering_.from_deg
+           << " deg, veering " << veering_.rate_deg_per_h << " deg/h, perturbation " << veering_.perturbation << ")";
+    } else if (wind_preset_ == WindPreset::JenningsReplay) {
+        ss << " (hourly network-mean wind measured in wildfire_pm25_dataset.csv; held after its last hour)";
+    }
+    return ss.str();
+}
+
+bool Fields::wind_preset_from_name(std::string name, WindPreset& out) {
+    for (char& c : name) {
+        c = (c == '_' || c == ' ') ? '-' : static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    static const std::pair<const char*, WindPreset> kNames[] = {
+        {"jet-shear", WindPreset::JetShear},
+        {"vortex-pair", WindPreset::VortexPair},
+        {"shear-vortex-blend", WindPreset::ShearVortexBlend},
+        {"cellular", WindPreset::Cellular},
+        {"zero", WindPreset::Zero},
+        {"uniform", WindPreset::Uniform},
+        {"solid-body-rotation", WindPreset::SolidBodyRotation},
+        {"veering-uniform", WindPreset::VeeringUniform},
+        {"jennings-replay", WindPreset::JenningsReplay},
+    };
+    for (const auto& [n, preset] : kNames) {
+        if (name == n) {
+            out = preset;
+            return true;
+        }
+    }
+    return false;
 }
 
 void Fields::cycle_diffusivity_preset(int direction) {
@@ -327,6 +389,51 @@ Vec2 Fields::wind_solid_body_rotation(const Vec2& x) const {
     const float dx = x.x() - cx;
     const float dy = x.y() - cy;
     return Vec2(-OMEGA * dy, OMEGA * dx);
+}
+
+Vec2 Fields::wind_veering_uniform(float time_s, const Vec2& x) const {
+    const float hours = time_s * time_stretch_ / 3600.0f;
+    const float from_rad = (veering_.from_deg + veering_.rate_deg_per_h * hours) * PI / 180.0f;
+    const float speed = veering_.speed_m_s;
+    // "From" direction to a vector pointing downwind; domain +y is south.
+    Vec2 w(-speed * std::sin(from_rad), speed * std::cos(from_rad));
+
+    // Smooth, slowly drifting spatial variation of relative size `perturbation`:
+    // a domain-scale mode plus a shorter one (~1/6 of the domain) so that
+    // closely spaced sensors also see somewhat different winds.
+    const float xs = normalized_x(domain_, x);
+    const float ys = normalized_y(domain_, x);
+    const float phase = 0.3f * hours;
+    const float dx = std::sin(2.0f * PI * ys + phase) * std::cos(PI * xs)
+        + std::sin(12.0f * PI * xs - phase) * std::cos(10.0f * PI * ys + phase);
+    const float dy = std::cos(2.0f * PI * xs - phase) * std::sin(PI * ys)
+        + std::cos(10.0f * PI * xs + phase) * std::sin(12.0f * PI * ys - phase);
+    w.x() += veering_.perturbation * speed * dx;
+    w.y() += veering_.perturbation * speed * dy;
+    return w;
+}
+
+Vec2 Fields::wind_jennings_replay(float time_s) const {
+    if (observed_wind_.empty()) {
+        return Vec2::Zero();
+    }
+    const float t = time_s * time_stretch_;
+    auto it = std::lower_bound(observed_wind_.begin(), observed_wind_.end(), t,
+        [](const ObservedWind& w, float value) { return w.real_time_s < value; });
+    ObservedWind w;
+    if (it == observed_wind_.begin()) {
+        w = observed_wind_.front();
+    } else if (it == observed_wind_.end()) {
+        w = observed_wind_.back();
+    } else {
+        const auto& b = *it;
+        const auto& a = *(it - 1);
+        const float f = (t - a.real_time_s) / std::max(1.0e-6f, b.real_time_s - a.real_time_s);
+        w.u_east = a.u_east + f * (b.u_east - a.u_east);
+        w.v_north = a.v_north + f * (b.v_north - a.v_north);
+    }
+    // Domain +y is south.
+    return Vec2(w.u_east, -w.v_north);
 }
 
 Vec2 Fields::wind_shear_vortex_blend(float time_s, const Vec2& x) const {

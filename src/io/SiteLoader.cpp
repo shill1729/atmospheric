@@ -2,7 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <ctime>
 #include <fstream>
+#include <map>
 #include <sstream>
 #include <unordered_map>
 
@@ -93,6 +96,82 @@ std::vector<SiteRecord> load_unique_sites(const std::string& csv_path, std::stri
 
     if (out.empty()) {
         error_msg = "No valid sites found in " + csv_path;
+    }
+    return out;
+}
+
+std::vector<Fields::ObservedWind> load_network_mean_wind(const std::string& csv_path, std::string& error_msg) {
+    std::ifstream f(csv_path);
+    if (!f.is_open()) {
+        error_msg = "Cannot open: " + csv_path;
+        return {};
+    }
+    std::string header_line;
+    if (!std::getline(f, header_line)) {
+        error_msg = "Empty file: " + csv_path;
+        return {};
+    }
+    const auto headers = split_csv_row(header_line);
+    const int col_time = column_index(headers, "Datetime_UTC");
+    const int col_u = column_index(headers, "wind_u_component");
+    const int col_v = column_index(headers, "wind_v_component");
+    if (col_time < 0 || col_u < 0 || col_v < 0) {
+        error_msg = "Missing columns (need Datetime_UTC, wind_u_component, wind_v_component)";
+        return {};
+    }
+
+    // Timestamps are "YYYY-MM-DD HH:MM:SS+00:00", so text order is time order.
+    struct Sum {
+        double u = 0.0;
+        double v = 0.0;
+        int n = 0;
+    };
+    std::map<std::string, Sum> by_time;
+    std::string line;
+    while (std::getline(f, line)) {
+        const auto cols = split_csv_row(line);
+        const int ncols = static_cast<int>(cols.size());
+        if (col_time >= ncols || col_u >= ncols || col_v >= ncols) continue;
+        const std::string u_s = trim(cols[static_cast<std::size_t>(col_u)]);
+        const std::string v_s = trim(cols[static_cast<std::size_t>(col_v)]);
+        if (u_s.empty() || v_s.empty()) continue;
+        try {
+            auto& sum = by_time[trim(cols[static_cast<std::size_t>(col_time)])];
+            sum.u += std::stod(u_s);
+            sum.v += std::stod(v_s);
+            ++sum.n;
+        } catch (...) {
+            continue;
+        }
+    }
+
+    auto parse_utc = [](const std::string& s, std::time_t& out) {
+        std::tm tm{};
+        if (std::sscanf(s.c_str(), "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour,
+                &tm.tm_min, &tm.tm_sec) != 6) {
+            return false;
+        }
+        tm.tm_year -= 1900;
+        tm.tm_mon -= 1;
+#ifdef _WIN32
+        out = _mkgmtime(&tm);
+#else
+        out = timegm(&tm);
+#endif
+        return true;
+    };
+
+    std::vector<Fields::ObservedWind> out;
+    std::time_t t0 = 0;
+    for (const auto& [time_text, sum] : by_time) {
+        std::time_t t = 0;
+        if (sum.n == 0 || !parse_utc(time_text, t)) continue;
+        if (out.empty()) t0 = t;
+        out.push_back({static_cast<float>(std::difftime(t, t0)), static_cast<float>(sum.u / sum.n),
+            static_cast<float>(sum.v / sum.n)});
+    }
+    if (out.empty()) {
+        error_msg = "No wind readings found in " + csv_path;
     }
     return out;
 }

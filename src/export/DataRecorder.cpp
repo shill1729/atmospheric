@@ -116,6 +116,7 @@ std::string sanitize_name(std::string s) {
 std::string DataRecorder::export_csv(
     const std::string& output_dir,
     const std::string& wind_model,
+    const std::string& wind_details,
     const std::string& diffusion_model,
     const std::string& pde_mode,
     float dt,
@@ -202,6 +203,7 @@ std::string DataRecorder::export_csv(
     out << std::fixed << std::setprecision(6);
     out << "# Atmospheric Tool - Forward Simulation Export\n"
         << "# Wind model: " << wind_model << "\n"
+        << (wind_details != wind_model ? "# Wind details: " + wind_details + "\n" : std::string())
         << "# Wind scale: " << wind_scale << "\n"
         << "# Diffusion model: " << diffusion_model << "\n"
         << "# PDE diffusion mode: " << pde_mode << "\n"

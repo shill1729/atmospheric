@@ -63,7 +63,12 @@ ApplySettingsReport SimulationController::apply_settings(const RuntimeSettings& 
         }
 
         config_ = next_config;
+        // Keep the presets chosen at runtime (W / K) rather than resetting them.
+        const Fields::WindPreset wind = simulator().wind_preset();
+        const Fields::DiffusivityPreset diffusivity = simulator().diffusivity_preset();
         simulator_ = std::make_unique<Simulator>(config_);
+        simulator_->set_wind_preset(wind);
+        simulator_->set_diffusivity_preset(diffusivity);
         report.recreated_simulator = true;
         report.reset_state = true;
     }

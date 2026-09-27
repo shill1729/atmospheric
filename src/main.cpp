@@ -1,6 +1,7 @@
 #include "app/Application.hpp"
 #include "core/Config.hpp"
 #include "core/Validation.hpp"
+#include "science/Fields.hpp"
 
 #include <exception>
 #include <iostream>
@@ -26,6 +27,12 @@ void print_help(const char* exe) {
         << "  --max-particles N         Maximum SDE particles\n"
         << "  --deposition X            Deposition/killing rate lambda\n"
         << "  --wind-scale X            Multiplier on every wind preset (default 1)\n"
+        << "  --wind-preset NAME        Initial wind: jet-shear, vortex-pair, shear-vortex-blend, cellular,\n"
+        << "                            zero, uniform, solid-body-rotation, veering-uniform, jennings-replay\n"
+        << "  --veer-speed X            Veering Uniform wind speed (m/s)\n"
+        << "  --veer-from X             Veering Uniform initial direction wind blows from (deg from north)\n"
+        << "  --veer-rate X             Veering Uniform turn rate (deg per exported hour; + = clockwise)\n"
+        << "  --veer-perturbation X     Veering Uniform relative spatial variation (0 = identical everywhere)\n"
         << "  --source-emission X       Initial source emission rate\n"
         << "  --source-decay X          Source emission decay rate\n"
         << "  --source-lifespan X       Source active lifespan (seconds)\n"
@@ -139,6 +146,31 @@ int main(int argc, char** argv) {
             }
             if (arg == "--wind-scale") {
                 config.physics.wind_scale = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--wind-preset") {
+                const std::string name = need_value(arg);
+                atm::Fields::WindPreset preset{};
+                if (!atm::Fields::wind_preset_from_name(name, preset)) {
+                    throw std::runtime_error("unknown wind preset: " + name);
+                }
+                config.physics.wind_preset = static_cast<int>(preset);
+                continue;
+            }
+            if (arg == "--veer-speed") {
+                config.physics.veering.speed_m_s = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--veer-from") {
+                config.physics.veering.from_deg = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--veer-rate") {
+                config.physics.veering.rate_deg_per_h = parse_float(need_value(arg), arg);
+                continue;
+            }
+            if (arg == "--veer-perturbation") {
+                config.physics.veering.perturbation = parse_float(need_value(arg), arg);
                 continue;
             }
             if (arg == "--source-emission") {

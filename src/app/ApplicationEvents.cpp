@@ -100,6 +100,9 @@ void Application::process_events() {
             if (key->code == sf::Keyboard::Key::N) {
                 apply_ny_sensor_preset();
             }
+            if (key->code == sf::Keyboard::Key::S) {
+                screenshot_requested_ = true;
+            }
         }
 
         if (const auto* text = event->getIf<sf::Event::TextEntered>()) {
@@ -262,6 +265,7 @@ void Application::reset_simulation() {
 
 void Application::capture_recording_meta() {
     recording_meta_.wind_model = std::string(sim().wind_model_name());
+    recording_meta_.wind_details = sim().wind_model_details();
     recording_meta_.diffusion_model = std::string(sim().diffusion_model_name());
     recording_meta_.pde_mode = std::string(sim().pde_diffusion_mode_name());
     recording_meta_.dt = sim().config().numerics.dt;
@@ -280,7 +284,7 @@ void Application::start_recording() {
 
 std::string Application::export_recording() {
     const auto& m = recording_meta_;
-    return data_recorder_.export_csv("exports", m.wind_model, m.diffusion_model, m.pde_mode, m.dt, m.time_scale,
+    return data_recorder_.export_csv("exports", m.wind_model, m.wind_details, m.diffusion_model, m.pde_mode, m.dt, m.time_scale,
         m.sample_period_s, m.wind_scale, estimation_results_);
 }
 

@@ -4,6 +4,8 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <ctime>
+#include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -262,7 +264,30 @@ void Application::render() {
     }
     top_toolbar_.draw(window_, font_, menu_model_, data_recorder_.is_recording());
     top_toolbar_.draw_active_menu(window_, font_, menu_model_, data_recorder_.is_recording());
+    if (screenshot_requested_) {
+        screenshot_requested_ = false;
+        save_screenshot();
+    }
     window_.display();
+}
+
+void Application::save_screenshot() {
+    const std::time_t now = std::time(nullptr);
+    std::tm tm_buf{};
+#ifdef _WIN32
+    localtime_s(&tm_buf, &now);
+#else
+    localtime_r(&now, &tm_buf);
+#endif
+    std::ostringstream name;
+    name << "exports/screenshot_" << std::put_time(&tm_buf, "%Y%m%d_%H%M%S") << ".png";
+
+    std::error_code dir_error;
+    std::filesystem::create_directories("exports", dir_error);
+    sf::Texture texture(window_.getSize());
+    texture.update(window_);
+    recording_status_ = texture.copyToImage().saveToFile(name.str()) ? "Screenshot saved: " + name.str()
+                                                                     : "Screenshot failed: " + name.str();
 }
 
 void Application::draw_wind_field() {
@@ -621,7 +646,8 @@ void Application::draw_help_overlay() {
         "M       : cycle displayed estimation method\n"
         "J       : cycle overlay: posterior / backward flow / off\n"
         "L       : load NY wildfire sensor network (clears current sensors)\n"
-        "N       : apply NY observation preset (phys 300 s, avg 3600 s)\n"
+        "N       : apply NY observation preset (5 min / 1 h in exported time)\n"
+        "S       : save a screenshot to exports/\n"
         "Space   : pause/resume\n"
         "R       : reset simulation (clears sensors)\n"
         "Esc     : open/close preferences\n"

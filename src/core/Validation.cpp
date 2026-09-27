@@ -48,6 +48,11 @@ std::vector<std::string> validate_config(const Config& config) {
     if (!is_finite_non_negative(config.physics.wind_scale)) {
         errors.emplace_back("wind scale must be a finite number >= 0");
     }
+    if (!is_finite_non_negative(config.physics.veering.speed_m_s)
+        || !is_finite_non_negative(config.physics.veering.perturbation)
+        || !std::isfinite(config.physics.veering.from_deg) || !std::isfinite(config.physics.veering.rate_deg_per_h)) {
+        errors.emplace_back("veering wind parameters must be finite (speed and perturbation >= 0)");
+    }
     if (!is_finite_positive(config.physics.constant_scalar_diffusivity)) {
         errors.emplace_back("constant scalar diffusivity must be a finite number > 0");
     }

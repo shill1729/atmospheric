@@ -8,7 +8,9 @@
 #include "science/SourceModel.hpp"
 
 #include <functional>
+#include <string>
 #include <string_view>
+#include <vector>
 
 namespace atm {
 
@@ -42,11 +44,17 @@ public:
     std::size_t trail_length() const;
     void set_wind_scale(float scale);
     float wind_scale() const;
+    void set_time_stretch(float stretch);
+    void set_observed_wind(std::vector<Fields::ObservedWind> series);
+    bool has_observed_wind() const;
     void cycle_wind_model(int direction);
     Fields::WindPreset wind_preset() const;
+    void set_wind_preset(Fields::WindPreset preset);
     std::string_view wind_model_name() const;
+    std::string wind_model_details() const;
     void cycle_diffusion_model(int direction);
     Fields::DiffusivityPreset diffusivity_preset() const;
+    void set_diffusivity_preset(Fields::DiffusivityPreset preset);
     std::string_view diffusion_model_name() const;
     void cycle_pde_diffusion_mode(int direction);
     AdvectionDiffusionSolver::DiffusionMode pde_diffusion_mode() const;

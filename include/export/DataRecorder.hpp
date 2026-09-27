@@ -67,6 +67,7 @@ public:
     std::string export_csv(
         const std::string& output_dir,
         const std::string& wind_model,
+        const std::string& wind_details,
         const std::string& diffusion_model,
         const std::string& pde_mode,
         float dt,
